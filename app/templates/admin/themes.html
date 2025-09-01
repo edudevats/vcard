@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Temas - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-palette me-2"></i>Gestionar Temas
+                </h2>
+                <a href="{{ url_for('admin.new_theme') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Nuevo Tema
+                </a>
+            </div>
+            
+            <!-- Themes Grid -->
+            {% if themes %}
+                <div class="row">
+                    {% for theme in themes %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <!-- Theme Header -->
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="card-title mb-0">{{ theme.name }}</h5>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                                    data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('admin.edit_theme', id=theme.id) }}">
+                                                        <i class="fas fa-edit me-2"></i>Editar
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('admin.delete_theme', id=theme.id) }}" 
+                                                          onsubmit="return confirm('¿Eliminar este tema?')">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fas fa-trash me-2"></i>Eliminar
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Theme Preview -->
+                                    <div class="mb-3" style="
+                                        background: linear-gradient(135deg, {{ theme.primary_color }}, {{ theme.secondary_color }});
+                                        border-radius: 15px;
+                                        padding: 20px;
+                                        min-height: 200px;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        position: relative;
+                                    ">
+                                        <!-- Mini Card Preview -->
+                                        <div style="
+                                            {% if theme.layout == 'classic' %}
+                                            background: white;
+                                            border-radius: 10px;
+                                            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+                                            border: 1px solid {{ theme.primary_color }}20;
+                                            {% elif theme.layout == 'minimal' %}
+                                            background: white;
+                                            border-radius: 0;
+                                            box-shadow: none;
+                                            border: 1px solid #e0e0e0;
+                                            {% else %}
+                                            background: rgba(255, 255, 255, 0.95);
+                                            border-radius: 15px;
+                                            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                                            {% endif %}
+                                            padding: 15px;
+                                            text-align: center;
+                                            max-width: 150px;
+                                            font-family: '{{ theme.font_family }}', sans-serif;
+                                        ">
+                                            <!-- Mini Avatar -->
+                                            <div style="
+                                                {% if theme.avatar_shape == 'rectangle' %}
+                                                width: 60px;
+                                                height: 34px;
+                                                {% else %}
+                                                width: 40px;
+                                                height: 40px;
+                                                {% endif %}
+                                                margin: 0 auto 10px;
+                                                background: linear-gradient(135deg, {{ theme.primary_color }}, {{ theme.secondary_color }});
+                                                {% if theme.avatar_shape == 'circle' %}
+                                                border-radius: 50%;
+                                                {% elif theme.avatar_shape == 'rounded' %}
+                                                border-radius: 8px;
+                                                {% elif theme.avatar_shape == 'rectangle' %}
+                                                border-radius: 4px;
+                                                {% else %}
+                                                border-radius: 4px;
+                                                {% endif %}
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                color: white;
+                                                font-size: 16px;
+                                            ">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            
+                                            <div style="color: {{ theme.primary_color }}; font-weight: 600; font-size: 12px; margin-bottom: 5px;">
+                                                Nombre
+                                            </div>
+                                            
+                                            <div style="
+                                                {% if theme.layout == 'classic' %}
+                                                background: {{ theme.primary_color }};
+                                                border-radius: 4px;
+                                                text-transform: none;
+                                                letter-spacing: 0;
+                                                {% elif theme.layout == 'minimal' %}
+                                                background: {{ theme.primary_color }};
+                                                border-radius: 0;
+                                                text-transform: none;
+                                                letter-spacing: 0;
+                                                font-weight: 500;
+                                                {% else %}
+                                                background: linear-gradient(135deg, {{ theme.primary_color }}, {{ theme.secondary_color }});
+                                                border-radius: 10px;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.5px;
+                                                {% endif %}
+                                                color: white;
+                                                padding: 4px 8px;
+                                                font-size: 8px;
+                                                font-weight: 600;
+                                                margin-bottom: 5px;
+                                            ">
+                                                Contacto
+                                            </div>
+                                            
+                                            <div style="
+                                                {% if theme.layout == 'classic' %}
+                                                background: {{ theme.secondary_color }};
+                                                border-radius: 4px;
+                                                text-transform: none;
+                                                letter-spacing: 0;
+                                                {% elif theme.layout == 'minimal' %}
+                                                background: {{ theme.secondary_color }};
+                                                border-radius: 0;
+                                                text-transform: none;
+                                                letter-spacing: 0;
+                                                font-weight: 500;
+                                                {% else %}
+                                                background: linear-gradient(135deg, {{ theme.secondary_color }}, {{ theme.accent_color }});
+                                                border-radius: 10px;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.5px;
+                                                {% endif %}
+                                                color: white;
+                                                padding: 4px 8px;
+                                                font-size: 8px;
+                                                font-weight: 600;
+                                            ">
+                                                Servicios
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Theme Details -->
+                                    <div class="mb-3">
+                                        <!-- Color Palette -->
+                                        <div class="d-flex align-items-center mb-2">
+                                            <small class="text-muted me-2">Colores:</small>
+                                            <div class="d-flex gap-1">
+                                                <div style="width: 20px; height: 20px; background: {{ theme.primary_color }}; border-radius: 3px; border: 1px solid #ddd;" 
+                                                     title="Primario: {{ theme.primary_color }}"></div>
+                                                <div style="width: 20px; height: 20px; background: {{ theme.secondary_color }}; border-radius: 3px; border: 1px solid #ddd;" 
+                                                     title="Secundario: {{ theme.secondary_color }}"></div>
+                                                <div style="width: 20px; height: 20px; background: {{ theme.accent_color }}; border-radius: 3px; border: 1px solid #ddd;" 
+                                                     title="Acento: {{ theme.accent_color }}"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Theme Properties -->
+                                        <div class="small text-muted">
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Tipografía:</strong></span>
+                                                <span>{{ theme.font_family }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Layout:</strong></span>
+                                                <span class="text-capitalize">{{ theme.layout }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Avatar:</strong></span>
+                                                <span class="text-capitalize">{{ theme.avatar_shape }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Theme Stats -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">En uso:</small>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-info me-1">{{ theme.cards.count() }}</span>
+                                                <small class="text-muted">tarjeta{{ 's' if theme.cards.count() != 1 else '' }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Creation Date -->
+                                    <div class="mt-auto">
+                                        <div class="small text-muted">
+                                            Creado: {{ theme.created_at.strftime('%d/%m/%Y') if theme.created_at else '-' }}
+                                        </div>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="d-flex gap-2 mt-2">
+                                            <a href="{{ url_for('admin.edit_theme', id=theme.id) }}" 
+                                               class="btn btn-outline-primary btn-sm flex-grow-1">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-info btn-sm" 
+                                                    onclick="previewTheme({{ theme.id }})" title="Vista previa">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-palette fa-3x text-muted mb-3"></i>
+                        <h4>No hay temas disponibles</h4>
+                        <p class="text-muted">Crea el primer tema para que los usuarios puedan personalizar sus tarjetas</p>
+                        <a href="{{ url_for('admin.new_theme') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Crear Primer Tema
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Theme Preview Modal -->
+<div class="modal fade" id="themePreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vista Previa del Tema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="themePreviewContent">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewTheme(themeId) {
+    // This would load a full preview of the theme
+    const modal = new bootstrap.Modal(document.getElementById('themePreviewModal'));
+    document.getElementById('themePreviewContent').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando vista previa...</p>
+        </div>
+    `;
+    modal.show();
+    
+    // Simulate loading preview
+    setTimeout(() => {
+        document.getElementById('themePreviewContent').innerHTML = `
+            <div class="text-center py-4">
+                <p class="text-muted">Vista previa del tema disponible próximamente</p>
+            </div>
+        `;
+    }, 1000);
+}
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.theme-preview {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 15px;
+    min-height: 200px;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,194 @@
+{# Componente reutilizable para mostrar vista previa de tarjetas #}
+{% macro render_card_preview(card, size='medium') %}
+    {% set sizes = {
+        'small': {'width': '200px', 'avatar': '40px', 'title': '14px', 'btn_padding': '4px 8px', 'btn_font': '8px'},
+        'medium': {'width': '280px', 'avatar': '60px', 'title': '18px', 'btn_padding': '8px 12px', 'btn_font': '10px'},
+        'large': {'width': '350px', 'avatar': '80px', 'title': '22px', 'btn_padding': '10px 15px', 'btn_font': '12px'}
+    } %}
+    {% set s = sizes[size] %}
+    
+    <div class="card-preview" style="
+        max-width: {{ s.width }};
+        width: 100%;
+        background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+        border-radius: 20px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    " onclick="{% if card.is_public %}window.open('{{ card.get_public_url() }}', '_blank'){% endif %}">
+        
+        {# Background overlay #}
+        <div style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(2px);
+        "></div>
+        
+        {# Card content #}
+        <div class="card-content" style="
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: {{ '15px' if size == 'small' else '20px' if size == 'medium' else '25px' }};
+            text-align: center;
+            font-family: {{ card.theme.font_family }}, sans-serif;
+        ">
+            
+            {# Avatar #}
+            <div class="avatar" style="
+                {% if card.theme.avatar_shape == 'rectangle' %}
+                width: {{ '120px' if size == 'small' else '150px' if size == 'medium' else '180px' }};
+                height: {{ '65px' if size == 'small' else '80px' if size == 'medium' else '100px' }};
+                padding: {{ '4px' if size == 'small' else '6px' if size == 'medium' else '8px' }};
+                {% else %}
+                width: {{ s.avatar }};
+                height: {{ s.avatar }};
+                {% endif %}
+                margin: 0 auto {{ '10px' if size == 'small' else '15px' if size == 'medium' else '20px' }};
+                {% if card.theme.avatar_shape == 'circle' %}
+                border-radius: 50%;
+                {% elif card.theme.avatar_shape == 'rounded' %}
+                border-radius: {{ '8px' if size == 'small' else '12px' if size == 'medium' else '16px' }};
+                {% elif card.theme.avatar_shape == 'rectangle' %}
+                border-radius: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '12px' }};
+                {% else %}
+                border-radius: {{ '4px' if size == 'small' else '6px' if size == 'medium' else '8px' }};
+                {% endif %}
+                overflow: hidden;
+                border: {{ '2px' if size == 'small' else '3px' if size == 'medium' else '4px' }} solid white;
+                box-shadow: 0 {{ '3px 8px' if size == 'small' else '5px 12px' if size == 'medium' else '8px 20px' }} rgba(0,0,0,0.2);
+                background: {% if card.theme.avatar_shape == 'rectangle' %}white{% else %}#f8f9fa{% endif %};
+            ">
+                {% if card.has_avatar() %}
+                    <img src="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                         style="width: 100%; height: 100%; 
+                         {% if card.theme.avatar_shape == 'rectangle' %}
+                         object-fit: contain; background: white;
+                         {% else %}
+                         object-fit: cover;
+                         {% endif %}
+                         " alt="{{ card.name }}">
+                {% else %}
+                    <div style="
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: white;
+                        font-size: {{ ('16px' if size == 'small' else '24px' if size == 'medium' else '32px') }};
+                    ">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            {# Title #}
+            <h3 style="
+                color: {{ card.theme.primary_color }};
+                font-size: {{ s.title }};
+                font-weight: 700;
+                margin-bottom: {{ '3px' if size == 'small' else '5px' if size == 'medium' else '8px' }};
+                line-height: 1.2;
+            ">{{ card.title or card.name }}</h3>
+            
+            {# Job Title #}
+            {% if card.job_title %}
+                <p style="
+                    color: #666;
+                    font-size: {{ ('10px' if size == 'small' else '12px' if size == 'medium' else '14px') }};
+                    margin-bottom: {{ '10px' if size == 'small' else '15px' if size == 'medium' else '18px' }};
+                ">{{ card.job_title }}</p>
+            {% endif %}
+            
+            {# Company Badge #}
+            {% if card.company %}
+                <div style="
+                    background: linear-gradient(135deg, {{ card.theme.primary_color }}20, {{ card.theme.secondary_color }}20);
+                    color: {{ card.theme.primary_color }};
+                    padding: {{ '4px 8px' if size == 'small' else '6px 10px' if size == 'medium' else '8px 12px' }};
+                    border-radius: {{ '8px' if size == 'small' else '10px' if size == 'medium' else '12px' }};
+                    font-size: {{ ('8px' if size == 'small' else '10px' if size == 'medium' else '12px') }};
+                    font-weight: 600;
+                    margin-bottom: {{ '10px' if size == 'small' else '15px' if size == 'medium' else '18px' }};
+                ">
+                    <i class="fas fa-building me-1"></i>{{ card.company }}
+                </div>
+            {% endif %}
+            
+            {# Action Buttons #}
+            <div class="action-buttons" style="display: flex; flex-direction: column; gap: {{ '4px' if size == 'small' else '6px' if size == 'medium' else '8px' }};">
+                <div style="
+                    background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+                    color: white;
+                    padding: {{ s.btn_padding }};
+                    border-radius: {{ '12px' if size == 'small' else '15px' if size == 'medium' else '18px' }};
+                    font-size: {{ s.btn_font }};
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: {{ '0.5px' if size == 'small' else '1px' if size == 'medium' else '1.2px' }};
+                ">CONTACTO</div>
+                
+                {% if card.services.count() > 0 %}
+                    <div style="
+                        background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
+                        color: white;
+                        padding: {{ s.btn_padding }};
+                        border-radius: {{ '12px' if size == 'small' else '15px' if size == 'medium' else '18px' }};
+                        font-size: {{ s.btn_font }};
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: {{ '0.5px' if size == 'small' else '1px' if size == 'medium' else '1.2px' }};
+                    ">SERVICIOS</div>
+                {% endif %}
+                
+                <div style="
+                    background: transparent;
+                    color: {{ card.theme.primary_color }};
+                    border: 1px solid {{ card.theme.primary_color }}50;
+                    padding: {{ s.btn_padding }};
+                    border-radius: {{ '12px' if size == 'small' else '15px' if size == 'medium' else '18px' }};
+                    font-size: {{ s.btn_font }};
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: {{ '0.5px' if size == 'small' else '1px' if size == 'medium' else '1.2px' }};
+                ">UBICACIÓN</div>
+            </div>
+            
+            {# Status Badge #}
+            <div style="
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: {{ 'rgba(34, 197, 94, 0.9)' if card.is_public else 'rgba(107, 114, 128, 0.9)' }};
+                color: white;
+                padding: 2px 6px;
+                border-radius: 10px;
+                font-size: 8px;
+                font-weight: 600;
+            ">
+                {% if card.is_public %}
+                    <i class="fas fa-eye"></i> PÚBLICA
+                {% else %}
+                    <i class="fas fa-eye-slash"></i> PRIVADA
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <style>
+    .card-preview:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    </style>
+{% endmacro %}

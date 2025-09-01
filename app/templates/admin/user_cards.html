@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Tarjetas de {{ user.email }} - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-id-card me-2"></i>Tarjetas de {{ user.email }}
+                </h2>
+                <div>
+                    <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-user-edit me-1"></i>Editar Usuario
+                    </a>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                     style="width: 60px; height: 60px;">
+                                    <i class="fas fa-user fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">{{ user.email }}</h5>
+                                    <div class="mb-1">
+                                        {% if user.role == 'admin' %}
+                                            <span class="badge bg-danger me-2">
+                                                <i class="fas fa-crown me-1"></i>Administrador
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-primary me-2">
+                                                <i class="fas fa-user me-1"></i>Usuario
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Activo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-pause me-1"></i>Inactivo
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        Registro: {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '-' }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="h4 mb-0 text-primary">{{ cards|length }}</div>
+                                    <small class="text-muted">Tarjetas</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h4 mb-0 text-success">{{ cards|selectattr('is_public')|list|length }}</div>
+                                    <small class="text-muted">Públicas</small>
+                                </div>
+                                <div class="col-4">
+                                    <div class="h4 mb-0 text-warning">{{ user.max_cards }}</div>
+                                    <small class="text-muted">Límite</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cards Grid -->
+            {% if cards %}
+                <div class="row">
+                    {% for card in cards %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <!-- Card Header -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="avatar-sm me-3">
+                                            {% if card.avatar_path %}
+                                                <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" 
+                                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                                     style="width: 50px; height: 50px; background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }}); color: white;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0">{{ card.title or card.name }}</h6>
+                                            {% if card.company %}
+                                                <small class="text-muted">{{ card.company }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Card Info -->
+                                    <div class="mb-3">
+                                        <div class="d-flex flex-wrap gap-1 mb-2">
+                                            {% if card.is_public %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-eye me-1"></i>Pública
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-eye-slash me-1"></i>Privada
+                                                </span>
+                                            {% endif %}
+                                            
+                                            <span class="badge bg-info">
+                                                {{ card.services.count() }} servicio{{ 's' if card.services.count() != 1 else '' }}
+                                            </span>
+                                            
+                                            <span class="badge bg-warning">
+                                                {{ card.gallery_items.count() }} imagen{{ 'es' if card.gallery_items.count() != 1 else '' }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="small text-muted">
+                                            <div><strong>Slug:</strong> {{ card.slug }}</div>
+                                            <div><strong>Tema:</strong> {{ card.theme.name }}</div>
+                                            <div><strong>Creada:</strong> {{ card.created_at.strftime('%d/%m/%Y') if card.created_at else '-' }}</div>
+                                            {% if card.published_at %}
+                                                <div><strong>Publicada:</strong> {{ card.published_at.strftime('%d/%m/%Y') }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Card Description -->
+                                    {% if card.bio %}
+                                        <p class="card-text text-muted small flex-grow-1">
+                                            {{ card.bio[:100] }}{% if card.bio|length > 100 %}...{% endif %}
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <!-- Card Actions -->
+                                    <div class="mt-auto">
+                                        <div class="d-grid gap-2">
+                                            {% if card.is_public %}
+                                                <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-external-link-alt me-1"></i>Ver Tarjeta Pública
+                                                </a>
+                                            {% else %}
+                                                <button class="btn btn-outline-secondary btn-sm" disabled>
+                                                    <i class="fas fa-eye-slash me-1"></i>Tarjeta Privada
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Admin Actions -->
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block mb-1">Acciones de Admin:</small>
+                                            <div class="btn-group w-100" role="group">
+                                                {% if card.is_public %}
+                                                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                            onclick="toggleCardVisibility({{ card.id }}, false)" title="Hacer privada">
+                                                        <i class="fas fa-eye-slash"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                                            onclick="toggleCardVisibility({{ card.id }}, true)" title="Hacer pública">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                {% endif %}
+                                                
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="deleteCard({{ card.id }}, '{{ card.name }}')" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
+                        <h4>{{ user.email }} no tiene tarjetas</h4>
+                        <p class="text-muted">Este usuario aún no ha creado ninguna tarjeta digital</p>
+                        <div class="small text-muted">
+                            Límite: {{ user.max_cards }} tarjeta{{ 's' if user.max_cards != 1 else '' }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCardVisibility(cardId, makePublic) {
+    const action = makePublic ? 'hacer pública' : 'hacer privada';
+    if (confirm(`¿Estás seguro de que quieres ${action} esta tarjeta?`)) {
+        // This would require an AJAX endpoint
+        fetch(`/admin/cards/${cardId}/toggle-visibility`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            },
+            body: JSON.stringify({ is_public: makePublic })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al cambiar la visibilidad de la tarjeta');
+            }
+        })
+        .catch(error => {
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+function deleteCard(cardId, cardName) {
+    if (confirm(`¿Estás seguro de que quieres eliminar la tarjeta "${cardName}"? Esta acción no se puede deshacer.`)) {
+        // This would require an AJAX endpoint
+        fetch(`/admin/cards/${cardId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al eliminar la tarjeta');
+            }
+        })
+        .catch(error => {
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.avatar-sm img {
+    transition: transform 0.2s ease;
+}
+
+.avatar-sm:hover img {
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}

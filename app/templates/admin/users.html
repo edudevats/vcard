@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Usuarios - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-users me-2"></i>Gestionar Usuarios
+                </h2>
+                <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-1"></i>Nuevo Usuario
+                </a>
+            </div>
+            
+            <!-- Search and Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Buscar por email..." value="{{ search }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="role" class="form-select">
+                                <option value="">Todos los roles</option>
+                                <option value="user" {{ 'selected' if request.args.get('role') == 'user' }}>Usuario</option>
+                                <option value="admin" {{ 'selected' if request.args.get('role') == 'admin' }}>Administrador</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-grid gap-2 d-md-flex">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search me-1"></i>Buscar
+                                </button>
+                                <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Lista de Usuarios
+                        <small class="text-muted">({{ users.total }} usuarios)</small>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if users.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th width="12%">Rol</th>
+                                        <th width="12%">Estado</th>
+                                        <th width="12%">Tarjetas</th>
+                                        <th width="10%">Vistas</th>
+                                        <th width="12%">Registro</th>
+                                        <th width="20%">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users.items %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-user"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ user.email }}</h6>
+                                                        <small class="text-muted">ID: {{ user.id }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if user.role == 'admin' %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-crown me-1"></i>Admin
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-user me-1"></i>Usuario
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.is_suspended %}
+                                                    <div>
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-ban me-1"></i>Suspendido
+                                                        </span>
+                                                        {% if user.suspension_reason %}
+                                                            <div class="mt-1">
+                                                                <small class="text-muted" title="{{ user.suspension_reason }}">
+                                                                    {{ user.suspension_reason[:30] }}{% if user.suspension_reason|length > 30 %}...{% endif %}
+                                                                </small>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% elif user.is_active %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>Activo
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-pause me-1"></i>Inactivo
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2">{{ user.cards.count() }}/{{ user.max_cards }}</span>
+                                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: {{ (user.cards.count() / user.max_cards * 100) if user.max_cards > 0 else 0 }}%">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="text-center">
+                                                    <div class="h6 mb-0">{{ user.get_total_card_views() }}</div>
+                                                    <small class="text-muted">vistas totales</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '-' }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{{ url_for('admin.edit_user', id=user.id) }}" 
+                                                       class="btn btn-outline-primary" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{{ url_for('admin.user_cards', id=user.id) }}" 
+                                                       class="btn btn-outline-info" title="Ver Tarjetas">
+                                                        <i class="fas fa-id-card"></i>
+                                                    </a>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                                                data-bs-toggle="dropdown">
+                                                            <i class="fas fa-cog"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            {% if not user.is_admin() %}
+                                                                {% if user.is_suspended %}
+                                                                    <li>
+                                                                        <form method="POST" action="{{ url_for('admin.unsuspend_user', id=user.id) }}" class="d-inline">
+                                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                                            <button type="submit" class="dropdown-item text-success">
+                                                                                <i class="fas fa-check me-2"></i>Quitar Suspensión
+                                                                            </button>
+                                                                        </form>
+                                                                    </li>
+                                                                {% else %}
+                                                                    <li>
+                                                                        <a class="dropdown-item text-warning" href="#" 
+                                                                           onclick="suspendUser({{ user.id }}, '{{ user.email }}')">
+                                                                            <i class="fas fa-ban me-2"></i>Suspender
+                                                                        </a>
+                                                                    </li>
+                                                                {% endif %}
+                                                                
+                                                                <li><hr class="dropdown-divider"></li>
+                                                                
+                                                                {% if user.is_active %}
+                                                                    <li>
+                                                                        <form method="POST" action="{{ url_for('admin.toggle_user_status', id=user.id) }}" class="d-inline">
+                                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                                            <button type="submit" class="dropdown-item text-warning">
+                                                                                <i class="fas fa-pause me-2"></i>Desactivar
+                                                                            </button>
+                                                                        </form>
+                                                                    </li>
+                                                                {% else %}
+                                                                    <li>
+                                                                        <form method="POST" action="{{ url_for('admin.toggle_user_status', id=user.id) }}" class="d-inline">
+                                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                                            <button type="submit" class="dropdown-item text-success">
+                                                                                <i class="fas fa-play me-2"></i>Activar
+                                                                            </button>
+                                                                        </form>
+                                                                    </li>
+                                                                {% endif %}
+                                                                
+                                                                <li>
+                                                                    <a class="dropdown-item" href="#" 
+                                                                       onclick="updateLimits({{ user.id }}, {{ user.max_cards }}, '{{ user.email }}')">
+                                                                        <i class="fas fa-sliders-h me-2"></i>Límites
+                                                                    </a>
+                                                                </li>
+                                                                
+                                                                <li>
+                                                                    <a class="dropdown-item text-info" href="#" 
+                                                                       onclick="resetPassword({{ user.id }}, '{{ user.email }}')">
+                                                                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                                                                    </a>
+                                                                </li>
+                                                            {% else %}
+                                                                <li>
+                                                                    <span class="dropdown-item text-muted">
+                                                                        <i class="fas fa-crown me-2"></i>Usuario Administrador
+                                                                    </span>
+                                                                </li>
+                                                            {% endif %}
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if users.pages > 1 %}
+                            <div class="card-footer">
+                                <nav aria-label="Users pagination">
+                                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                                        {% if users.has_prev %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.users', page=users.prev_num, search=search) }}">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        {% for page_num in users.iter_pages() %}
+                                            {% if page_num %}
+                                                {% if page_num != users.page %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="{{ url_for('admin.users', page=page_num, search=search) }}">
+                                                            {{ page_num }}
+                                                        </a>
+                                                    </li>
+                                                {% else %}
+                                                    <li class="page-item active">
+                                                        <span class="page-link">{{ page_num }}</span>
+                                                    </li>
+                                                {% endif %}
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if users.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.users', page=users.next_num, search=search) }}">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h4>No se encontraron usuarios</h4>
+                            {% if search %}
+                                <p class="text-muted">No hay usuarios que coincidan con "{{ search }}"</p>
+                                <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary">
+                                    Ver todos los usuarios
+                                </a>
+                            {% else %}
+                                <p class="text-muted">Aún no hay usuarios registrados</p>
+                                <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-1"></i>Crear Primer Usuario
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleUserStatus(userId, activate) {
+    const action = activate ? 'activar' : 'desactivar';
+    if (confirm(`¿Estás seguro de que quieres ${action} este usuario?`)) {
+        // This would require an AJAX endpoint
+        fetch(`/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ is_active: activate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al cambiar el estado del usuario');
+            }
+        });
+    }
+}
+
+function suspendUser(userId, userEmail) {
+    const reason = prompt(`¿Por qué quieres suspender a ${userEmail}?`, 'Violación de términos de servicio');
+    
+    if (reason !== null && reason.trim() !== '') {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/users/${userId}/suspend`;
+        
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason.trim();
+        
+        form.appendChild(reasonInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function updateLimits(userId, currentMax, userEmail) {
+    const newMax = prompt(`Nuevo límite de tarjetas para ${userEmail}:`, currentMax);
+    
+    if (newMax !== null && !isNaN(newMax) && parseInt(newMax) >= 0) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/users/${userId}/update-limits`;
+        
+        const maxInput = document.createElement('input');
+        maxInput.type = 'hidden';
+        maxInput.name = 'max_cards';
+        maxInput.value = parseInt(newMax);
+        
+        form.appendChild(maxInput);
+        document.body.appendChild(form);
+        form.submit();
+    } else if (newMax !== null) {
+        alert('Por favor ingresa un número válido mayor o igual a 0');
+    }
+}
+
+function resetPassword(userId, userEmail) {
+    const newPassword = prompt(`Nueva contraseña para ${userEmail} (mínimo 6 caracteres):`);
+    
+    if (newPassword !== null && newPassword.length >= 6) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/users/${userId}/reset-password`;
+        
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'new_password';
+        passwordInput.value = newPassword;
+        
+        form.appendChild(passwordInput);
+        document.body.appendChild(form);
+        form.submit();
+    } else if (newPassword !== null) {
+        alert('La contraseña debe tener al menos 6 caracteres');
+    }
+}
+</script>
+{% endblock %}

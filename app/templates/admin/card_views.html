@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas de {{ card.name }} - VCard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <div class="d-flex align-items-center mb-2">
+                        <a href="{{ url_for('admin.cards') }}" class="btn btn-outline-secondary btn-sm me-3">
+                            <i class="fas fa-arrow-left me-1"></i>Volver
+                        </a>
+                        <h2 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Estadísticas de Tarjeta
+                        </h2>
+                    </div>
+                </div>
+                {% if card.is_public %}
+                    <a href="{{ card.get_public_url() }}" class="btn btn-info" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i>Ver Tarjeta
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Card Info -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            {% if card.has_avatar() %}
+                                <img src="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                                     alt="{{ card.name }}" class="avatar-lg rounded-circle">
+                            {% else %}
+                                <div class="avatar-lg bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-user fa-2x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h4>{{ card.name }}</h4>
+                            {% if card.title %}<p class="text-muted mb-1">{{ card.title }}</p>{% endif %}
+                            {% if card.job_title %}<p class="text-muted mb-1">{{ card.job_title }}{% if card.company %} - {{ card.company }}{% endif %}</p>{% endif %}
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary me-2">{{ card.owner.email }}</span>
+                                {% if card.is_public %}
+                                    <span class="badge bg-success me-2">
+                                        <i class="fas fa-eye me-1"></i>Pública
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-eye-slash me-1"></i>Privada
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted font-monospace">/c/{{ card.slug }}</small>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <small class="text-muted">Creada</small>
+                            <div>{{ card.created_at.strftime('%d/%m/%Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-primary">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Vistas
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.total_views }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-eye fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-success">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Vistas Únicas
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.unique_views }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-info">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Hoy
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.views_today }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-warning">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Este Mes
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.views_this_month }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-month fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Views Log -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list me-2"></i>Registro de Vistas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if views.items %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>IP</th>
+                                        <th>Navegador</th>
+                                        <th>Referrer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for view in views.items %}
+                                    <tr>
+                                        <td>
+                                            {{ view.viewed_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                                        </td>
+                                        <td>
+                                            <code>{{ view.ip_address or 'N/A' }}</code>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted" title="{{ view.user_agent }}">
+                                                {% if view.user_agent %}
+                                                    {% if 'Mobile' in view.user_agent %}
+                                                        <i class="fas fa-mobile-alt me-1"></i>Móvil
+                                                    {% elif 'Chrome' in view.user_agent %}
+                                                        <i class="fab fa-chrome me-1"></i>Chrome
+                                                    {% elif 'Firefox' in view.user_agent %}
+                                                        <i class="fab fa-firefox me-1"></i>Firefox
+                                                    {% elif 'Safari' in view.user_agent %}
+                                                        <i class="fab fa-safari me-1"></i>Safari
+                                                    {% elif 'Edge' in view.user_agent %}
+                                                        <i class="fab fa-edge me-1"></i>Edge
+                                                    {% else %}
+                                                        <i class="fas fa-globe me-1"></i>Otro
+                                                    {% endif %}
+                                                    {{ view.user_agent[:30] }}{% if view.user_agent|length > 30 %}...{% endif %}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {% if view.referrer %}
+                                                    {{ view.referrer[:50] }}{% if view.referrer|length > 50 %}...{% endif %}
+                                                {% else %}
+                                                    Directo
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if views.pages > 1 %}
+                        <nav aria-label="Page navigation" class="mt-3">
+                            <ul class="pagination justify-content-center pagination-sm">
+                                {% if views.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.card_views', id=card.id, page=views.prev_num) }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in views.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != views.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.card_views', id=card.id, page=page_num) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">…</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if views.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.card_views', id=card.id, page=views.next_num) }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h6>Sin vistas registradas</h6>
+                            <p class="text-muted mb-0">Esta tarjeta aún no ha sido vista por nadie.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-lg {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+}
+
+.card {
+    border-radius: 15px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df!important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a!important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc!important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e!important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #5a5c69;
+}
+</style>
+{% endblock %}

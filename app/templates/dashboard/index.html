@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - VCard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link active" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.new_card') }}">
+                    <i class="fas fa-plus me-2"></i>Nueva Tarjeta
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.analytics') }}">
+                    <i class="fas fa-chart-line me-2"></i>Analytics
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.advanced_features') }}">
+                    <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-id-card me-2"></i>Mis Tarjetas
+                    <small class="text-muted">({{ cards|length }}/{{ current_user.max_cards }})</small>
+                </h2>
+                
+                <div>
+                    <a href="{{ url_for('dashboard.advanced_features') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-rocket me-1"></i>Avanzadas
+                    </a>
+                    <a href="{{ url_for('dashboard.analytics') }}" class="btn btn-info me-2">
+                        <i class="fas fa-chart-line me-1"></i>Analytics
+                    </a>
+                    {% if current_user.can_create_card() %}
+                        <a href="{{ url_for('dashboard.new_card') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Nueva Tarjeta
+                        </a>
+                    {% else %}
+                        <span class="text-muted">Límite alcanzado</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            {% if cards and stats %}
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-primary">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Vistas
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.total_views }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-eye fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-success">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Vistas Únicas
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.unique_views }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-info">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Hoy
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.views_today }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-warning">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Este Mes
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {{ stats.views_this_month }}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-month fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if cards %}
+                <div class="row">
+                    {% for card in cards %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <!-- Card Header -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="avatar-sm me-3">
+                                            {% if card.avatar_path %}
+                                                <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" 
+                                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-0">{{ card.title or card.name }}</h6>
+                                            {% if card.company %}
+                                                <small class="text-muted">{{ card.company }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" 
+                                                    data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                                                        <i class="fas fa-edit me-2"></i>Editar
+                                                    </a>
+                                                </li>
+                                                {% if config.ENABLE_VISUAL_EDITOR %}
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('dashboard.visual_editor', id=card.id) }}">
+                                                        <i class="fas fa-magic me-2" style="color: #6f42c1;"></i>Editor Visual
+                                                    </a>
+                                                </li>
+                                                {% endif %}
+                                                {% if card.is_public %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ card.get_public_url() }}" target="_blank">
+                                                            <i class="fas fa-external-link-alt me-2"></i>Ver Pública
+                                                        </a>
+                                                    </li>
+                                                {% endif %}
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('dashboard.delete_card', id=card.id) }}" 
+                                                          onsubmit="return confirm('¿Estás seguro de eliminar esta tarjeta?')">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fas fa-trash me-2"></i>Eliminar
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Card Status -->
+                                    <div class="mb-3">
+                                        {% if card.is_public %}
+                                            <span class="badge bg-success me-2">
+                                                <i class="fas fa-eye me-1"></i>Pública
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary me-2">
+                                                <i class="fas fa-eye-slash me-1"></i>Privada
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if card.services.count() > 0 %}
+                                            <span class="badge bg-info me-2">
+                                                {{ card.services.count() }} servicio{{ 's' if card.services.count() > 1 }}
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if card.is_public %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-chart-line me-1"></i>{{ card.get_total_views() }} vistas
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Card Description -->
+                                    {% if card.bio %}
+                                        <p class="card-text text-muted small flex-grow-1">
+                                            {{ card.bio[:100] }}{% if card.bio|length > 100 %}...{% endif %}
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <!-- Quick Actions -->
+                                    <div class="mt-auto">
+                                        <div class="btn-group w-100" role="group">
+                                            <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" 
+                                               class="btn btn-outline-primary btn-sm" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('dashboard.card_services', id=card.id) }}" 
+                                               class="btn btn-outline-info btn-sm" title="Servicios">
+                                                <i class="fas fa-concierge-bell"></i>
+                                            </a>
+                                            <a href="{{ url_for('dashboard.card_gallery', id=card.id) }}" 
+                                               class="btn btn-outline-warning btn-sm" title="Galería">
+                                                <i class="fas fa-images"></i>
+                                            </a>
+                                            <a href="{{ url_for('dashboard.card_theme', id=card.id) }}" 
+                                               class="btn btn-outline-success btn-sm" title="Personalizar">
+                                                <i class="fas fa-palette"></i>
+                                            </a>
+                                            {% if config.ENABLE_VISUAL_EDITOR %}
+                                            <a href="{{ url_for('dashboard.visual_editor', id=card.id) }}" 
+                                               class="btn btn-outline-purple btn-sm" title="Editor Visual" style="color: #6f42c1; border-color: #6f42c1;">
+                                                <i class="fas fa-magic"></i>
+                                            </a>
+                                            {% endif %}
+                                            <a href="{{ url_for('dashboard.card_qr', id=card.id) }}" 
+                                               class="btn btn-outline-secondary btn-sm" title="Código QR">
+                                                <i class="fas fa-qrcode"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-5">
+                    <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
+                    <h4>No tienes tarjetas aún</h4>
+                    <p class="text-muted">Crea tu primera tarjeta digital para comenzar</p>
+                    {% if current_user.can_create_card() %}
+                        <a href="{{ url_for('dashboard.new_card') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>Crear Primera Tarjeta
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+}
+
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df!important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a!important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc!important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e!important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+{% endblock %}

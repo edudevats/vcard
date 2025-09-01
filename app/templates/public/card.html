@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ card.title or card.name }} - Tarjeta Digital</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{{ card.bio[:160] if card.bio else 'Tarjeta de presentación digital de ' + card.name }}">
+    <meta name="keywords" content="tarjeta digital, {{ card.name }}, {{ card.company or '' }}, contacto">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{ card.title or card.name }}">
+    <meta property="og:description" content="{{ card.bio[:160] if card.bio else 'Tarjeta de presentación digital' }}">
+    <meta property="og:type" content="profile">
+    {% if featured_image %}
+    <meta property="og:image" content="{{ url_for('static', filename='uploads/' + featured_image.image_path) }}">
+    {% elif card.has_avatar() %}
+    <meta property="og:image" content="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}">
+    {% endif %}
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: '{{ card.theme.font_family }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-container {
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            {% if card.theme.layout == 'classic' %}
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid {{ card.theme.primary_color }}20;
+            {% elif card.theme.layout == 'minimal' %}
+            background: white;
+            border-radius: 0;
+            padding: 40px 30px;
+            box-shadow: none;
+            border: 1px solid #e0e0e0;
+            {% else %}
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 40px 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            {% endif %}
+        }
+        
+        .card-container::before {
+            {% if card.theme.layout != 'minimal' %}
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            {% if card.theme.layout == 'classic' %}
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}10, {{ card.theme.secondary_color }}10);
+            border-radius: 15px 15px 0 0;
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}20, {{ card.theme.secondary_color }}20);
+            border-radius: 30px 30px 0 0;
+            {% endif %}
+            {% endif %}
+        }
+        
+        .avatar {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            position: relative;
+            z-index: 2;
+            {% if card.theme.avatar_shape == 'circle' %}
+            border-radius: 50%;
+            {% elif card.theme.avatar_shape == 'rounded' %}
+            border-radius: 25px;
+            {% elif card.theme.avatar_shape == 'rectangle' %}
+            border-radius: 12px;
+            width: 220px;
+            height: 120px;
+            padding: 10px;
+            {% else %}
+            border-radius: 10px;
+            {% endif %}
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: {% if card.theme.avatar_shape == 'rectangle' %}white{% else %}#f8f9fa{% endif %};
+            border: 4px solid white;
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            {% if card.theme.avatar_shape == 'rectangle' %}
+            object-fit: contain;
+            background: white;
+            {% else %}
+            object-fit: cover;
+            {% endif %}
+        }
+        
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            color: white;
+            font-size: 48px;
+        }
+        
+        .card-title {
+            color: {{ card.theme.primary_color }};
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .card-subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .company-info {
+            padding: 15px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            {% if card.theme.layout == 'classic' %}
+            background: {{ card.theme.primary_color }}05;
+            border-radius: 8px;
+            border-left: 4px solid {{ card.theme.primary_color }};
+            {% elif card.theme.layout == 'minimal' %}
+            background: #f8f9fa;
+            border-radius: 0;
+            border-bottom: 2px solid {{ card.theme.primary_color }};
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}10, {{ card.theme.secondary_color }}10);
+            border-radius: 20px;
+            {% endif %}
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .action-btn {
+            padding: 15px 25px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            {% if card.theme.layout == 'classic' %}
+            border-radius: 8px;
+            text-transform: none;
+            letter-spacing: 0;
+            {% elif card.theme.layout == 'minimal' %}
+            border-radius: 0;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 500;
+            {% else %}
+            border-radius: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            {% endif %}
+        }
+        
+        .btn-contact {
+            color: white;
+            {% if card.theme.layout == 'classic' %}
+            background: {{ card.theme.primary_color }};
+            box-shadow: 0 2px 5px {{ card.theme.primary_color }}30;
+            {% elif card.theme.layout == 'minimal' %}
+            background: {{ card.theme.primary_color }};
+            box-shadow: none;
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            box-shadow: 0 5px 15px {{ card.theme.primary_color }}40;
+            {% endif %}
+        }
+        
+        .btn-services {
+            color: white;
+            {% if card.theme.layout == 'classic' %}
+            background: {{ card.theme.secondary_color }};
+            box-shadow: 0 2px 5px {{ card.theme.secondary_color }}30;
+            {% elif card.theme.layout == 'minimal' %}
+            background: {{ card.theme.secondary_color }};
+            box-shadow: none;
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
+            box-shadow: 0 5px 15px {{ card.theme.secondary_color }}40;
+            {% endif %}
+        }
+        
+        .btn-products {
+            color: white;
+            {% if card.theme.layout == 'classic' %}
+            background: {{ card.theme.accent_color }};
+            box-shadow: 0 2px 5px {{ card.theme.accent_color }}30;
+            {% elif card.theme.layout == 'minimal' %}
+            background: {{ card.theme.accent_color }};
+            box-shadow: none;
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.accent_color }}, {{ card.theme.primary_color }});
+            box-shadow: 0 5px 15px {{ card.theme.accent_color }}40;
+            {% endif %}
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: {{ card.theme.primary_color }};
+            {% if card.theme.layout == 'classic' %}
+            border: 2px solid {{ card.theme.primary_color }};
+            {% elif card.theme.layout == 'minimal' %}
+            border: 1px solid {{ card.theme.primary_color }};
+            {% else %}
+            border: 2px solid {{ card.theme.primary_color }}50;
+            {% endif %}
+        }
+        
+        .action-btn:hover {
+            {% if card.theme.layout == 'minimal' %}
+            opacity: 0.8;
+            {% else %}
+            transform: translateY(-3px);
+            {% if card.theme.layout == 'classic' %}
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            {% else %}
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            {% endif %}
+            {% endif %}
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .social-link {
+            width: 50px;
+            height: 50px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 20px;
+            transition: all 0.3s ease;
+            {% if card.theme.layout == 'classic' %}
+            background: {{ card.theme.primary_color }};
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            {% elif card.theme.layout == 'minimal' %}
+            background: {{ card.theme.primary_color }};
+            border-radius: 0;
+            box-shadow: none;
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            border-radius: 50%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            {% endif %}
+        }
+        
+        .social-link:hover {
+            color: white;
+            {% if card.theme.layout == 'minimal' %}
+            opacity: 0.8;
+            {% else %}
+            transform: translateY(-3px) scale(1.1);
+            {% endif %}
+        }
+        
+        .services-section,
+        .gallery-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        
+        .section-title {
+            color: {{ card.theme.primary_color }};
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .service-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .service-title {
+            font-weight: 600;
+            color: {{ card.theme.primary_color }};
+            margin-bottom: 5px;
+        }
+        
+        .service-price {
+            color: {{ card.theme.accent_color }};
+            font-weight: 600;
+            margin-left: auto;
+        }
+        
+        .service-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+        
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .gallery-item:hover {
+            transform: scale(1.08);
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .bio {
+            color: #666;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        
+        /* Primary Social Networks (above contact) */
+        .primary-social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0 20px 0;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .primary-social-link {
+            width: 45px;
+            height: 45px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .primary-social-link:hover {
+            color: white;
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Secondary Social Networks (bottom) */
+        .secondary-social-networks {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .card-container {
+                margin: 10px;
+                padding: 30px 20px;
+            }
+            
+            .avatar {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .avatar{% if card.theme.avatar_shape == 'rectangle' %}-rectangle{% endif %} {
+                {% if card.theme.avatar_shape == 'rectangle' %}
+                width: 180px;
+                height: 100px;
+                {% else %}
+                width: 100px;
+                height: 100px;
+                {% endif %}
+            }
+            
+            .card-title {
+                font-size: 20px;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            
+            .primary-social-links {
+                gap: 12px;
+                margin: 20px 0 15px 0;
+                padding-bottom: 15px;
+            }
+            
+            .primary-social-link {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <!-- Avatar -->
+        <div class="avatar">
+            {% if card.has_avatar() %}
+                <img src="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}" alt="{{ card.name }}">
+            {% else %}
+                <div class="avatar-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Header Info -->
+        <h1 class="card-title">{{ card.title or card.name }}</h1>
+        {% if card.job_title %}
+            <p class="card-subtitle">{{ card.job_title }}</p>
+        {% endif %}
+        
+        {% if card.company %}
+            <div class="company-info">
+                <i class="fas fa-building me-2"></i>{{ card.company }}
+            </div>
+        {% endif %}
+        
+        {% if card.bio %}
+            <div class="bio">{{ card.bio }}</div>
+        {% endif %}
+        
+        <!-- Primary Social Networks (above contact button) -->
+        {% set primary_socials = card.get_primary_social_networks() %}
+        
+        
+        {% if primary_socials %}
+            <div class="primary-social-links">
+                {% for network in primary_socials %}
+                    {% set url = network.base_url + network.value %}
+                    {% if network.name == 'WhatsApp' %}
+                        {% if card.get_whatsapp_full_number() %}
+                            {% set url = network.base_url + card.get_whatsapp_full_number() %}
+                        {% endif %}
+                    {% endif %}
+                    
+                    <a href="{{ url }}" 
+                       target="_blank" 
+                       class="primary-social-link"
+                       style="background-color: {{ network.color }};"
+                       title="{{ network.name }}"
+                       rel="noopener noreferrer">
+                        <i class="{{ network.icon }}"></i>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            {% if card.phone or card.email_public %}
+                <a href="#contact" class="action-btn btn-contact" onclick="showContact()">
+                    <i class="fas fa-phone"></i> CONTACTO
+                </a>
+            {% endif %}
+            
+
+            {% if services %}
+                <a href="{{ url_for('public.card_services', slug=card.slug) }}" class="action-btn btn-services">
+                    <i class="fas fa-concierge-bell"></i> SERVICIOS
+                </a>
+            {% endif %}
+            
+            {% if products %}
+                <a href="{{ url_for('public.card_products', slug=card.slug) }}" class="action-btn btn-products">
+                    <i class="fas fa-box"></i> PRODUCTOS
+                </a>
+            {% endif %}
+            
+            {% if card.location %}
+                <a href="#location" class="action-btn btn-outline" onclick="showLocation()">
+                    <i class="fas fa-map-marker-alt"></i> UBICACIÓN
+                </a>
+            {% endif %}
+            
+            {% if gallery_items %}
+                <a href="{{ url_for('public.card_gallery', slug=card.slug) }}" class="action-btn btn-outline">
+                    <i class="fas fa-images"></i> GALERÍA
+                </a>
+            {% endif %}
+
+            <!-- Share Button -->
+            <button class="action-btn btn-share" onclick="shareCard()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                <i class="fas fa-share-alt"></i> COMPARTIR
+            </button>
+
+        </div>
+        
+        <!-- Secondary Social Networks -->
+        {% set secondary_socials = card.get_secondary_social_networks() %}
+        {% if secondary_socials %}
+            <div class="secondary-social-networks">
+                <div class="social-links">
+                    {% for network in secondary_socials %}
+                        {% set url = network.base_url + network.value %}
+                        {% if network.name == 'WhatsApp' %}
+                            {% if card.get_whatsapp_full_number() %}
+                                {% set url = network.base_url + card.get_whatsapp_full_number() %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        <a href="{{ url }}" 
+                           target="_blank" 
+                           class="social-link"
+                           style="background-color: {{ network.color }};"
+                           title="{{ network.name }}"
+                           rel="noopener noreferrer">
+                            <i class="{{ network.icon }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Services Section (Hidden by default) -->
+        {% if services %}
+            <div class="services-section" id="services-section" style="display: none;">
+                <h3 class="section-title">
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                </h3>
+                {% for service in services %}
+                    <div class="service-item">
+                        <div class="d-flex align-items-center mb-2">
+                            {% if service.image_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + service.image_path) }}" 
+                                     alt="{{ service.title }}" 
+                                     class="service-image me-2 rounded">
+                            {% elif service.icon %}
+                                <i class="fas {{ service.icon }} me-2"></i>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <div class="service-title d-flex align-items-center">
+                                    {{ service.title }}
+                                    {% if service.is_featured %}
+                                        <i class="fas fa-star text-warning ms-1" title="Destacado"></i>
+                                    {% endif %}
+                                </div>
+                                {% if service.category %}
+                                    <small class="badge bg-light text-dark me-1">{{ service.category|title }}</small>
+                                {% endif %}
+                                {% if service.get_duration_display() %}
+                                    <small class="text-info me-2"><i class="fas fa-clock me-1"></i>{{ service.get_duration_display() }}</small>
+                                {% endif %}
+                            </div>
+                            {% if service.price_from %}
+                                <div class="service-price">Desde ${{ service.price_from }}</div>
+                            {% endif %}
+                        </div>
+                        {% if service.description %}
+                            <div class="text-muted small">{{ service.description }}</div>
+                        {% endif %}
+                        {% if service.availability %}
+                            <div class="text-info small mt-1"><i class="fas fa-calendar me-1"></i>{{ service.availability }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Gallery Section (Hidden by default) -->
+        {% if gallery_items %}
+            <div class="gallery-section" id="gallery-section" style="display: none;">
+                <h3 class="section-title">
+                    <i class="fas fa-images me-2"></i>Galería
+                </h3>
+                <div class="gallery-grid">
+                    {% for item in gallery_items[:9] %}
+                        <div class="gallery-item" onclick="openImage('{{ url_for('static', filename='uploads/' + item.image_path) }}')">
+                            <img src="{{ url_for('static', filename='thumbs/' + item.thumbnail_path) }}" alt="{{ item.caption or 'Imagen' }}">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showContact() {
+            {% if card.phone %}
+                if (confirm('¿Quieres llamar a {{ card.name }}?')) {
+                    window.location.href = 'tel:{{ card.phone }}';
+                }
+            {% elif card.email_public %}
+                window.location.href = 'mailto:{{ card.email_public }}';
+            {% endif %}
+        }
+        
+        function showServices() {
+            const section = document.getElementById('services-section');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function showGallery() {
+            const section = document.getElementById('gallery-section');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function showLocation() {
+            {% if card.location %}
+                const query = encodeURIComponent('{{ card.location }}');
+                window.open(`https://maps.google.com/maps?q=${query}`, '_blank');
+            {% endif %}
+        }
+        
+        function openImage(src) {
+            window.open(src, '_blank');
+        }
+        
+        // PWA Share functionality
+        function shareCard() {
+            const cardData = {
+                title: '{{ card.name }} - Tarjeta Digital',
+                text: '{{ card.bio[:100] if card.bio else "Conoce mi tarjeta de presentación digital" }}',
+                url: window.location.href
+            };
+            
+            if (window.pwaManager) {
+                window.pwaManager.shareCard(cardData);
+            } else if (navigator.share) {
+                navigator.share(cardData).catch(console.error);
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('¡Enlace copiado al portapapeles!');
+                }).catch(() => {
+                    // Manual fallback
+                    const textArea = document.createElement('textarea');
+                    textArea.value = window.location.href;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('¡Enlace copiado al portapapeles!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

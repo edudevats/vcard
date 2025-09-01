@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarjeta No Disponible - {{ card.name }}</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Esta tarjeta digital no está disponible actualmente">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: '{{ card.theme.font_family }}', sans-serif;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .suspension-container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 50px 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .suspension-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(135deg, #ff4757, #ff6b7a);
+            border-radius: 30px 30px 0 0;
+        }
+        
+        .suspension-icon {
+            position: relative;
+            z-index: 2;
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            color: #ff4757;
+            font-size: 2.5rem;
+        }
+        
+        .suspension-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .suspension-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        .card-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #6366f1;
+            margin-bottom: 20px;
+        }
+        
+        .suspension-reason {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: left;
+        }
+        
+        .suspension-reason .reason-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .suspension-reason .reason-text {
+            color: #856404;
+            line-height: 1.5;
+        }
+        
+        .contact-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .contact-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .contact-text {
+            color: #6c757d;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .back-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+        
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff4757;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        @media (max-width: 480px) {
+            .suspension-container {
+                margin: 10px;
+                padding: 40px 25px;
+            }
+            
+            .suspension-title {
+                font-size: 1.6rem;
+            }
+            
+            .suspension-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="suspension-container">
+        <div class="status-badge">
+            <i class="fas fa-ban me-1"></i>Suspendida
+        </div>
+        
+        <div class="suspension-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        
+        <h1 class="suspension-title">Tarjeta No Disponible</h1>
+        <p class="suspension-subtitle">Esta tarjeta digital ha sido temporalmente suspendida</p>
+        
+        <div class="card-name">{{ card.name }}</div>
+        
+        {% if reason %}
+            <div class="suspension-reason">
+                <div class="reason-title">
+                    <i class="fas fa-info-circle me-2"></i>Motivo de la suspensión:
+                </div>
+                <div class="reason-text">{{ reason }}</div>
+            </div>
+        {% endif %}
+        
+        <div class="contact-info">
+            <div class="contact-title">
+                <i class="fas fa-headset me-2"></i>¿Necesitas ayuda?
+            </div>
+            <div class="contact-text">
+                Si crees que esto es un error o necesitas más información, 
+                puedes contactar al propietario de esta tarjeta directamente 
+                o comunicarte con nuestro equipo de soporte.
+            </div>
+        </div>
+        
+        <a href="javascript:history.back()" class="back-button">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+    
+    <script>
+        // Add some subtle animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.suspension-container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.6s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

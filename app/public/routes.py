@@ -1,0 +1,145 @@
+from flask import render_template, abort, request
+from ..models import Card, Product, CardView
+from .. import db, cache
+from . import bp
+from ..analytics import AnalyticsService
+
+def record_view(card):
+    """Record a view for the given card with enhanced analytics"""
+    view = AnalyticsService.track_card_view(card, request)
+    db.session.add(view)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+@bp.route('/c/<slug>')
+@cache.cached(timeout=300, key_prefix='card_view_%s')
+def card_view(slug):
+    # Use cached query for better performance
+    cache_key = f'card_data_{slug}'
+    card = cache.get(cache_key)
+    
+    if not card:
+        card = Card.query.filter_by(slug=slug).first()
+        if card and card.is_public and not card.owner.is_suspended:
+            cache.set(cache_key, card, timeout=300)  # Cache for 5 minutes
+    
+    if not card:
+        abort(404)
+    
+    # Check if user is suspended
+    if card.owner.is_suspended:
+        return render_template('public/suspended.html',
+                             card=card,
+                             reason=card.owner.suspension_reason)
+    
+    if not card.is_public:
+        abort(404)
+    
+    # Record the view (don't cache this part)
+    record_view(card)
+    
+    # Cache queries for related data
+    services_key = f'card_services_{card.id}'
+    services = cache.get(services_key)
+    if not services:
+        services = card.services.filter_by(is_visible=True).order_by('order_index').all()
+        cache.set(services_key, services, timeout=600)
+    
+    products_key = f'card_products_{card.id}'
+    products = cache.get(products_key)
+    if not products:
+        products = card.products.filter_by(is_visible=True).order_by('order_index').all()
+        cache.set(products_key, products, timeout=600)
+    
+    gallery_key = f'card_gallery_{card.id}'
+    gallery_items = cache.get(gallery_key)
+    if not gallery_items:
+        gallery_items = card.gallery_items.filter_by(is_visible=True).order_by('order_index').all()
+        cache.set(gallery_key, gallery_items, timeout=600)
+    
+    featured_key = f'card_featured_{card.id}'
+    featured_image = cache.get(featured_key)
+    if featured_image is None:  # Use None check because False is valid
+        featured_image = card.gallery_items.filter_by(is_featured=True, is_visible=True).first()
+        cache.set(featured_key, featured_image, timeout=600)
+    
+    return render_template('public/card.html', 
+                         card=card, 
+                         services=services,
+                         products=products, 
+                         gallery_items=gallery_items,
+                         featured_image=featured_image)
+
+@bp.route('/c/<slug>/services')
+def card_services(slug):
+    card = Card.query.filter_by(slug=slug).first()
+    
+    if not card:
+        abort(404)
+    
+    # Check if user is suspended
+    if card.owner.is_suspended:
+        return render_template('public/suspended.html',
+                             card=card,
+                             reason=card.owner.suspension_reason)
+    
+    if not card.is_public:
+        abort(404)
+    
+    services = card.services.filter_by(is_visible=True).order_by('order_index').all()
+    
+    return render_template('public/services.html', 
+                         card=card, 
+                         services=services)
+
+@bp.route('/c/<slug>/gallery')
+def card_gallery(slug):
+    card = Card.query.filter_by(slug=slug).first()
+    
+    if not card:
+        abort(404)
+    
+    # Check if user is suspended
+    if card.owner.is_suspended:
+        return render_template('public/suspended.html',
+                             card=card,
+                             reason=card.owner.suspension_reason)
+    
+    if not card.is_public:
+        abort(404)
+    
+    gallery_items = card.gallery_items.filter_by(is_visible=True).order_by('order_index').all()
+    
+    return render_template('public/gallery.html',
+                         card=card,
+                         gallery_items=gallery_items)
+
+@bp.route('/c/<slug>/productos')
+def card_products(slug):
+    card = Card.query.filter_by(slug=slug).first()
+    
+    if not card:
+        abort(404)
+    
+    # Check if user is suspended
+    if card.owner.is_suspended:
+        return render_template('public/suspended.html',
+                             card=card,
+                             reason=card.owner.suspension_reason)
+    
+    if not card.is_public:
+        abort(404)
+    
+    products = card.products.filter_by(is_visible=True).order_by(Product.order_index.asc(), Product.created_at.desc()).all()
+    
+    return render_template('public/products.html',
+                         card=card,
+                         products=products)
+
+
+@bp.route('/offline')
+def offline():
+    """Offline page for PWA"""
+    return render_template('offline.html')

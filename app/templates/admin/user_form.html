@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-{{ 'user-plus' if not user else 'user-edit' }} me-2"></i>{{ title }}
+                </h2>
+                {% if user %}
+                    <div class="text-muted">
+                        <small>ID: {{ user.id }} | Creado: {{ user.created_at.strftime('%d/%m/%Y') if user.created_at }}</small>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <!-- User Form -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user me-2"></i>Información del Usuario
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                {{ form.hidden_tag() }}
+                                
+                                <!-- Email -->
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label required") }}
+                                    {{ form.email() }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.email.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Password -->
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.password.label(class="form-label") }}
+                                        {{ form.password() }}
+                                        {% if not user %}
+                                            <div class="form-text">Mínimo 6 caracteres</div>
+                                        {% else %}
+                                            <div class="form-text">Dejar vacío para no cambiar</div>
+                                        {% endif %}
+                                        {% if form.password.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.password.errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.password2.label(class="form-label") }}
+                                        {{ form.password2() }}
+                                        {% if form.password2.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.password2.errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Role and Status -->
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        {{ form.role.label(class="form-label required") }}
+                                        {{ form.role() }}
+                                        {% if form.role.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.role.errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        {{ form.max_cards.label(class="form-label required") }}
+                                        {{ form.max_cards() }}
+                                        <div class="form-text">Límite de tarjetas que puede crear</div>
+                                        {% if form.max_cards.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.max_cards.errors %}
+                                                    <div>{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3 d-flex align-items-end">
+                                        <div class="form-check">
+                                            {{ form.is_active() }}
+                                            {{ form.is_active.label(class="form-check-label") }}
+                                            <div class="form-text">Usuario puede iniciar sesión</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Submit Buttons -->
+                                <div class="d-flex gap-2">
+                                    {{ form.submit() }}
+                                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancelar
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Stats (if editing existing user) -->
+                {% if user %}
+                    <div class="col-lg-4">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-chart-pie me-2"></i>Estadísticas del Usuario
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="border-end">
+                                            <div class="h4 mb-0 text-primary">{{ user.cards.count() }}</div>
+                                            <small class="text-muted">Tarjetas</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="h4 mb-0 text-success">{{ user.cards.filter_by(is_public=True).count() }}</div>
+                                        <small class="text-muted">Públicas</small>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small>Uso de tarjetas</small>
+                                        <small>{{ user.cards.count() }}/{{ user.max_cards }}</small>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ (user.cards.count() / user.max_cards * 100) if user.max_cards > 0 else 0 }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="small text-muted">
+                                    <div><strong>Último acceso:</strong> -</div>
+                                    <div><strong>Registro:</strong> {{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '-' }}</div>
+                                    <div><strong>Actualizado:</strong> {{ user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '-' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('admin.user_cards', id=user.id) }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-id-card me-2"></i>Ver Tarjetas
+                                    </a>
+                                    
+                                    {% if user.is_active %}
+                                        <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                onclick="toggleUserStatus({{ user.id }}, false)">
+                                            <i class="fas fa-pause me-2"></i>Desactivar Usuario
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-success btn-sm" 
+                                                onclick="toggleUserStatus({{ user.id }}, true)">
+                                            <i class="fas fa-play me-2"></i>Activar Usuario
+                                        </button>
+                                    {% endif %}
+                                    
+                                    <hr>
+                                    
+                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                            onclick="sendPasswordReset('{{ user.email }}')">
+                                        <i class="fas fa-key me-2"></i>Resetear Contraseña
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleUserStatus(userId, activate) {
+    const action = activate ? 'activar' : 'desactivar';
+    if (confirm(`¿Estás seguro de que quieres ${action} este usuario?`)) {
+        // This would require an AJAX endpoint
+        alert('Funcionalidad pendiente de implementar');
+    }
+}
+
+function sendPasswordReset(email) {
+    if (confirm(`¿Enviar email de reseteo de contraseña a ${email}?`)) {
+        // This would require an AJAX endpoint
+        alert('Funcionalidad pendiente de implementar');
+    }
+}
+
+// Auto-generate strong password
+function generatePassword() {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    document.getElementById('password').value = password;
+    document.getElementById('password2').value = password;
+}
+
+// Add generate password button
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordField = document.getElementById('password');
+    if (passwordField) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-outline-secondary btn-sm mt-1';
+        button.innerHTML = '<i class="fas fa-random me-1"></i>Generar';
+        button.onclick = generatePassword;
+        passwordField.parentNode.appendChild(button);
+    }
+});
+</script>
+{% endblock %}

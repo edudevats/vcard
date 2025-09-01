@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-user me-2"></i>Mi Perfil
+                </a>
+                <hr>
+                <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user me-2"></i>Mi Perfil
+                </h2>
+            </div>
+            
+            <div class="row">
+                <!-- Profile Info -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Información de la Cuenta
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-sm-4 font-weight-bold">Email:</div>
+                                <div class="col-sm-8">{{ current_user.email }}</div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-sm-4 font-weight-bold">Rol:</div>
+                                <div class="col-sm-8">
+                                    {% if current_user.is_admin() %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-crown me-1"></i>Administrador
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-user me-1"></i>Usuario
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-sm-4 font-weight-bold">Límite de Tarjetas:</div>
+                                <div class="col-sm-8">{{ current_user.max_cards }}</div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-sm-4 font-weight-bold">Fecha de Registro:</div>
+                                <div class="col-sm-8">{{ current_user.created_at.strftime('%d/%m/%Y %H:%M') if current_user.created_at else '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Change Password -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-lock me-2"></i>Cambiar Contraseña
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Contraseña Actual</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">Nueva Contraseña</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirmar Nueva Contraseña</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Cambiar Contraseña
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Mis Estadísticas
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <div class="h4 mb-0 text-primary">{{ current_user.cards.count() }}</div>
+                                        <small class="text-muted">Tarjetas</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="h4 mb-0 text-success">{{ current_user.cards.filter_by(is_public=True).count() }}</div>
+                                    <small class="text-muted">Públicas</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Uso de tarjetas</small>
+                                    <small>{{ current_user.cards.count() }}/{{ current_user.max_cards }}</small>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ (current_user.cards.count() / current_user.max_cards * 100) if current_user.max_cards > 0 else 0 }}%">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if current_user.can_create_card() %}
+                                <a href="{{ url_for('dashboard.new_card') }}" class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-plus me-1"></i>Nueva Tarjeta
+                                </a>
+                            {% else %}
+                                <div class="alert alert-warning small mb-0">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Has alcanzado el límite de tarjetas
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Account Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-cog me-2"></i>Configuración de Cuenta
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-download me-1"></i>Exportar Datos
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Eliminar Cuenta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería - {{ card.title or card.name }} - Tarjeta Digital</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Galería de {{ card.name }}. {{ card.bio[:100] if card.bio else '' }}">
+    <meta name="keywords" content="galería, portfolio, {{ card.name }}, {{ card.company or '' }}">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Galería - {{ card.title or card.name }}">
+    <meta property="og:description" content="Explora la galería de {{ card.name }}">
+    <meta property="og:type" content="website">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: '{{ card.theme.font_family }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            {% if card.theme.layout == 'classic' %}
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid {{ card.theme.primary_color }}20;
+            {% elif card.theme.layout == 'minimal' %}
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            border-bottom: 3px solid {{ card.theme.primary_color }};
+            {% else %}
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            {% endif %}
+        }
+        
+        .header h1 {
+            color: {{ card.theme.primary_color }};
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            padding: 12px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .nav-btn.primary {
+            background: {{ card.theme.primary_color }};
+            color: white;
+        }
+        
+        .nav-btn.outline {
+            background: transparent;
+            color: {{ card.theme.primary_color }};
+            border-color: {{ card.theme.primary_color }};
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .nav-btn.outline:hover {
+            background: {{ card.theme.primary_color }};
+            color: white;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .gallery-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .gallery-image {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .gallery-item:hover .gallery-image {
+            transform: scale(1.05);
+        }
+        
+        .gallery-caption {
+            padding: 8px;
+        }
+        
+        .gallery-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .gallery-description {
+            color: #666;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        /* Compact View Styles */
+        .gallery-grid.compact {
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 6px;
+        }
+        
+        .gallery-grid.compact .gallery-item {
+            border-radius: 8px;
+        }
+        
+        .gallery-grid.compact .gallery-image {
+            height: 80px;
+        }
+        
+        .gallery-grid.compact .gallery-caption {
+            padding: 8px;
+        }
+        
+        .gallery-grid.compact .gallery-title {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .gallery-grid.compact .gallery-description {
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+        
+        .view-toggle-animation {
+            transition: all 0.4s ease;
+        }
+        
+        .empty-state {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 60px 30px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #999;
+        }
+        
+        /* Modal mejorado para ver imágenes */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            max-width: 95vw;
+            max-height: 95vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-image-container {
+            position: relative;
+            max-width: 100%;
+            max-height: 85vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+            cursor: zoom-in;
+        }
+        
+        .modal-image.zoomed {
+            cursor: zoom-out;
+            transform: scale(2);
+        }
+        
+        .modal-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1002;
+        }
+        
+        .modal-btn {
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+        
+        .modal-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            font-size: 24px;
+        }
+        
+        .modal-nav:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .modal-prev {
+            left: 20px;
+        }
+        
+        .modal-next {
+            right: 20px;
+        }
+        
+        .modal-nav:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .modal-nav:disabled:hover {
+            transform: translateY(-50%);
+        }
+        
+        .modal-info {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .modal-description {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        
+        .modal-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1001;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 8px;
+            }
+            
+            .gallery-grid.compact {
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 4px;
+            }
+            
+            .gallery-grid.compact .gallery-image {
+                height: 70px;
+            }
+            
+            .gallery-grid.compact .gallery-caption {
+                padding: 6px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .modal-nav {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            
+            .modal-prev {
+                left: 10px;
+            }
+            
+            .modal-next {
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-images me-2"></i>Galería</h1>
+            <div class="subtitle">{{ card.title or card.name }}</div>
+            
+            <div class="nav-buttons">
+                <a href="{{ url_for('public.card_view', slug=card.slug) }}" class="nav-btn outline">
+                    <i class="fas fa-arrow-left me-1"></i>Volver a la Tarjeta
+                </a>
+                {% if card.services.filter_by(is_visible=True).count() > 0 %}
+                    <a href="{{ url_for('public.card_services', slug=card.slug) }}" class="nav-btn outline">
+                        <i class="fas fa-concierge-bell me-1"></i>Ver Servicios
+                    </a>
+                {% endif %}
+                {% if card.products.filter_by(is_visible=True).count() > 0 %}
+                    <a href="{{ url_for('public.card_products', slug=card.slug) }}" class="nav-btn outline">
+                        <i class="fas fa-box me-1"></i>Ver Productos
+                    </a>
+                {% endif %}
+                <button onclick="toggleView()" class="nav-btn outline" id="viewToggle">
+                    <i class="fas fa-th me-1"></i>Vista Compacta
+                </button>
+                <button onclick="shareGallery()" class="nav-btn primary">
+                    <i class="fas fa-share-alt me-1"></i>Compartir
+                </button>
+            </div>
+        </div>
+        
+        {% if gallery_items %}
+            <!-- Gallery Grid -->
+            <div class="gallery-grid">
+                {% for item in gallery_items %}
+                    <div class="gallery-item" onclick="openModal({{ loop.index0 }})">
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" 
+                             alt="{{ item.caption or 'Imagen' }}" 
+                             class="gallery-image">
+                        {% if item.caption %}
+                            <div class="gallery-caption">
+                                <div class="gallery-title">{{ item.caption }}</div>
+                                {% if item.description %}
+                                    <div class="gallery-description">{{ item.description }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="fas fa-images"></i>
+                <h3>No hay imágenes disponibles</h3>
+                <p>{{ card.name }} aún no ha agregado imágenes a su galería.</p>
+            </div>
+        {% endif %}
+        
+        <!-- Social Networks Footer -->
+        <div class="header">
+            <h3 style="color: {{ card.theme.primary_color }}; margin-bottom: 20px;">
+                <i class="fas fa-share-alt me-2"></i>Conecta conmigo
+            </h3>
+            
+            <!-- Social Networks -->
+            {% set justify = 'center' %}
+            {% set size = 45 %}
+            {% include 'components/social_networks.html' with context %}
+        </div>
+    </div>
+
+    <!-- Modal mejorado para ver imágenes -->
+    <div id="imageModal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <!-- Controles superiores -->
+            <div class="modal-controls">
+                <button class="modal-btn" onclick="toggleZoom()" id="zoomBtn" title="Zoom">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button class="modal-btn" onclick="downloadImage()" title="Descargar">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="modal-btn" onclick="closeModal()" title="Cerrar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Navegación lateral -->
+            {% if gallery_items|length > 1 %}
+                <button class="modal-nav modal-prev" onclick="prevImage()" id="prevBtn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="modal-nav modal-next" onclick="nextImage()" id="nextBtn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            {% endif %}
+            
+            <!-- Contenedor de imagen -->
+            <div class="modal-image-container">
+                <img id="modalImage" class="modal-image" src="" alt="" onclick="toggleZoom()">
+            </div>
+            
+            <!-- Información de la imagen -->
+            <div class="modal-info" id="modalInfo">
+                <div id="modalTitle" class="modal-title"></div>
+                <div id="modalDescription" class="modal-description"></div>
+            </div>
+            
+            <!-- Contador de imágenes -->
+            <div class="modal-counter" id="modalCounter"></div>
+        </div>
+    </div>
+
+    <script>
+        const galleryData = [
+            {% for item in gallery_items %}
+            {
+                image: "{{ url_for('static', filename='uploads/' + item.image_path) }}",
+                caption: "{{ item.caption or '' }}",
+                description: "{{ item.description or '' }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        let currentImageIndex = 0;
+        
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDescription = document.getElementById('modalDescription');
+            const modalCounter = document.getElementById('modalCounter');
+            const modalInfo = document.getElementById('modalInfo');
+            
+            const item = galleryData[index];
+            modalImage.src = item.image;
+            modalTitle.textContent = item.caption;
+            modalDescription.textContent = item.description;
+            
+            // Inicializar contador
+            modalCounter.textContent = `${currentImageIndex + 1} / ${galleryData.length}`;
+            
+            // Mostrar/ocultar información según haya contenido
+            if (item.caption || item.description) {
+                modalInfo.style.display = 'block';
+            } else {
+                modalInfo.style.display = 'none';
+            }
+            
+            // Resetear zoom
+            modalImage.classList.remove('zoomed');
+            updateZoomButton();
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(event) {
+            if (!event || event.target === event.currentTarget || event.target.classList.contains('modal-close')) {
+                const modal = document.getElementById('imageModal');
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function nextImage() {
+            currentImageIndex = (currentImageIndex + 1) % galleryData.length;
+            updateModalImage();
+        }
+        
+        function prevImage() {
+            currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
+            updateModalImage();
+        }
+        
+        function updateModalImage() {
+            const modalImage = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDescription = document.getElementById('modalDescription');
+            const modalCounter = document.getElementById('modalCounter');
+            const modalInfo = document.getElementById('modalInfo');
+            
+            const item = galleryData[currentImageIndex];
+            modalImage.src = item.image;
+            modalTitle.textContent = item.caption;
+            modalDescription.textContent = item.description;
+            
+            // Actualizar contador
+            modalCounter.textContent = `${currentImageIndex + 1} / ${galleryData.length}`;
+            
+            // Mostrar/ocultar información según haya contenido
+            if (item.caption || item.description) {
+                modalInfo.style.display = 'block';
+            } else {
+                modalInfo.style.display = 'none';
+            }
+            
+            // Resetear zoom si estaba activo
+            modalImage.classList.remove('zoomed');
+            updateZoomButton();
+        }
+        
+        function toggleZoom() {
+            const modalImage = document.getElementById('modalImage');
+            modalImage.classList.toggle('zoomed');
+            updateZoomButton();
+        }
+        
+        function updateZoomButton() {
+            const zoomBtn = document.getElementById('zoomBtn');
+            const modalImage = document.getElementById('modalImage');
+            const icon = zoomBtn.querySelector('i');
+            
+            if (modalImage.classList.contains('zoomed')) {
+                icon.className = 'fas fa-search-minus';
+                zoomBtn.title = 'Zoom Out';
+            } else {
+                icon.className = 'fas fa-search-plus';
+                zoomBtn.title = 'Zoom In';
+            }
+        }
+        
+        function downloadImage() {
+            const currentItem = galleryData[currentImageIndex];
+            const link = document.createElement('a');
+            link.href = currentItem.image;
+            link.download = currentItem.caption || `imagen-${currentImageIndex + 1}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Navegación con teclado
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('imageModal');
+            if (modal.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                } else if (e.key === 'ArrowRight') {
+                    nextImage();
+                } else if (e.key === 'ArrowLeft') {
+                    prevImage();
+                } else if (e.key === 'z' || e.key === 'Z') {
+                    toggleZoom();
+                }
+            }
+        });
+        
+        // View toggle functionality
+        function toggleView() {
+            const galleryGrid = document.querySelector('.gallery-grid');
+            const viewToggleBtn = document.getElementById('viewToggle');
+            const icon = viewToggleBtn.querySelector('i');
+            const isCompact = galleryGrid.classList.contains('compact');
+            
+            // Add animation class
+            galleryGrid.classList.add('view-toggle-animation');
+            
+            if (isCompact) {
+                // Switch to normal view
+                galleryGrid.classList.remove('compact');
+                icon.className = 'fas fa-th me-1';
+                viewToggleBtn.innerHTML = '<i class="fas fa-th me-1"></i>Vista Compacta';
+            } else {
+                // Switch to compact view
+                galleryGrid.classList.add('compact');
+                icon.className = 'fas fa-th-large me-1';
+                viewToggleBtn.innerHTML = '<i class="fas fa-th-large me-1"></i>Vista Normal';
+            }
+            
+            // Save preference in localStorage
+            localStorage.setItem('galleryViewMode', isCompact ? 'normal' : 'compact');
+        }
+        
+        // Load saved view preference on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedViewMode = localStorage.getItem('galleryViewMode');
+            if (savedViewMode === 'compact') {
+                toggleView();
+            }
+        });
+        
+        function shareGallery() {
+            const url = window.location.href;
+            const text = `Mira la galería de {{ card.name }} - ${url}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Galería - {{ card.name }}',
+                    text: text,
+                    url: url
+                }).catch(console.error);
+            } else {
+                // Fallback para navegadores que no soportan Web Share API
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('¡Enlace copiado al portapapeles!');
+                    });
+                } else {
+                    // Fallback para navegadores muy antiguos
+                    prompt('Copia este enlace:', url);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

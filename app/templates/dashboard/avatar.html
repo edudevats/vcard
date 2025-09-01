@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Avatar - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+                    <i class="fas fa-box me-2"></i>Productos
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+                    <i class="fas fa-images me-2"></i>Galería
+                </a>
+                <a class="nav-link active" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+                    <i class="fas fa-user-circle me-2"></i>Avatar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+                    <i class="fas fa-palette me-2"></i>Personalizar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-circle me-2"></i>Avatar
+                    <small class="text-muted">- {{ card.name }}</small>
+                </h2>
+                {% if card.is_public %}
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <!-- Current Avatar -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-image me-2"></i>Avatar Actual
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if card.avatar_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" 
+                                     class="img-fluid mb-3" 
+                                     style="
+                                        {% if card.theme.avatar_shape == 'circle' %}
+                                            border-radius: 50%; width: 200px; height: 200px;
+                                        {% elif card.theme.avatar_shape == 'rounded' %}
+                                            border-radius: 25px; width: 200px; height: 200px;
+                                        {% elif card.theme.avatar_shape == 'rectangle' %}
+                                            border-radius: 8px; width: 300px; height: 180px;
+                                        {% else %}
+                                            border-radius: 10px; width: 200px; height: 200px;
+                                        {% endif %}
+                                        object-fit: cover;
+                                     "
+                                     alt="Avatar de {{ card.name }}">
+                                <p class="text-muted">
+                                    Avatar personalizado 
+                                    ({{ 'Circular' if card.theme.avatar_shape == 'circle' 
+                                        else 'Redondeado' if card.theme.avatar_shape == 'rounded'
+                                        else 'Rectangular' if card.theme.avatar_shape == 'rectangle'
+                                        else 'Cuadrado' }})
+                                </p>
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center mx-auto mb-3" 
+                                     style="
+                                        {% if card.theme.avatar_shape == 'circle' %}
+                                            border-radius: 50%; width: 200px; height: 200px;
+                                        {% elif card.theme.avatar_shape == 'rounded' %}
+                                            border-radius: 25px; width: 200px; height: 200px;
+                                        {% elif card.theme.avatar_shape == 'rectangle' %}
+                                            border-radius: 8px; width: 300px; height: 180px;
+                                        {% else %}
+                                            border-radius: 10px; width: 200px; height: 200px;
+                                        {% endif %}
+                                        background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }}); color: white; font-size: 4rem;
+                                     ">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <p class="text-muted">
+                                    Avatar por defecto 
+                                    ({{ 'Circular' if card.theme.avatar_shape == 'circle' 
+                                        else 'Redondeado' if card.theme.avatar_shape == 'rounded'
+                                        else 'Rectangular' if card.theme.avatar_shape == 'rectangle'
+                                        else 'Cuadrado' }})
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Preview with theme -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-eye me-2"></i>Vista Previa
+                            </h5>
+                        </div>
+                        <div class="card-body text-center" style="background: linear-gradient(135deg, {{ card.theme.primary_color }}20, {{ card.theme.secondary_color }}20);">
+                            <div class="avatar mb-3 mx-auto" style="
+                                width: 120px; 
+                                height: 120px; 
+                                {% if card.theme.avatar_shape == 'circle' %}
+                                border-radius: 50%;
+                                {% elif card.theme.avatar_shape == 'rounded' %}
+                                border-radius: 25px;
+                                {% else %}
+                                border-radius: 10px;
+                                {% endif %}
+                                overflow: hidden;
+                                border: 4px solid white;
+                                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                                background: #f8f9fa;
+                            ">
+                                {% if card.avatar_path %}
+                                    <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" 
+                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                         alt="Avatar">
+                                {% else %}
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center" 
+                                         style="background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }}); color: white; font-size: 48px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <h6 style="color: {{ card.theme.primary_color }};">{{ card.name }}</h6>
+                            <p class="text-muted small">Como se ve en tu tarjeta</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upload Form -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Cambiar Avatar
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" enctype="multipart/form-data">
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ form.avatar.label(class="form-label required") }}
+                                    {{ form.avatar() }}
+                                    <div class="form-text">
+                                        <strong>Recomendaciones:</strong><br>
+                                        • Imagen cuadrada (1:1)<br>
+                                        • Mínimo 300x300 píxeles<br>
+                                        • Formatos: JPG, PNG, WEBP<br>
+                                        • Máximo 5MB<br>
+                                        • La imagen se recortará automáticamente
+                                    </div>
+                                    {% if form.avatar.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.avatar.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- File preview -->
+                                <div id="preview-container" style="display: none;" class="mb-3">
+                                    <h6>Vista Previa:</h6>
+                                    <img id="preview-image" class="img-fluid rounded" style="max-width: 200px;" alt="Vista previa">
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    {{ form.submit() }}
+                                    {% if card.avatar_path %}
+                                        <button type="button" class="btn btn-outline-danger" onclick="removeAvatar()">
+                                            <i class="fas fa-trash me-1"></i>Eliminar Avatar
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Tips -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>Consejos
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0 small">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Usa una foto profesional y reciente
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Asegúrate de que tu rostro sea claramente visible
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Evita fondos muy ocupados o distractores
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    La imagen se adaptará automáticamente a la forma seleccionada en tu tema
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Preview uploaded file
+document.getElementById('avatar').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('preview-container').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('preview-container').style.display = 'none';
+    }
+});
+
+function removeAvatar() {
+    if (confirm('¿Estás seguro de que quieres eliminar tu avatar?')) {
+        fetch(`{{ url_for('dashboard.card_avatar', id=card.id) }}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error al eliminar el avatar');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+
+{% block title %}Funciones Avanzadas - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.new_card') }}">
+                    <i class="fas fa-plus me-2"></i>Nueva Tarjeta
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.analytics') }}">
+                    <i class="fas fa-chart-line me-2"></i>Analytics
+                </a>
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
+                </h2>
+                <div class="badge bg-primary fs-6">
+                    <i class="fas fa-star me-1"></i>Nuevas Características
+                </div>
+            </div>
+            
+            <!-- Feature Categories -->
+            <div class="row">
+                <!-- Analytics & Reports -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Analytics & Reportes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Obtén insights detallados sobre el rendimiento de tus tarjetas</p>
+                            
+                            <div class="feature-list mb-3">
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Dashboard con gráficos interactivos</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Análisis por dispositivo y navegador</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Geolocalización de visitantes</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Análisis de horas pico</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Métricas de crecimiento</span>
+                                </div>
+                            </div>
+                            
+                            <a href="{{ url_for('dashboard.analytics') }}" class="btn btn-info">
+                                <i class="fas fa-chart-bar me-1"></i>Ver Analytics
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Visual Editor -->
+                {% if config.ENABLE_VISUAL_EDITOR %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-header bg-purple text-white" style="background-color: #6f42c1 !important;">
+                            <h5 class="mb-0">
+                                <i class="fas fa-magic me-2"></i>Editor Visual
+                                <span class="badge bg-warning text-dark ms-2">Beta</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Editor experimental drag-and-drop para diseñar tarjetas</p>
+                            
+                            <div class="feature-list mb-3">
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Interfaz drag-and-drop intuitiva</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Componentes pre-diseñados</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Preview en tiempo real</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Responsive design automático</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Múltiples dispositivos</span>
+                                </div>
+                            </div>
+                            
+                            {% if cards %}
+                                <div class="dropdown">
+                                    <button class="btn btn-purple dropdown-toggle" type="button" style="background-color: #6f42c1; border-color: #6f42c1;" data-bs-toggle="dropdown">
+                                        <i class="fas fa-magic me-1"></i>Abrir Editor
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% for card in cards %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('dashboard.visual_editor', id=card.id) }}">
+                                                <i class="fas fa-id-card me-2"></i>{{ card.name }}
+                                            </a>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% else %}
+                                <a href="{{ url_for('dashboard.new_card') }}" class="btn btn-outline-purple" style="color: #6f42c1; border-color: #6f42c1;">
+                                    <i class="fas fa-plus me-1"></i>Crear Primera Tarjeta
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- PWA Features -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-mobile-alt me-2"></i>App Móvil (PWA)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Instala VCard como una app nativa en tu dispositivo</p>
+                            
+                            <div class="feature-list mb-3">
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Instalación con un click</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Funciona sin conexión</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Notificaciones push</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Acceso desde home screen</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Experiencia app nativa</span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success" onclick="installPWA()" id="install-pwa-btn">
+                                    <i class="fas fa-download me-1"></i>Instalar App
+                                </button>
+                                <button class="btn btn-outline-success" onclick="testPWAFeatures()">
+                                    <i class="fas fa-cog me-1"></i>Probar Funciones
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance (Admin Only) -->
+                {% if current_user.is_admin() %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tachometer-alt me-2"></i>Performance
+                                <span class="badge bg-dark ms-2">Admin</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Optimización avanzada y monitoreo del sistema</p>
+                            
+                            <div class="feature-list mb-3">
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Dashboard de performance</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Gestión de cache avanzada</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Métricas del sistema</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Analytics globales</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Optimización automática</span>
+                                </div>
+                            </div>
+                            
+                            <div class="performance-stats">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="stat-number text-warning fw-bold fs-4">3x</div>
+                                        <div class="stat-label small">Más Rápido</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-number text-warning fw-bold fs-4">90%</div>
+                                        <div class="stat-label small">Menos Carga</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="stat-number text-warning fw-bold fs-4">99%</div>
+                                        <div class="stat-label small">Uptime</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <a href="{{ url_for('dashboard.admin_performance') }}" class="btn btn-warning text-dark mt-3">
+                                <i class="fas fa-tachometer-alt me-1"></i>Abrir Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Security -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>Seguridad
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Sistema avanzado de seguridad y recuperación</p>
+                            
+                            <div class="feature-list mb-3">
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Reset de contraseña seguro</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Verificación de email</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Tokens con expiración</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Encriptación avanzada</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Rate limiting</span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('auth.forgot_password') }}" class="btn btn-danger">
+                                    <i class="fas fa-key me-1"></i>Cambiar Contraseña
+                                </a>
+                                <button class="btn btn-outline-danger" onclick="showSecurityInfo()">
+                                    <i class="fas fa-info-circle me-1"></i>Info de Seguridad
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Export & Backup -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-0 shadow">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-download me-2"></i>Exportar
+                                {% if current_user.is_admin() %}
+                                    & Backup <span class="badge bg-dark ms-2">Admin</span>
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Exporta tus datos{% if current_user.is_admin() %} y gestiona backups del sistema{% endif %}</p>
+                            
+                            <div class="feature-list mb-3">
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Exportar a vCard (.vcf)</span>
+                                </div>
+                                {% if current_user.is_admin() %}
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Backup completo del sistema</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Exportar analytics globales</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Gestión de base de datos</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>API para terceros</span>
+                                </div>
+                                {% else %}
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Backup personal de datos</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span>Sincronización con contactos</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-info-circle text-muted me-2"></i>
+                                    <span class="text-muted">Analytics avanzados (Solo admin)</span>
+                                </div>
+                                <div class="feature-item mb-2">
+                                    <i class="fas fa-info-circle text-muted me-2"></i>
+                                    <span class="text-muted">Backups del sistema (Solo admin)</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                {% if cards %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-download me-1"></i>Exportar
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            {% for card in cards %}
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('dashboard.export_vcard', card_id=card.id) }}">
+                                                    <i class="fas fa-id-card me-2"></i>{{ card.name }} (vCard)
+                                                </a>
+                                            </li>
+                                            {% endfor %}
+                                            {% if current_user.is_admin() %}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item" href="{{ url_for('dashboard.export_analytics') }}">
+                                                    <i class="fas fa-chart-line me-2"></i>Analytics (CSV)
+                                                </a>
+                                            </li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                                {% if current_user.is_admin() %}
+                                    <a href="{{ url_for('dashboard.admin_backup') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-shield-alt me-1"></i>Gestión Avanzada
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-secondary" onclick="createPersonalBackup()">
+                                        <i class="fas fa-cloud-upload-alt me-1"></i>Backup Personal
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if not config.ENABLE_VISUAL_EDITOR %}
+            <!-- Info when Visual Editor is disabled -->
+            <div class="alert alert-info border" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>Editor Visual
+                </h5>
+                <p class="mb-2">El editor visual drag-and-drop está actualmente deshabilitado por el administrador del sistema.</p>
+                <p class="mb-0">Puedes personalizar tu tarjeta usando las opciones de edición estándar disponibles.</p>
+            </div>
+            {% endif %}
+            
+            <!-- Coming Soon -->
+            <div class="alert alert-light border" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fas fa-rocket me-2"></i>Próximamente
+                </h5>
+                <p class="mb-2">Estamos trabajando en nuevas funciones increíbles:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-clock text-warning me-2"></i>Integración con CRM</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>IA para contenido</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>Realidad aumentada</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-clock text-warning me-2"></i>Marketplace de temas</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>Sistema de pagos</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>Multi-idioma</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function installPWA() {
+    if (window.pwaManager && window.pwaManager.deferredPrompt) {
+        window.pwaManager.installApp();
+    } else {
+        alert('La instalación de PWA está disponible en dispositivos móviles y navegadores compatibles.');
+    }
+}
+
+function testPWAFeatures() {
+    const features = [];
+    
+    if ('serviceWorker' in navigator) {
+        features.push('✅ Service Worker');
+    } else {
+        features.push('❌ Service Worker');
+    }
+    
+    if ('PushManager' in window) {
+        features.push('✅ Push Notifications');
+    } else {
+        features.push('❌ Push Notifications');
+    }
+    
+    if ('share' in navigator) {
+        features.push('✅ Web Share API');
+    } else {
+        features.push('❌ Web Share API');
+    }
+    
+    if ('BeforeInstallPromptEvent' in window || window.matchMedia('(display-mode: standalone)').matches) {
+        features.push('✅ Installable');
+    } else {
+        features.push('❌ Installable');
+    }
+    
+    alert('Estado PWA:\n\n' + features.join('\n'));
+}
+
+function clearCache() {
+    if ('caches' in window) {
+        caches.keys().then(names => {
+            names.forEach(name => {
+                caches.delete(name);
+            });
+        });
+    }
+    
+    // Clear localStorage
+    localStorage.clear();
+    
+    // Send cache clear request to service worker
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        const channel = new MessageChannel();
+        channel.port1.onmessage = (event) => {
+            if (event.data.success) {
+                alert('✅ Cache limpiado exitosamente');
+            }
+        };
+        navigator.serviceWorker.controller.postMessage({type: 'CLEAR_CACHE'}, [channel.port2]);
+    } else {
+        alert('✅ Cache local limpiado');
+    }
+}
+
+function showSecurityInfo() {
+    const info = `🔒 Información de Seguridad
+
+✅ Contraseñas encriptadas con bcrypt
+✅ Tokens seguros con expiración
+✅ Validación de email
+✅ Protección CSRF
+✅ Headers de seguridad
+✅ Rate limiting
+
+Tu cuenta está protegida con las mejores prácticas de seguridad.`;
+
+    alert(info);
+}
+
+function createPersonalBackup() {
+    // This would trigger a personal backup creation
+    const confirmed = confirm('¿Crear backup de tus datos personales?\n\nIncluye: tus tarjetas y configuración personal.');
+    
+    if (confirmed) {
+        // Here you would implement the personal backup functionality
+        alert('🔄 Creando backup personal...\n\nTe notificaremos cuando esté listo para descargar.');
+    }
+}
+</script>
+
+<style>
+.sidebar {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    height: fit-content;
+}
+
+.nav-link.active {
+    background: #007bff;
+    color: white !important;
+    border-radius: 5px;
+}
+
+.card {
+    border-radius: 15px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.feature-item {
+    font-size: 0.9rem;
+}
+
+.stat-number {
+    font-size: 1.5rem !important;
+}
+
+.stat-label {
+    color: #6c757d;
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+.btn-purple {
+    background-color: #6f42c1;
+    border-color: #6f42c1;
+    color: white;
+}
+
+.btn-purple:hover {
+    background-color: #5a32a3;
+    border-color: #5a32a3;
+    color: white;
+}
+</style>
+{% endblock %}

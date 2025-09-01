@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitudes Pendientes - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-user-clock me-2"></i>Solicitudes de Registro Pendientes
+                </h2>
+                {% if pending_users %}
+                    <div class="text-muted">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        {{ pending_users|length }} solicitud{{ 'es' if pending_users|length != 1 else '' }} pendiente{{ 's' if pending_users|length != 1 else '' }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if pending_users %}
+                <!-- Pending Approvals List -->
+                <div class="row">
+                    {% for user in pending_users %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- User Info -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="avatar-placeholder me-3" style="
+                                            width: 50px;
+                                            height: 50px;
+                                            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                                            border-radius: 50%;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: white;
+                                        ">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="card-title mb-1">{{ user.email }}</h5>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                Solicitado: {{ user.created_at.strftime('%d/%m/%Y a las %H:%M') }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- User Details -->
+                                    <div class="mb-3">
+                                        <div class="small text-muted mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Estado:</strong></span>
+                                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Días esperando:</strong></span>
+                                                <span>{{ ((moment().date() - user.created_at.date()).days) if user.created_at else 0 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex gap-2">
+                                        <form method="POST" action="{{ url_for('admin.approve_user', user_id=user.id) }}" class="flex-grow-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="btn btn-success btn-sm w-100" 
+                                                    onclick="return confirm('¿Aprobar el registro de {{ user.email }}?')">
+                                                <i class="fas fa-check me-1"></i>Aprobar
+                                            </button>
+                                        </form>
+                                        
+                                        <form method="POST" action="{{ url_for('admin.reject_user', user_id=user.id) }}" class="flex-grow-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="btn btn-danger btn-sm w-100" 
+                                                    onclick="return confirm('¿Rechazar y eliminar permanentemente la solicitud de {{ user.email }}? Esta acción no se puede deshacer.')">
+                                                <i class="fas fa-times me-1"></i>Rechazar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Bulk Actions -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-list-check me-2"></i>Acciones en Lote
+                        </h6>
+                        <p class="text-muted small mb-3">
+                            Estas acciones afectarán a todos los usuarios pendientes mostrados arriba.
+                        </p>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success" onclick="approveAllUsers()">
+                                <i class="fas fa-check-double me-1"></i>Aprobar Todos ({{ pending_users|length }})
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="showRejectAllModal()">
+                                <i class="fas fa-times-circle me-1"></i>Rechazar Todos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div style="font-size: 4rem; color: #28a745; margin-bottom: 1rem;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h4>¡Todo al día!</h4>
+                        <p class="text-muted mb-4">No hay solicitudes de registro pendientes en este momento.</p>
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="p-3">
+                                    <i class="fas fa-users fa-2x text-info mb-2"></i>
+                                    <p class="small text-muted">Los nuevos usuarios aparecerán aquí automáticamente</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3">
+                                    <i class="fas fa-bell fa-2x text-warning mb-2"></i>
+                                    <p class="small text-muted">Recibirás notificaciones de nuevas solicitudes</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3">
+                                    <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+                                    <p class="small text-muted">Control total sobre quién puede acceder</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Reject All Confirmation Modal -->
+<div class="modal fade" id="rejectAllModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                    Confirmar Rechazo Masivo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>⚠️ Advertencia:</strong> Esta acción eliminará permanentemente todas las {{ pending_users|length }} solicitudes de registro pendientes.
+                </div>
+                <p>¿Estás seguro de que deseas rechazar y eliminar todas las solicitudes pendientes?</p>
+                <p class="text-muted small">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="rejectAllUsers()">
+                    <i class="fas fa-times me-1"></i>Rechazar Todos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveAllUsers() {
+    if (!confirm('¿Aprobar todas las {{ pending_users|length }} solicitudes pendientes?')) {
+        return;
+    }
+    
+    // Create a form to approve all users
+    const forms = document.querySelectorAll('form[action*="approve-user"]');
+    let completed = 0;
+    
+    if (forms.length === 0) {
+        return;
+    }
+    
+    // Show loading state
+    const button = event.target;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
+    
+    // Submit all forms
+    forms.forEach((form, index) => {
+        setTimeout(() => {
+            form.submit();
+        }, index * 100); // Stagger submissions
+    });
+}
+
+function showRejectAllModal() {
+    const modal = new bootstrap.Modal(document.getElementById('rejectAllModal'));
+    modal.show();
+}
+
+function rejectAllUsers() {
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('rejectAllModal')).hide();
+    
+    // Create a form to reject all users
+    const forms = document.querySelectorAll('form[action*="reject-user"]');
+    
+    if (forms.length === 0) {
+        return;
+    }
+    
+    // Submit all forms
+    forms.forEach((form, index) => {
+        setTimeout(() => {
+            form.submit();
+        }, index * 100); // Stagger submissions
+    });
+}
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.avatar-placeholder {
+    flex-shrink: 0;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

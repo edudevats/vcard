@@ -1,0 +1,51 @@
+{% extends "email/base.html" %}
+
+{% block title %}¡Bienvenido a VCard!{% endblock %}
+
+{% block content %}
+<h2>¡Bienvenido a VCard, {{ user.email }}! 🎉</h2>
+
+<p>Nos complace darte la bienvenida a VCard, la plataforma líder para crear tarjetas de presentación digitales profesionales.</p>
+
+<div class="alert alert-success">
+    <strong>¡Tu cuenta ha sido creada exitosamente!</strong><br>
+    Ya puedes comenzar a crear tus tarjetas digitales.
+</div>
+
+<h3>¿Qué puedes hacer ahora?</h3>
+<ul>
+    <li><strong>Crear tu primera tarjeta:</strong> Diseña una tarjeta profesional con tu información</li>
+    <li><strong>Personalizar el diseño:</strong> Elige colores, fuentes y estilos que representen tu marca</li>
+    <li><strong>Agregar servicios:</strong> Muestra lo que ofreces con precios y descripciones</li>
+    <li><strong>Subir imágenes:</strong> Crea una galería con tu trabajo y proyectos</li>
+    <li><strong>Compartir tu tarjeta:</strong> Obtén una URL única para compartir en cualquier lugar</li>
+</ul>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="{{ url_for('dashboard.index', _external=True) }}" class="btn">
+        Acceder a mi Dashboard
+    </a>
+</div>
+
+<div class="alert alert-info">
+    <strong>Información de tu cuenta:</strong><br>
+    • Límite de tarjetas: {{ user.max_cards }}<br>
+    • Rol: {{ 'Administrador' if user.is_admin() else 'Usuario' }}<br>
+    • Fecha de registro: {{ user.created_at.strftime('%d/%m/%Y') if user.created_at }}
+</div>
+
+<h3>¿Necesitas ayuda?</h3>
+<p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos:</p>
+<ul>
+    <li>📧 Email: soporte@vcard.com</li>
+    <li>📖 Documentación: <a href="#">Guía de Usuario</a></li>
+    <li>💬 Chat en vivo disponible en tu dashboard</li>
+</ul>
+
+<p>¡Esperamos que disfrutes usando VCard para crear tarjetas digitales impresionantes!</p>
+
+<p>
+    Saludos,<br>
+    <strong>El equipo de VCard</strong>
+</p>
+{% endblock %}

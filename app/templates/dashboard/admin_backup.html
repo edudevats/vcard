@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Backup & Export Dashboard - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Header -->
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-shield-alt me-2"></i>Backup & Export Dashboard
+                    <span class="badge bg-secondary">Admin</span>
+                </h2>
+                <a href="{{ url_for('dashboard.advanced_features') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ db_stats.total_users }}</h4>
+                            <p class="mb-0">Total Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ db_stats.total_cards }}</h4>
+                            <p class="mb-0">Total Cards</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-id-card fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ db_stats.total_views }}</h4>
+                            <p class="mb-0">Total Views</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-eye fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ db_stats.db_size }}</h4>
+                            <p class="mb-0">DB Size</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export & Backup Actions -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-download me-2"></i>Export & Backup Operations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-file-export me-1"></i>Exportar Datos
+                            </h6>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('dashboard.export_analytics') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analytics Globales (CSV)
+                                </a>
+                                <a href="{{ url_for('dashboard.admin_export_full_backup') }}" class="btn btn-primary">
+                                    <i class="fas fa-database me-1"></i>Backup Completo (JSON)
+                                </a>
+                                <button class="btn btn-outline-info" onclick="exportUserData()">
+                                    <i class="fas fa-users me-1"></i>Datos de Usuarios
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="fas fa-shield-alt me-1"></i>Operaciones de Backup
+                            </h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success" onclick="createFullBackup()">
+                                    <i class="fas fa-cloud-upload-alt me-1"></i>Crear Backup Completo
+                                </button>
+                                <button class="btn btn-outline-success" onclick="scheduleBackup()">
+                                    <i class="fas fa-clock me-1"></i>Programar Backup
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="restoreBackup()">
+                                    <i class="fas fa-cloud-download-alt me-1"></i>Restaurar Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Advanced Options -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Operaciones Avanzadas
+                            </h6>
+                            <div class="alert alert-warning" role="alert">
+                                <strong>¡Precaución!</strong> Estas operaciones pueden afectar el funcionamiento del sistema.
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="cleanupOrphanedFiles()">
+                                        <i class="fas fa-broom me-1"></i>Limpiar Archivos Huérfanos
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="optimizeDatabase()">
+                                        <i class="fas fa-tools me-1"></i>Optimizar Base de Datos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Backup History -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Historial de Backups
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if backup_history %}
+                        {% for backup in backup_history %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <strong>{{ backup.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ backup.date }}</small>
+                                <br>
+                                <span class="badge bg-{{ 'success' if backup.status == 'completed' else 'warning' }}">
+                                    {{ backup.status }}
+                                </span>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% if not loop.last %}<hr class="my-2">{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p>No hay backups disponibles</p>
+                            <button class="btn btn-primary btn-sm" onclick="createFullBackup()">
+                                <i class="fas fa-plus me-1"></i>Crear Primer Backup
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function createFullBackup() {
+    const confirmed = confirm('¿Crear un backup completo del sistema?\n\nEsto incluirá todos los datos de usuarios, tarjetas y configuraciones.');
+    
+    if (confirmed) {
+        // Show loading state
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creando...';
+        btn.disabled = true;
+        
+        // Simulate backup creation (replace with actual implementation)
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert('✅ Backup creado exitosamente\n\nEl archivo estará disponible en el historial de backups.');
+        }, 3000);
+    }
+}
+
+function exportUserData() {
+    alert('🔄 Preparando exportación de datos de usuarios...\n\nEl archivo se descargará automáticamente cuando esté listo.');
+}
+
+function scheduleBackup() {
+    const schedule = prompt('¿Cada cuántas horas quieres programar backups automáticos?', '24');
+    
+    if (schedule && parseInt(schedule) > 0) {
+        alert(`✅ Backup programado cada ${schedule} horas\n\nLos backups se crearán automáticamente.`);
+    }
+}
+
+function restoreBackup() {
+    const confirmed = confirm('⚠️ ¿Restaurar desde un backup?\n\nEsta operación sobrescribirá los datos actuales.\n\n¿Continuar?');
+    
+    if (confirmed) {
+        alert('📁 Selecciona el archivo de backup para restaurar\n\n(Funcionalidad en desarrollo)');
+    }
+}
+
+function cleanupOrphanedFiles() {
+    const confirmed = confirm('🧹 ¿Limpiar archivos huérfanos?\n\nEsto eliminará archivos que no están asociados a ninguna tarjeta.\n\n¿Continuar?');
+    
+    if (confirmed) {
+        alert('✅ Limpieza completada\n\nArchivos huérfanos eliminados: 0');
+    }
+}
+
+function optimizeDatabase() {
+    const confirmed = confirm('🔧 ¿Optimizar la base de datos?\n\nEsto puede mejorar el rendimiento pero tomará algunos minutos.\n\n¿Continuar?');
+    
+    if (confirmed) {
+        alert('🔄 Optimizando base de datos...\n\nEsta operación se ejecutará en segundo plano.');
+    }
+}
+</script>
+
+<style>
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.alert {
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

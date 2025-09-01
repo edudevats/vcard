@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-{{ 'plus' if not card else 'edit' }} me-2"></i>{{ title }}
+                </a>
+                {% if card %}
+                    <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+                        <i class="fas fa-concierge-bell me-2"></i>Servicios
+                    </a>
+                    <a class="nav-link" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+                        <i class="fas fa-box me-2"></i>Productos
+                    </a>
+                    <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+                        <i class="fas fa-images me-2"></i>Galería
+                    </a>
+                    <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+                        <i class="fas fa-user-circle me-2"></i>Avatar
+                    </a>
+                    <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+                        <i class="fas fa-palette me-2"></i>Personalizar
+                    </a>
+                    {% if config.ENABLE_VISUAL_EDITOR %}
+                    <a class="nav-link" href="{{ url_for('dashboard.visual_editor', id=card.id) }}">
+                        <i class="fas fa-magic me-2"></i>Editor Visual
+                    </a>
+                    {% endif %}
+                    <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+                        <i class="fas fa-qrcode me-2"></i>Código QR
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-{{ 'plus' if not card else 'edit' }} me-2"></i>{{ title }}
+                </h2>
+                {% if card and card.is_public %}
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    </a>
+                {% endif %}
+            </div>
+            
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <!-- Información Básica -->
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Información Básica
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.name.label(class="form-label required") }}
+                                        {{ form.name() }}
+                                        {% if form.name.errors %}
+                                            <div class="text-danger small">
+                                                {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.title.label(class="form-label") }}
+                                        {{ form.title() }}
+                                        <div class="form-text">Título que aparecerá en la tarjeta</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.job_title.label(class="form-label") }}
+                                        {{ form.job_title() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.company.label(class="form-label") }}
+                                        {{ form.company() }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.bio.label(class="form-label") }}
+                                    {{ form.bio() }}
+                                    <div class="form-text">Máximo 500 caracteres</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información de Contacto -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-address-book me-2"></i>Información de Contacto
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.phone.label(class="form-label") }}
+                                        {{ form.phone() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.email_public.label(class="form-label") }}
+                                        {{ form.email_public() }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.website.label(class="form-label") }}
+                                        {{ form.website() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.location.label(class="form-label") }}
+                                        {{ form.location() }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Redes Sociales -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                                </h5>
+                                <small class="text-muted">Solo se mostrarán las redes que configures</small>
+                            </div>
+                            <div class="card-body">
+                                <!-- Redes principales -->
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-star me-1"></i>Principales
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-instagram me-1" style="color: #E4405F;"></i>{{ form.instagram.label.text }}
+                                        </label>
+                                        {{ form.instagram() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-whatsapp me-1" style="color: #25D366;"></i>WhatsApp
+                                        </label>
+                                        <!-- Country Code Selector -->
+                                        <div class="row g-2">
+                                            <div class="col-5">
+                                                {{ form.whatsapp_country() }}
+                                                <small class="form-text text-muted">País</small>
+                                            </div>
+                                            <div class="col-7">
+                                                {{ form.whatsapp() }}
+                                                <small class="form-text text-muted">Número</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-facebook me-1" style="color: #1877F2;"></i>{{ form.facebook.label.text }}
+                                        </label>
+                                        {{ form.facebook() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-linkedin me-1" style="color: #0A66C2;"></i>{{ form.linkedin.label.text }}
+                                        </label>
+                                        {{ form.linkedin() }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Separador -->
+                                <hr class="my-4">
+                                
+                                <!-- Otras redes -->
+                                <h6 class="text-secondary mb-3">
+                                    <i class="fas fa-plus-circle me-1"></i>Adicionales
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-twitter me-1" style="color: #1DA1F2;"></i>{{ form.twitter.label.text }}
+                                        </label>
+                                        {{ form.twitter() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-youtube me-1" style="color: #FF0000;"></i>{{ form.youtube.label.text }}
+                                        </label>
+                                        {{ form.youtube() }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-tiktok me-1" style="color: #000000;"></i>{{ form.tiktok.label.text }}
+                                        </label>
+                                        {{ form.tiktok() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-telegram me-1" style="color: #0088CC;"></i>{{ form.telegram.label.text }}
+                                        </label>
+                                        {{ form.telegram() }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-snapchat me-1" style="color: #FFFC00;"></i>{{ form.snapchat.label.text }}
+                                        </label>
+                                        {{ form.snapchat() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-pinterest me-1" style="color: #BD081C;"></i>{{ form.pinterest.label.text }}
+                                        </label>
+                                        {{ form.pinterest() }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Profesionales/Creativos -->
+                                <hr class="my-4">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-briefcase me-1"></i>Profesionales
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-github me-1" style="color: #333333;"></i>{{ form.github.label.text }}
+                                        </label>
+                                        {{ form.github() }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-behance me-1" style="color: #1769FF;"></i>{{ form.behance.label.text }}
+                                        </label>
+                                        {{ form.behance() }}
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fab fa-dribbble me-1" style="color: #EA4C89;"></i>{{ form.dribbble.label.text }}
+                                        </label>
+                                        {{ form.dribbble() }}
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info small mt-3">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Nota:</strong> Solo las redes sociales que configures aparecerán en tu tarjeta digital. 
+                                    Deja los campos vacíos para las redes que no uses.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configuración -->
+                    <div class="col-lg-4">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-cog me-2"></i>Configuración
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    {{ form.theme_id.label(class="form-label") }}
+                                    {{ form.theme_id() }}
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    {{ form.is_public() }}
+                                    {{ form.is_public.label(class="form-check-label") }}
+                                    <div class="form-text">
+                                        Si está activada, tu tarjeta será visible públicamente
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if card %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-link me-2"></i>URL Pública
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" 
+                                               value="{{ request.host_url.rstrip('/') + card.get_public_url() }}" readonly>
+                                        <button type="button" class="btn btn-outline-secondary" 
+                                                onclick="copyToClipboard(this.previousElementSibling)">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Acciones -->
+                        <div class="d-grid gap-2">
+                            {{ form.submit() }}
+                            <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(element) {
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value);
+    
+    // Visual feedback
+    const button = element.nextElementSibling;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+</script>
+{% endblock %}

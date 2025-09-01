@@ -1,0 +1,11 @@
+# Creating remaining PWA icons
+# 96x96
+cp icon-72x72.svg icon-96x96.svg
+# 128x128  
+cp icon-72x72.svg icon-128x128.svg
+# 144x144
+cp icon-72x72.svg icon-144x144.svg
+# 152x152
+cp icon-72x72.svg icon-152x152.svg
+# 384x384
+cp icon-192x192.svg icon-384x384.svg

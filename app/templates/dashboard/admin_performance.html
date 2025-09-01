@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Performance Dashboard - Admin{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Header -->
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-tachometer-alt me-2"></i>Performance Dashboard
+                    <span class="badge bg-warning text-dark">Admin</span>
+                </h2>
+                <a href="{{ url_for('dashboard.advanced_features') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ system_stats.cpu_percent }}%</h4>
+                            <p class="mb-0">CPU Usage</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-microchip fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ system_stats.memory_percent }}%</h4>
+                            <p class="mb-0">Memory Usage</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-memory fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ system_stats.disk_percent }}%</h4>
+                            <p class="mb-0">Disk Usage</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hdd fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ cache_stats.status|title }}</h4>
+                            <p class="mb-0">Cache Status</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Analytics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ analytics.total_users }}</h3>
+                    <p class="text-muted mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ analytics.total_cards }}</h3>
+                    <p class="text-muted mb-0">Total Cards</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ analytics.total_views }}</h3>
+                    <p class="text-muted mb-0">Total Views</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ analytics.new_users }}</h3>
+                    <p class="text-muted mb-0">New Users (30d)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cache Management -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database me-2"></i>Cache Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Cache Status</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-circle text-success"></i> Backend: {{ cache_stats.backend }}</li>
+                                <li><i class="fas fa-circle text-info"></i> Hit Rate: {{ cache_stats.hit_rate }}</li>
+                                <li><i class="fas fa-circle text-primary"></i> Status: {{ cache_stats.status }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Cache Actions</h6>
+                            <form method="POST" action="{{ url_for('dashboard.admin_clear_cache') }}" class="mb-2">
+                                <div class="input-group">
+                                    <select name="cache_type" class="form-select">
+                                        <option value="all">Toda la cache</option>
+                                        <option value="cards">Cache de tarjetas</option>
+                                        <option value="analytics">Cache de analytics</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        <i class="fas fa-trash me-1"></i>Limpiar
+                                    </button>
+                                </div>
+                            </form>
+                            <form method="POST" action="{{ url_for('dashboard.admin_warm_cache') }}">
+                                <button type="submit" class="btn btn-outline-success">
+                                    <i class="fas fa-fire me-1"></i>Precalentar Cache
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>Top Cards
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analytics.top_cards %}
+                        {% for card in analytics.top_cards[:5] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ card.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ card.slug }}</small>
+                            </div>
+                            <span class="badge bg-primary">{{ card.views }} views</span>
+                        </div>
+                        {% if not loop.last %}<hr class="my-2">{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

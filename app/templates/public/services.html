@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios - {{ card.title or card.name }} - Tarjeta Digital</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Servicios de {{ card.name }}. {{ card.bio[:100] if card.bio else '' }}">
+    <meta name="keywords" content="servicios, {{ card.name }}, {{ card.company or '' }}">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Servicios - {{ card.title or card.name }}">
+    <meta property="og:description" content="Descubre todos los servicios que ofrece {{ card.name }}">
+    <meta property="og:type" content="website">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: '{{ card.theme.font_family }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            {% if card.theme.layout == 'classic' %}
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid {{ card.theme.primary_color }}20;
+            {% elif card.theme.layout == 'minimal' %}
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            border-bottom: 3px solid {{ card.theme.primary_color }};
+            {% else %}
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            {% endif %}
+        }
+        
+        .header h1 {
+            color: {{ card.theme.primary_color }};
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            padding: 12px 24px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            {% if card.theme.layout == 'classic' %}
+            border-radius: 8px;
+            {% elif card.theme.layout == 'minimal' %}
+            border-radius: 0;
+            border-bottom: 2px solid transparent;
+            {% else %}
+            border-radius: 25px;
+            {% endif %}
+        }
+        
+        .nav-btn.primary {
+            background: {{ card.theme.primary_color }};
+            color: white;
+        }
+        
+        .nav-btn.outline {
+            background: transparent;
+            color: {{ card.theme.primary_color }};
+            border-color: {{ card.theme.primary_color }};
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .nav-btn.outline:hover {
+            background: {{ card.theme.primary_color }};
+            color: white;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 0 5px;
+        }
+        
+        .service-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, {{ card.theme.primary_color }}, transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .service-card:hover::before {
+            left: 100%;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            border-color: {{ card.theme.primary_color }}30;
+        }
+        
+        .service-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            margin: 0 auto 24px auto;
+            flex-shrink: 0;
+            box-shadow: 0 8px 25px {{ card.theme.primary_color }}4D;
+            transition: all 0.3s ease;
+        }
+        
+        .service-card:hover .service-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 35px {{ card.theme.primary_color }}66;
+        }
+        
+        .service-image-container {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .service-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .service-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .service-description {
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        .service-price {
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px {{ card.theme.primary_color }}4D;
+            transition: all 0.3s ease;
+            margin-top: auto;
+        }
+        
+        .service-card:hover .service-price {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px {{ card.theme.primary_color }}66;
+        }
+        
+        .service-details {
+            margin: 15px 0;
+            width: 100%;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .empty-state {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 60px 30px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #999;
+        }
+        
+        /* Filter Styles */
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid {{ card.theme.primary_color }}50;
+            background: transparent;
+            color: {{ card.theme.primary_color }};
+            border-radius: 20px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+        
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: {{ card.theme.primary_color }}10;
+        }
+        
+        .filter-btn.active {
+            background: {{ card.theme.primary_color }};
+            color: white;
+            border-color: {{ card.theme.primary_color }};
+        }
+        
+        .filter-btn.active:hover {
+            background: {{ card.theme.secondary_color }};
+            border-color: {{ card.theme.secondary_color }};
+        }
+        
+        .service-card.hidden {
+            display: none;
+        }
+        
+        /* Enhanced Mobile Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                padding: 0;
+            }
+            
+            .service-card {
+                padding: 20px;
+                border-radius: 20px;
+            }
+            
+            .service-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+                margin-bottom: 16px;
+            }
+            
+            .service-title {
+                font-size: 1.2rem;
+            }
+            
+            .nav-buttons {
+                gap: 10px;
+            }
+            
+            .nav-btn {
+                padding: 14px 20px;
+                font-size: 0.9rem;
+                border-radius: 12px;
+            }
+            
+            .filter-buttons {
+                gap: 8px;
+            }
+            
+            .filter-btn {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+                border-radius: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .service-card {
+                padding: 16px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .nav-btn {
+                width: 100%;
+                text-align: center;
+                padding: 16px;
+                font-weight: 600;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+            
+            .service-price {
+                padding: 10px 16px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-concierge-bell me-2"></i>Servicios</h1>
+            <div class="subtitle">{{ card.title or card.name }}</div>
+            
+            <div class="nav-buttons">
+                <a href="{{ url_for('public.card_view', slug=card.slug) }}" class="nav-btn outline">
+                    <i class="fas fa-arrow-left me-1"></i>Volver a la Tarjeta
+                </a>
+                {% if card.products.filter_by(is_visible=True).count() > 0 %}
+                    <a href="{{ url_for('public.card_products', slug=card.slug) }}" class="nav-btn outline">
+                        <i class="fas fa-box me-1"></i>Ver Productos
+                    </a>
+                {% endif %}
+                {% if card.gallery_items.filter_by(is_visible=True).count() > 0 %}
+                    <a href="{{ url_for('public.card_gallery', slug=card.slug) }}" class="nav-btn outline">
+                        <i class="fas fa-images me-1"></i>Ver Galería
+                    </a>
+                {% endif %}
+                <button onclick="shareServices()" class="nav-btn primary">
+                    <i class="fas fa-share-alt me-1"></i>Compartir
+                </button>
+            </div>
+        </div>
+        
+        {% if services %}
+            <!-- Filter Section -->
+            {% set categories = services | map(attribute='category') | reject('none') | unique | list %}
+            {% if categories %}
+                <div class="filter-section">
+                    <div class="header" style="margin-bottom: 20px;">
+                        <h3 style="color: {{ card.theme.primary_color }}; margin-bottom: 15px;">
+                            <i class="fas fa-filter me-2"></i>Filtrar por Categoría
+                        </h3>
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" onclick="filterServices('all')">
+                                <i class="fas fa-th me-1"></i>Todos
+                            </button>
+                            {% for category in categories %}
+                                <button class="filter-btn" onclick="filterServices('{{ category|lower }}')">
+                                    <i class="fas fa-tag me-1"></i>{{ category|title }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Services Grid -->
+            <div class="services-grid">
+                {% for service in services %}
+                    <div class="service-card" data-category="{{ service.category|lower if service.category else 'sin-categoria' }}">
+                        {% if service.image_path %}
+                            <div class="service-image-container">
+                                <img src="{{ url_for('static', filename='uploads/' + service.image_path) }}" 
+                                     alt="{{ service.title }}" 
+                                     class="service-image">
+                            </div>
+                        {% else %}
+                            <div class="service-icon">
+                                {% if service.icon %}
+                                    <i class="fas {{ service.icon }}"></i>
+                                {% else %}
+                                    <i class="fas fa-star"></i>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="service-title">
+                            <span>{{ service.title }}</span>
+                            {% if service.is_featured %}
+                                <i class="fas fa-star" style="color: #f59e0b;" title="Destacado"></i>
+                            {% endif %}
+                        </div>
+                        
+                        {% if service.category %}
+                            <div class="mb-3">
+                                <span class="category-badge" style="
+                                    background: {{ card.theme.primary_color }}15;
+                                    color: {{ card.theme.primary_color }};
+                                    padding: 6px 12px;
+                                    border-radius: 15px;
+                                    font-size: 0.8rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.5px;
+                                    border: 1px solid {{ card.theme.primary_color }}30;
+                                ">{{ service.category|title }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if service.description %}
+                            <div class="service-description">{{ service.description }}</div>
+                        {% endif %}
+                        
+                        {% if service.get_duration_display() or service.availability %}
+                            <div class="service-details">
+                                {% if service.get_duration_display() %}
+                                    <div class="detail-item">
+                                        <i class="fas fa-clock text-info me-2"></i>
+                                        <span>{{ service.get_duration_display() }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if service.availability %}
+                                    <div class="detail-item">
+                                        <i class="fas fa-calendar text-success me-2"></i>
+                                        <span>{{ service.availability }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        {% if service.price_from %}
+                            <div class="service-price">
+                                <i class="fas fa-tag"></i>
+                                Desde ${{ service.price_from }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="fas fa-concierge-bell"></i>
+                <h3>No hay servicios disponibles</h3>
+                <p>{{ card.name }} aún no ha agregado servicios a su tarjeta digital.</p>
+            </div>
+        {% endif %}
+        
+        <!-- Contact Footer -->
+        <div class="header">
+            <h3 style="color: {{ card.theme.primary_color }}; margin-bottom: 20px;">
+                <i class="fas fa-phone me-2"></i>¿Interesado en nuestros servicios?
+            </h3>
+            <div class="nav-buttons">
+                {% if card.phone %}
+                    <a href="tel:{{ card.phone }}" class="nav-btn primary">
+                        <i class="fas fa-phone me-1"></i>Llamar
+                    </a>
+                {% endif %}
+                {% if card.whatsapp %}
+                    <a href="https://wa.me/{{ card.whatsapp.replace(' ', '').replace('+', '') }}" target="_blank" class="nav-btn primary">
+                        <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                    </a>
+                {% endif %}
+                {% if card.email_public %}
+                    <a href="mailto:{{ card.email_public }}" class="nav-btn outline">
+                        <i class="fas fa-envelope me-1"></i>Email
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Social Networks -->
+            {% set justify = 'center' %}
+            {% set size = 45 %}
+            {% set title = 'Sígueme en:' %}
+            {% include 'components/social_networks.html' with context %}
+        </div>
+    </div>
+
+    <script>
+        function shareServices() {
+            const url = window.location.href;
+            const text = `Conoce los servicios de {{ card.name }} - ${url}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Servicios - {{ card.name }}',
+                    text: text,
+                    url: url
+                }).catch(console.error);
+            } else {
+                // Fallback para navegadores que no soportan Web Share API
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('¡Enlace copiado al portapapeles!');
+                    });
+                } else {
+                    // Fallback para navegadores muy antiguos
+                    prompt('Copia este enlace:', url);
+                }
+            }
+        }
+        
+        // Filter functionality
+        function filterServices(category) {
+            const serviceCards = document.querySelectorAll('.service-card');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            // Update active filter button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filter service cards
+            serviceCards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.classList.remove('hidden');
+                    card.style.animation = 'fadeIn 0.3s ease';
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            
+            // Check if any services are visible
+            const visibleCards = document.querySelectorAll('.service-card:not(.hidden)');
+            const servicesGrid = document.querySelector('.services-grid');
+            
+            if (visibleCards.length === 0) {
+                if (!document.querySelector('.no-results-message')) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'no-results-message empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No hay servicios en esta categoría</h3>
+                        <p>Prueba con otra categoría o consulta todos los servicios.</p>
+                    `;
+                    servicesGrid.after(noResultsDiv);
+                }
+                document.querySelector('.no-results-message').style.display = 'block';
+            } else {
+                const noResultsMessage = document.querySelector('.no-results-message');
+                if (noResultsMessage) {
+                    noResultsMessage.style.display = 'none';
+                }
+            }
+        }
+        
+        // Add fade-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

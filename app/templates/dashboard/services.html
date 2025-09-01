@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Servicios - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
+                </a>
+                <a class="nav-link active" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+                    <i class="fas fa-box me-2"></i>Productos
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+                    <i class="fas fa-images me-2"></i>Galería
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+                    <i class="fas fa-user-circle me-2"></i>Avatar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+                    <i class="fas fa-palette me-2"></i>Personalizar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                    <small class="text-muted">- {{ card.name }}</small>
+                </h2>
+                {% if card.is_public %}
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Add Service Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>Agregar Nuevo Servicio
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                {{ form.title.label(class="form-label required") }}
+                                {{ form.title() }}
+                                {% if form.title.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.price_from.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.price_from(class="form-control") }}
+                                    <span class="input-group-text">$</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description() }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.category.label(class="form-label") }}
+                                {{ form.category() }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.duration_minutes.label(class="form-label") }}
+                                {{ form.duration_minutes() }}
+                                <div class="form-text">Ej: 30min, 1h, 2h 30min</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.availability.label(class="form-label") }}
+                                {{ form.availability() }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.icon.label(class="form-label") }}
+                                {{ form.icon() }}
+                                <div class="form-text">Ej: fa-cut, fa-camera</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image() }}
+                            <div class="form-text">Imagen opcional para el servicio (JPG, PNG, WEBP)</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    {{ form.is_visible() }}
+                                    {{ form.is_visible.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    {{ form.is_featured() }}
+                                    {{ form.is_featured.label(class="form-check-label") }}
+                                    <div class="form-text">Aparecerá destacado</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3 text-end">
+                                {{ form.submit() }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Services List -->
+            {% if services %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>Lista de Servicios ({{ services|length }})
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">
+                                            <i class="fas fa-grip-vertical text-muted"></i>
+                                        </th>
+                                        <th>Servicio</th>
+                                        <th width="12%">Precio</th>
+                                        <th width="10%">Duración</th>
+                                        <th width="8%">Estado</th>
+                                        <th width="15%">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for service in services %}
+                                        <tr>
+                                            <td class="text-center">
+                                                <i class="fas fa-grip-vertical text-muted"></i>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if service.image_path %}
+                                                        <img src="{{ url_for('static', filename='uploads/' + service.image_path) }}" 
+                                                             alt="{{ service.title }}" 
+                                                             class="service-image me-2 rounded">
+                                                    {% elif service.icon %}
+                                                        <i class="fas {{ service.icon }} me-2 text-primary"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-star me-2 text-muted"></i>
+                                                    {% endif %}
+                                                    <div>
+                                                        <h6 class="mb-0">
+                                                            {{ service.title }}
+                                                            {% if service.is_featured %}
+                                                                <i class="fas fa-star text-warning ms-1" title="Destacado"></i>
+                                                            {% endif %}
+                                                        </h6>
+                                                        {% if service.category %}
+                                                            <span class="badge bg-light text-dark me-1">{{ service.category|title }}</span>
+                                                        {% endif %}
+                                                        {% if service.description %}
+                                                            <small class="text-muted">{{ service.description[:50] }}{% if service.description|length > 50 %}...{% endif %}</small>
+                                                        {% endif %}
+                                                        {% if service.availability %}
+                                                            <div><small class="text-info"><i class="fas fa-clock me-1"></i>{{ service.availability }}</small></div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if service.price_from %}
+                                                    <strong class="text-success">${{ service.price_from }}</strong>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if service.get_duration_display() %}
+                                                    <span class="badge bg-info">{{ service.get_duration_display() }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if service.is_visible %}
+                                                    <span class="badge bg-success">Visible</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Oculto</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{{ url_for('dashboard.edit_service', card_id=card.id, service_id=service.id) }}" 
+                                                       class="btn btn-outline-primary" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form method="POST" action="{{ url_for('dashboard.delete_service', card_id=card.id, service_id=service.id) }}" 
+                                                          class="d-inline" onsubmit="return confirm('¿Eliminar este servicio?')">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-concierge-bell fa-3x text-muted mb-3"></i>
+                        <h4>No hay servicios agregados</h4>
+                        <p class="text-muted">Agrega tu primer servicio para mostrar lo que ofreces</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.table tbody tr {
+    cursor: move;
+}
+
+.service-drag-handle {
+    cursor: grab;
+}
+
+.service-drag-handle:active {
+    cursor: grabbing;
+}
+
+.service-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+}
+</style>
+
+<script>
+// Simple drag and drop functionality (can be enhanced with SortableJS)
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('dragstart', function(e) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.outerHTML);
+            this.classList.add('dragging');
+        });
+        
+        row.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+        });
+    });
+});
+</script>
+{% endblock %}

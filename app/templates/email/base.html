@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VCard{% endblock %}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .content {
+            padding: 40px;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .alert {
+            padding: 16px;
+            margin: 16px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        .alert-info {
+            background-color: #e1f5fe;
+            border-left-color: #0288d1;
+            color: #0277bd;
+        }
+        .alert-success {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-id-card-alt"></i>
+                VCard
+            </h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Tarjetas Digitales Profesionales</p>
+        </div>
+        
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <div class="footer">
+            <p>
+                © {{ moment().year if moment else '2025' }} VCard. Todos los derechos reservados.<br>
+                <a href="#" style="color: #6366f1;">Política de Privacidad</a> | 
+                <a href="#" style="color: #6366f1;">Términos de Servicio</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

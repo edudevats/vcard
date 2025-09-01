@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}Código QR - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+                    <i class="fas fa-box me-2"></i>Productos
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+                    <i class="fas fa-images me-2"></i>Galería
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+                    <i class="fas fa-user-circle me-2"></i>Avatar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+                    <i class="fas fa-palette me-2"></i>Personalizar
+                </a>
+                <a class="nav-link active" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <!-- Hidden CSRF token for AJAX requests -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                    <small class="text-muted">- {{ card.name }}</small>
+                </h2>
+                {% if card.is_public %}
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <!-- QR Code Display -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-qrcode me-2"></i>Tu Código QR Personalizado
+                            </h5>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if not card.is_public %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Tarjeta Privada:</strong> Tu tarjeta debe estar pública para que el código QR funcione correctamente.
+                                    <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="alert-link">Hacerla pública</a>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- QR Code Container -->
+                            <div class="qr-container mb-4" style="
+                                background: linear-gradient(135deg, {{ card.theme.primary_color }}10, {{ card.theme.secondary_color }}10);
+                                border-radius: 20px;
+                                padding: 30px;
+                                display: inline-block;
+                            ">
+                                <img id="qr-image" src="{{ qr_base64 }}" alt="Código QR de {{ card.name }}" 
+                                     class="img-fluid" style="max-width: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                            </div>
+                            
+                            <!-- QR Info -->
+                            <div class="qr-info mb-4">
+                                <h6 style="color: {{ card.theme.primary_color }};">
+                                    <i class="fas fa-link me-2"></i>URL de la tarjeta:
+                                </h6>
+                                <div class="input-group">
+                                    <input type="text" id="card-url" class="form-control text-center" 
+                                           value="{{ card_url }}" readonly>
+                                    <button type="button" class="btn btn-outline-secondary" 
+                                            onclick="copyToClipboard('card-url')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                <a href="{{ url_for('dashboard.download_qr', id=card.id) }}" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-download me-1"></i>Descargar PNG
+                                </a>
+                                
+                                <button type="button" class="btn btn-success" onclick="saveQR()">
+                                    <i class="fas fa-save me-1"></i>Guardar en Servidor
+                                </button>
+                                
+                                <button type="button" class="btn btn-info" onclick="printQR()">
+                                    <i class="fas fa-print me-1"></i>Imprimir
+                                </button>
+                                
+                                <button type="button" class="btn btn-outline-secondary" 
+                                        data-bs-toggle="modal" data-bs-target="#shareModal">
+                                    <i class="fas fa-share-alt me-1"></i>Compartir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- QR Options -->
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-cog me-2"></i>Personalizar QR
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Estilo del QR:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="qr-style" 
+                                           id="style-themed" value="themed" checked>
+                                    <label class="form-check-label" for="style-themed">
+                                        Con colores del tema
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="qr-style" 
+                                           id="style-classic" value="classic">
+                                    <label class="form-check-label" for="style-classic">
+                                        Clásico (blanco y negro)
+                                    </label>
+                                </div>
+                                {% if card.avatar_path %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="qr-style" 
+                                           id="style-logo" value="logo">
+                                    <label class="form-check-label" for="style-logo">
+                                        Con tu avatar al centro
+                                    </label>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="qr-size" class="form-label">Tamaño:</label>
+                                <select id="qr-size" class="form-select">
+                                    <option value="300">Pequeño (300px)</option>
+                                    <option value="400" selected>Mediano (400px)</option>
+                                    <option value="600">Grande (600px)</option>
+                                    <option value="800">Extra Grande (800px)</option>
+                                </select>
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="regenerateQR()">
+                                <i class="fas fa-sync-alt me-1"></i>Regenerar QR
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage Instructions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>¿Cómo usar tu QR?
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="small">
+                                <div class="mb-3">
+                                    <h6><i class="fas fa-mobile-alt me-2 text-primary"></i>En tu teléfono:</h6>
+                                    <ul class="mb-0">
+                                        <li>Guarda la imagen en tu galería</li>
+                                        <li>Úsala como fondo de pantalla de bloqueo</li>
+                                        <li>Compártela por WhatsApp o email</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <h6><i class="fas fa-print me-2 text-success"></i>Impreso:</h6>
+                                    <ul class="mb-0">
+                                        <li>Tarjetas de presentación</li>
+                                        <li>Flyers y folletos</li>
+                                        <li>Carteles y banners</li>
+                                        <li>Pegatinas y stickers</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="alert alert-info small">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    <strong>Consejo:</strong> Asegúrate de que tu tarjeta esté pública 
+                                    antes de compartir el QR.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-share-alt me-2"></i>Compartir Código QR
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <img src="{{ qr_base64 }}" alt="QR Code" style="max-width: 200px;" class="img-fluid">
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-success" onclick="shareWhatsApp()">
+                        <i class="fab fa-whatsapp me-2"></i>Compartir por WhatsApp
+                    </button>
+                    
+                    <button type="button" class="btn btn-primary" onclick="shareEmail()">
+                        <i class="fas fa-envelope me-2"></i>Enviar por Email
+                    </button>
+                    
+                    <button type="button" class="btn btn-info" onclick="shareTelegram()">
+                        <i class="fab fa-telegram-plane me-2"></i>Compartir en Telegram
+                    </button>
+                    
+                    <button type="button" class="btn btn-secondary" onclick="copyQRLink()">
+                        <i class="fas fa-link me-2"></i>Copiar Enlace
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function regenerateQR() {
+    const style = document.querySelector('input[name="qr-style"]:checked').value;
+    const size = document.getElementById('qr-size').value;
+    
+    console.log('Regenerating QR with style:', style, 'and size:', size);
+    
+    // Show loading
+    const qrImage = document.getElementById('qr-image');
+    const regenerateBtn = document.querySelector('button[onclick="regenerateQR()"]');
+    
+    qrImage.style.opacity = '0.5';
+    regenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generando...';
+    regenerateBtn.disabled = true;
+    
+    fetch(`{{ url_for('dashboard.generate_qr', id=card.id) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+        },
+        body: JSON.stringify({
+            style: style,
+            size: parseInt(size)
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            qrImage.src = data.qr_code;
+            qrImage.style.opacity = '1';
+            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
+            regenerateBtn.disabled = false;
+            console.log('QR regenerated successfully');
+        } else {
+            alert('Error al generar el código QR: ' + (data.error || 'Error desconocido'));
+            qrImage.style.opacity = '1';
+            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
+            regenerateBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error regenerating QR:', error);
+        alert('Error al generar el código QR: ' + error.message);
+        qrImage.style.opacity = '1';
+        regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
+        regenerateBtn.disabled = false;
+    });
+}
+
+function saveQR() {
+    // Show loading state
+    const saveBtn = document.querySelector('button[onclick="saveQR()"]');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+    saveBtn.disabled = true;
+    
+    fetch(`{{ url_for('dashboard.save_card_qr', id=card.id) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            saveBtn.innerHTML = '<i class="fas fa-check me-1"></i>¡Guardado!';
+            saveBtn.classList.remove('btn-success');
+            saveBtn.classList.add('btn-outline-success');
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.classList.add('btn-success');
+                saveBtn.classList.remove('btn-outline-success');
+                saveBtn.disabled = false;
+            }, 2000);
+        } else {
+            alert('Error al guardar: ' + (data.error || 'Error desconocido'));
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el código QR: ' + error.message);
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function printQR() {
+    const qrImage = document.getElementById('qr-image');
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Código QR - {{ card.name }}</title>
+                <style>
+                    body { 
+                        margin: 0; 
+                        padding: 20px; 
+                        text-align: center; 
+                        font-family: Arial, sans-serif;
+                    }
+                    h1 { 
+                        color: {{ card.theme.primary_color }}; 
+                        margin-bottom: 20px;
+                    }
+                    img { 
+                        max-width: 400px; 
+                        margin: 20px 0;
+                    }
+                    .url {
+                        font-size: 12px;
+                        color: #666;
+                        word-break: break-all;
+                        margin-top: 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>{{ card.title or card.name }}</h1>
+                <img src="${qrImage.src}" alt="Código QR">
+                <div class="url">{{ card_url }}</div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(element.value);
+    
+    // Visual feedback
+    const button = element.nextElementSibling;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.add('btn-success');
+    button.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function shareWhatsApp() {
+    const text = `¡Mira mi tarjeta digital! {{ card.name }} - {{ card_url }}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function shareEmail() {
+    const subject = `Tarjeta Digital de {{ card.name }}`;
+    const body = `¡Hola!\n\nTe comparto mi tarjeta de presentación digital.\n\nPuedes verla escaneando este código QR o visitando: {{ card_url }}\n\nSaludos,\n{{ card.name }}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+}
+
+function shareTelegram() {
+    const text = `¡Mira mi tarjeta digital! {{ card.name }} - {{ card_url }}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent('{{ card_url }}')}&text=${encodeURIComponent(text)}`, '_blank');
+}
+
+function copyQRLink() {
+    navigator.clipboard.writeText('{{ card_url }}');
+    alert('Enlace copiado al portapapeles');
+}
+
+// Add event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('QR code page loaded');
+    
+    // Add event listeners to QR style radio buttons
+    const styleRadios = document.querySelectorAll('input[name="qr-style"]');
+    styleRadios.forEach(radio => {
+        radio.addEventListener('change', regenerateQR);
+    });
+    
+    // Add event listener to size select
+    const sizeSelect = document.getElementById('qr-size');
+    if (sizeSelect) {
+        sizeSelect.addEventListener('change', regenerateQR);
+    }
+    
+    console.log('Event listeners added to QR customization controls');
+});
+</script>
+
+<style>
+.qr-container {
+    transition: all 0.3s ease;
+}
+
+.qr-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+#qr-image {
+    transition: opacity 0.3s ease;
+}
+
+.form-check {
+    margin-bottom: 0.5rem;
+}
+
+.alert-info {
+    border-left: 4px solid #17a2b8;
+}
+</style>
+{% endblock %}

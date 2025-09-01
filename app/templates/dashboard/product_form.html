@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if product else 'Nuevo' }} Producto - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                </a>
+                <a class="nav-link active" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+                    <i class="fas fa-box me-2"></i>Productos
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+                    <i class="fas fa-images me-2"></i>Galería
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+                    <i class="fas fa-user-circle me-2"></i>Avatar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+                    <i class="fas fa-palette me-2"></i>Personalizar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-{{ 'edit' if product else 'plus' }} me-2"></i>{{ 'Editar' if product else 'Nuevo' }} Producto
+                    <small class="text-muted">- {{ card.name }}</small>
+                </h2>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información del Producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                {{ form.name.label(class="form-label required") }}
+                                {{ form.name() }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.price.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.price(class="form-control") }}
+                                </div>
+                                <div class="form-text">Precio de venta</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description() }}
+                            <div class="form-text">Describe tu producto en detalle</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.category.label(class="form-label") }}
+                                {{ form.category() }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.brand.label(class="form-label") }}
+                                {{ form.brand() }}
+                                <div class="form-text">Marca del producto</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.original_price.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.original_price(class="form-control") }}
+                                </div>
+                                <div class="form-text">Para mostrar descuentos</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.sku.label(class="form-label") }}
+                                {{ form.sku() }}
+                                <div class="form-text">Código único del producto</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.stock_quantity.label(class="form-label") }}
+                                {{ form.stock_quantity() }}
+                                <div class="form-text">-1 para stock ilimitado</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.external_link.label(class="form-label") }}
+                            {{ form.external_link() }}
+                            <div class="form-text">
+                                <a href="#" onclick="return false;">Enlace directo para comprar o más información</a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.image.label(class="form-label") }}
+                            {{ form.image() }}
+                            <div class="form-text">
+                                Imagen del producto (JPG, PNG, WEBP)
+                                {% if product and product.image_path %}
+                                    <br><small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Imagen actual: {{ product.image_path }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                            {% if product and product.image_path %}
+                                <div class="mt-2">
+                                    <img src="{{ url_for('static', filename='uploads/' + product.image_path) }}" 
+                                         alt="{{ product.name }}" 
+                                         class="img-thumbnail" style="max-width: 100px; max-height: 100px;">
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_visible() }}
+                                    {{ form.is_visible.label(class="form-check-label") }}
+                                    <div class="form-text">Si está marcado, aparecerá en la tarjeta pública</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_featured() }}
+                                    {{ form.is_featured.label(class="form-check-label") }}
+                                    <div class="form-text">Aparecerá destacado</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.is_available() }}
+                                    {{ form.is_available.label(class="form-check-label") }}
+                                    <div class="form-text">Disponible para compra</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            {{ form.submit() }}
+                            <a href="{{ url_for('dashboard.card_products', id=card.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

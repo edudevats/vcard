@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Tarjetas - VCard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Sidebar -->
+    <div class="col-md-3">
+        {% include 'admin/_sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-id-card me-2"></i>Gestión de Tarjetas
+                </h2>
+                <div class="text-muted">
+                    {{ cards.total }} tarjetas en total
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" value="{{ search }}" 
+                                   placeholder="Nombre, email o slug...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="" {% if not status %}selected{% endif %}>Todos</option>
+                                <option value="public" {% if status == 'public' %}selected{% endif %}>Públicas</option>
+                                <option value="private" {% if status == 'private' %}selected{% endif %}>Privadas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </button>
+                            <a href="{{ url_for('admin.cards') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Cards Table -->
+            <div class="card">
+                <div class="card-body">
+                    {% if cards.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Avatar</th>
+                                        <th>Información</th>
+                                        <th>Propietario</th>
+                                        <th>Estado</th>
+                                        <th>Vistas</th>
+                                        <th>Creada</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for card in cards.items %}
+                                    <tr>
+                                        <td>
+                                            {% if card.has_avatar() %}
+                                                <img src="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                                                     alt="{{ card.name }}" class="avatar-sm rounded-circle">
+                                            {% else %}
+                                                <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ card.name }}</strong>
+                                                {% if card.title %}<br><small class="text-muted">{{ card.title }}</small>{% endif %}
+                                            </div>
+                                            {% if card.job_title %}<small class="text-muted">{{ card.job_title }}</small>{% endif %}
+                                            {% if card.company %}<small class="text-muted"> - {{ card.company }}</small>{% endif %}
+                                            <div><small class="text-muted font-monospace">{{ card.slug }}</small></div>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ card.owner.email }}</span>
+                                        </td>
+                                        <td>
+                                            {% if card.is_public %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-eye me-1"></i>Pública
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-eye-slash me-1"></i>Privada
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ card.get_total_views() }}</strong> total
+                                            </div>
+                                            <small class="text-muted">{{ card.get_unique_views() }} únicas</small>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ card.created_at.strftime('%d/%m/%Y') }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                {% if card.is_public %}
+                                                    <a href="{{ card.get_public_url() }}" class="btn btn-outline-info" 
+                                                       target="_blank" title="Ver tarjeta">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                {% endif %}
+                                                <a href="{{ url_for('admin.card_views', id=card.id) }}" 
+                                                   class="btn btn-outline-primary" title="Ver estadísticas">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </a>
+                                                <a href="{{ url_for('admin.user_cards', id=card.owner_id) }}" 
+                                                   class="btn btn-outline-secondary" title="Ver tarjetas del usuario">
+                                                    <i class="fas fa-user"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if cards.pages > 1 %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if cards.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.cards', page=cards.prev_num, search=search, status=status) }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in cards.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != cards.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.cards', page=page_num, search=search, status=status) }}">{{ page_num }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">…</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if cards.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.cards', page=cards.next_num, search=search, status=status) }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5>No se encontraron tarjetas</h5>
+                            <p class="text-muted">
+                                {% if search or status %}
+                                    Prueba ajustando los filtros de búsqueda.
+                                {% else %}
+                                    Aún no hay tarjetas creadas en el sistema.
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
+.card {
+    border-radius: 15px;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #5a5c69;
+}
+</style>
+{% endblock %}

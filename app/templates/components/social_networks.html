@@ -1,0 +1,263 @@
+<!-- Social Networks Component -->
+{% set primary_networks = card.get_primary_social_networks() %}
+{% set secondary_networks = card.get_secondary_social_networks() %}
+
+{% if primary_networks or secondary_networks %}
+    <div class="social-networks">
+        {% if title %}
+            <h5 class="social-title">{{ title }}</h5>
+        {% endif %}
+        
+        <!-- Primary Social Networks (Top) -->
+        {% if primary_networks %}
+            <div class="social-links primary-networks">
+                {% for network in primary_networks %}
+                    {% set url = network.base_url + network.value %}
+                    {% if network.name == 'WhatsApp' or network.name == 'WhatsApp Business' %}
+                        {% set url = network.base_url + network.value.replace(' ', '').replace('+', '') %}
+                    {% endif %}
+                    
+                    <a href="{{ url }}" 
+                       target="_blank" 
+                       class="social-link social-{{ network.name.lower().replace(' ', '-') }}"
+                       style="background-color: {{ network.color }}; border-color: {{ network.color }};"
+                       title="{{ network.name }}"
+                       rel="noopener noreferrer">
+                        <i class="{{ network.icon }}"></i>
+                        {% if show_labels %}
+                            <span class="social-label">{{ network.name }}</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <!-- Secondary Social Networks (Bottom) -->
+        {% if secondary_networks %}
+            <div class="social-links secondary-networks">
+                {% for network in secondary_networks %}
+                    {% set url = network.base_url + network.value %}
+                    {% if network.name == 'WhatsApp' or network.name == 'WhatsApp Business' %}
+                        {% set url = network.base_url + network.value.replace(' ', '').replace('+', '') %}
+                    {% endif %}
+                    
+                    <a href="{{ url }}" 
+                       target="_blank" 
+                       class="social-link social-{{ network.name.lower().replace(' ', '-') }}"
+                       style="background-color: {{ network.color }}; border-color: {{ network.color }};"
+                       title="{{ network.name }}"
+                       rel="noopener noreferrer">
+                        <i class="{{ network.icon }}"></i>
+                        {% if show_labels %}
+                            <span class="social-label">{{ network.name }}</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {% if show_count %}
+            {% set total_networks = (primary_networks|length) + (secondary_networks|length) %}
+            <p class="social-count text-muted small mt-2">
+                <i class="fas fa-share-alt me-1"></i>
+                {{ total_networks }} red{{ 'es' if total_networks > 1 else '' }} social{{ 'es' if total_networks > 1 else '' }}
+            </p>
+        {% endif %}
+    </div>
+
+    <style>
+        .social-networks {
+            margin: 20px 0;
+        }
+        
+        .social-title {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .social-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: {{ justify|default('flex-start') }};
+        }
+        
+        .primary-networks {
+            margin-bottom: 15px;
+        }
+        
+        .secondary-networks {
+            margin-top: 10px;
+        }
+        
+        .primary-networks .social-link {
+            width: {{ size|default(50) }}px;
+            height: {{ size|default(50) }}px;
+        }
+        
+        .secondary-networks .social-link {
+            width: {{ (size|default(50) * 0.85)|round|int }}px;
+            height: {{ (size|default(50) * 0.85)|round|int }}px;
+            font-size: {{ (icon_size|default('1.2rem')|replace('rem', '')|float * 0.9)|round(1) }}rem;
+        }
+        
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: {{ size|default(50) }}px;
+            height: {{ size|default(50) }}px;
+            border-radius: {{ shape|default('50%') }};
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: {{ icon_size|default('1.2rem') }};
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .social-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            color: white;
+            filter: brightness(1.1);
+        }
+        
+        .social-link:active {
+            transform: translateY(-1px);
+        }
+        
+        /* Specific network hover effects */
+        .social-instagram:hover {
+            background: linear-gradient(45deg, #E4405F, #C13584) !important;
+        }
+        
+        .social-whatsapp:hover {
+            background: linear-gradient(45deg, #25D366, #128C7E) !important;
+        }
+        
+        .social-facebook:hover {
+            background: linear-gradient(45deg, #1877F2, #166FE5) !important;
+        }
+        
+        .social-linkedin:hover {
+            background: linear-gradient(45deg, #0A66C2, #004182) !important;
+        }
+        
+        .social-twitter:hover {
+            background: linear-gradient(45deg, #1DA1F2, #0d8bd9) !important;
+        }
+        
+        .social-youtube:hover {
+            background: linear-gradient(45deg, #FF0000, #CC0000) !important;
+        }
+        
+        .social-tiktok:hover {
+            background: linear-gradient(45deg, #000000, #333333) !important;
+        }
+        
+        .social-telegram:hover {
+            background: linear-gradient(45deg, #0088CC, #006699) !important;
+        }
+        
+        .social-snapchat:hover {
+            background: linear-gradient(45deg, #FFFC00, #FFF700) !important;
+            color: #333 !important;
+        }
+        
+        .social-pinterest:hover {
+            background: linear-gradient(45deg, #BD081C, #9A0014) !important;
+        }
+        
+        .social-github:hover {
+            background: linear-gradient(45deg, #333333, #555555) !important;
+        }
+        
+        .social-behance:hover {
+            background: linear-gradient(45deg, #1769FF, #0052CC) !important;
+        }
+        
+        .social-dribbble:hover {
+            background: linear-gradient(45deg, #EA4C89, #E91E63) !important;
+        }
+        
+        /* With labels */
+        .social-link .social-label {
+            margin-left: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .social-links .social-link:has(.social-label) {
+            width: auto;
+            padding: 12px 16px;
+            border-radius: 25px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .social-links {
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .primary-networks .social-link {
+                width: {{ mobile_size|default(45) }}px;
+                height: {{ mobile_size|default(45) }}px;
+                font-size: {{ mobile_icon_size|default('1rem') }};
+            }
+            
+            .secondary-networks .social-link {
+                width: {{ (mobile_size|default(45) * 0.8)|round|int }}px;
+                height: {{ (mobile_size|default(45) * 0.8)|round|int }}px;
+                font-size: {{ (mobile_icon_size|default('1rem')|replace('rem', '')|float * 0.85)|round(1) }}rem;
+            }
+            
+            .primary-networks {
+                margin-bottom: 12px;
+            }
+            
+            .secondary-networks {
+                margin-top: 8px;
+            }
+        }
+        
+        /* Grid layout option */
+        {% if layout == 'grid' %}
+            .social-links {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 15px;
+            }
+            
+            .social-link {
+                width: 100%;
+                height: 50px;
+                border-radius: 10px;
+                justify-content: flex-start;
+                padding: 0 15px;
+            }
+            
+            .social-link .social-label {
+                margin-left: 10px;
+            }
+        {% endif %}
+        
+        /* Vertical layout option */
+        {% if layout == 'vertical' %}
+            .social-links {
+                flex-direction: column;
+                align-items: {{ justify|default('flex-start') }};
+            }
+            
+            .social-link {
+                width: 200px;
+                height: 50px;
+                border-radius: 10px;
+                justify-content: flex-start;
+                padding: 0 15px;
+            }
+        {% endif %}
+    </style>
+{% endif %}

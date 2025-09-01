@@ -1,0 +1,27 @@
+<!-- Admin Sidebar Component -->
+<div class="sidebar">
+    <h5 class="mb-3">
+        <i class="fas fa-cog me-2"></i>Administración
+    </h5>
+    <nav class="nav flex-column">
+        <a class="nav-link {{ 'active' if request.endpoint == 'admin.index' }}" href="{{ url_for('admin.index') }}">
+            <i class="fas fa-chart-bar me-2"></i>Dashboard
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'admin.users' }}" href="{{ url_for('admin.users') }}">
+            <i class="fas fa-users me-2"></i>Usuarios
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'admin.pending_approvals' }}" href="{{ url_for('admin.pending_approvals') }}">
+            <i class="fas fa-user-clock me-2"></i>Solicitudes
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'admin.cards' }}" href="{{ url_for('admin.cards') }}">
+            <i class="fas fa-id-card me-2"></i>Tarjetas
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'admin.themes' }}" href="{{ url_for('admin.themes') }}">
+            <i class="fas fa-palette me-2"></i>Temas
+        </a>
+        <hr>
+        <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+            <i class="fas fa-user me-2"></i>Mi Dashboard
+        </a>
+    </nav>
+</div>

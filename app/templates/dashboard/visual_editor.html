@@ -1,0 +1,1378 @@
+{% extends "base.html" %}
+
+{% block title %}Editor Visual - {{ card.name }}{% endblock %}
+
+{% block head %}
+<!-- Force cache reload -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<style>
+.editor-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.components-panel {
+    width: 300px;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.editor-canvas {
+    flex: 1;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.preview-frame {
+    width: 375px;
+    height: 667px;
+    margin: 20px auto;
+    border: 2px solid #dee2e6;
+    border-radius: 20px;
+    background: white;
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.properties-panel {
+    width: 320px;
+    background: #f8f9fa;
+    border-left: 1px solid #dee2e6;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.component-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.2s;
+}
+
+.component-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.component-item i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.drop-zone {
+    min-height: 60px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px;
+    transition: all 0.2s;
+    color: #6c757d;
+}
+
+.drop-zone.drag-over {
+    border-color: #007bff;
+    background-color: #f0f8ff;
+    color: #007bff;
+}
+
+.editable-element {
+    position: relative;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+.editable-element:hover {
+    border-color: #007bff;
+}
+
+.editable-element.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+.element-controls {
+    position: absolute;
+    top: -30px;
+    right: 0;
+    display: none;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.editable-element:hover .element-controls,
+.editable-element.selected .element-controls {
+    display: flex;
+}
+
+.control-btn {
+    border: none;
+    background: none;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    margin: 2px;
+}
+
+.control-btn:hover {
+    background: #f8f9fa;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.color-input {
+    width: 50px;
+    height: 35px;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.preview-content {
+    padding: 20px;
+    min-height: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.toolbar {
+    background: white;
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.device-preview {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.device-btn {
+    border: 1px solid #dee2e6;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.device-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Additional styles for better visual feedback */
+.editable-element {
+    position: relative;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.editable-element:hover {
+    background-color: rgba(0, 123, 255, 0.05) !important;
+    border-radius: 4px;
+}
+
+.editable-element.selected {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.editable-element .element-controls {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.editable-element:hover .element-controls,
+.editable-element.selected .element-controls {
+    opacity: 1;
+}
+
+.preview-content {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 10px;
+}
+
+.preview-content.drag-over {
+    border: 2px dashed #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+    transform: scale(1.02);
+}
+
+.preview-content.preview-mode .element-controls {
+    display: none !important;
+}
+
+.preview-content.preview-mode .editable-element {
+    border: none !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+
+.contact-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+#canvas.drag-over {
+    outline: 2px dashed #007bff;
+    background-color: #f0f8ff;
+}
+
+.preview-frame.preview-mode .editable-element {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.preview-frame.preview-mode .element-controls {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .editor-container {
+        flex-direction: column;
+    }
+    
+    .components-panel,
+    .properties-panel {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .preview-frame {
+        width: 100%;
+        max-width: 375px;
+        height: 500px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="editor-container">
+    <!-- Components Panel -->
+    <div class="components-panel">
+        <h5 class="mb-4">
+            <i class="fas fa-puzzle-piece me-2"></i>Componentes
+        </h5>
+        
+        <div class="component-category">
+            <h6 class="text-muted mb-3">Básicos</h6>
+            <div class="component-item" draggable="true" data-component="header">
+                <i class="fas fa-heading"></i>
+                <span>Encabezado</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="text">
+                <i class="fas fa-paragraph"></i>
+                <span>Texto</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="image">
+                <i class="fas fa-image"></i>
+                <span>Imagen</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="button">
+                <i class="fas fa-mouse-pointer"></i>
+                <span>Botón</span>
+            </div>
+        </div>
+        
+        <div class="component-category mt-4">
+            <h6 class="text-muted mb-3">Contacto</h6>
+            <div class="component-item" draggable="true" data-component="contact-info">
+                <i class="fas fa-address-card"></i>
+                <span>Info de Contacto</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="social-links">
+                <i class="fas fa-share-alt"></i>
+                <span>Redes Sociales</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="contact-form">
+                <i class="fas fa-envelope"></i>
+                <span>Formulario</span>
+            </div>
+        </div>
+        
+        <div class="component-category mt-4">
+            <h6 class="text-muted mb-3">Contenido</h6>
+            <div class="component-item" draggable="true" data-component="services">
+                <i class="fas fa-concierge-bell"></i>
+                <span>Servicios</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="gallery">
+                <i class="fas fa-images"></i>
+                <span>Galería</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="testimonials">
+                <i class="fas fa-quote-left"></i>
+                <span>Testimonios</span>
+            </div>
+        </div>
+        
+        <div class="component-category mt-4">
+            <h6 class="text-muted mb-3">Layout</h6>
+            <div class="component-item" draggable="true" data-component="divider">
+                <i class="fas fa-minus"></i>
+                <span>Divisor</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="spacer">
+                <i class="fas fa-arrows-alt-v"></i>
+                <span>Espaciador</span>
+            </div>
+            <div class="component-item" draggable="true" data-component="columns">
+                <i class="fas fa-columns"></i>
+                <span>Columnas</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Editor Canvas -->
+    <div class="editor-canvas">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="btn btn-sm btn-outline-primary" id="save-design">
+                <i class="fas fa-save me-1"></i>Guardar
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="preview-btn">
+                <i class="fas fa-eye me-1"></i>Vista Previa
+            </button>
+            <button class="btn btn-sm btn-outline-danger" id="clear-canvas">
+                <i class="fas fa-trash me-1"></i>Limpiar
+            </button>
+            
+            <div class="device-preview">
+                <button class="device-btn active" data-device="mobile">
+                    <i class="fas fa-mobile-alt"></i>
+                </button>
+                <button class="device-btn" data-device="tablet">
+                    <i class="fas fa-tablet-alt"></i>
+                </button>
+                <button class="device-btn" data-device="desktop">
+                    <i class="fas fa-desktop"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Preview Frame -->
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="preview-frame" id="preview-frame">
+                <div class="preview-content" id="canvas">
+                    <!-- Load current card content -->
+                    <div class="editable-element" data-type="header" id="card-header">
+                        <div class="element-controls">
+                            <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                            <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                            <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <h2 class="mb-3">{{ card.name }}</h2>
+                    </div>
+                    
+                    {% if card.job_title or card.company %}
+                    <div class="editable-element" data-type="text" id="card-subtitle">
+                        <div class="element-controls">
+                            <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                            <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                            <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <p class="text-muted">
+                            {% if card.job_title %}{{ card.job_title }}{% endif %}
+                            {% if card.job_title and card.company %} - {% endif %}
+                            {% if card.company %}{{ card.company }}{% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if card.bio %}
+                    <div class="editable-element" data-type="text" id="card-bio">
+                        <div class="element-controls">
+                            <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                            <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                            <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <p>{{ card.bio }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if card.email_public or card.phone or card.location %}
+                    <div class="editable-element" data-type="contact-info" id="card-contact">
+                        <div class="element-controls">
+                            <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                            <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                            <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div class="contact-info">
+                            {% if card.email_public %}
+                            <div class="mb-2">
+                                <i class="fas fa-envelope me-2"></i>{{ card.email_public }}
+                            </div>
+                            {% endif %}
+                            {% if card.phone %}
+                            <div class="mb-2">
+                                <i class="fas fa-phone me-2"></i>{{ card.phone }}
+                            </div>
+                            {% endif %}
+                            {% if card.location %}
+                            <div class="mb-2">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ card.location }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Drop zone for new elements -->
+                    <div class="drop-zone" id="main-drop-zone">
+                        <div class="text-center">
+                            <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                            <p>Arrastra más componentes aquí</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Properties Panel -->
+    <div class="properties-panel">
+        <h5 class="mb-4">
+            <i class="fas fa-cog me-2"></i>Propiedades
+        </h5>
+        
+        <div id="properties-content">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-mouse-pointer fa-2x mb-3"></i>
+                <p>Selecciona un elemento para editar sus propiedades</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Component Templates -->
+<div id="component-templates" style="display: none;">
+    <div id="header-template">
+        <div class="editable-element" data-type="header">
+            <div class="element-controls">
+                <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+            </div>
+            <h2 class="mb-3">Título Principal</h2>
+        </div>
+    </div>
+    
+    <div id="text-template">
+        <div class="editable-element" data-type="text">
+            <div class="element-controls">
+                <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+            </div>
+            <p>Este es un párrafo de texto. Haz clic para editarlo.</p>
+        </div>
+    </div>
+    
+    <div id="button-template">
+        <div class="editable-element" data-type="button">
+            <div class="element-controls">
+                <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+            </div>
+            <button class="btn btn-primary">Botón de Acción</button>
+        </div>
+    </div>
+    
+    <div id="contact-info-template">
+        <div class="editable-element" data-type="contact-info">
+            <div class="element-controls">
+                <button class="control-btn" data-action="edit"><i class="fas fa-edit"></i></button>
+                <button class="control-btn" data-action="duplicate"><i class="fas fa-copy"></i></button>
+                <button class="control-btn" data-action="delete"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="contact-info">
+                <div class="mb-2">
+                    <i class="fas fa-envelope me-2"></i>{{ card.email_public or 'email@ejemplo.com' }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-phone me-2"></i>{{ card.phone or '+1 234 567 8900' }}
+                </div>
+                <div class="mb-2">
+                    <i class="fas fa-map-marker-alt me-2"></i>{{ card.location or 'Ciudad, País' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initial layout JSON injected safely for JS to consume -->
+<script id="initial-layout" type="application/json">{{ (card.custom_layout or '')|tojson }}</script>
+
+<script>
+// Inject initial saved layout from server (read from JSON script tag)
+const _initialLayoutEl = document.getElementById('initial-layout');
+const INITIAL_LAYOUT = _initialLayoutEl ? JSON.parse(_initialLayoutEl.textContent || '""') : "";
+class VisualEditor {
+    constructor() {
+        this.selectedElement = null;
+        this.canvas = document.getElementById('canvas');
+        this.propertiesPanel = document.getElementById('properties-content');
+        this.previewFrame = document.getElementById('preview-frame');
+        // Preserve original server-rendered HTML to use as a fallback
+        this.originalHTML = this.canvas ? this.canvas.innerHTML : '';
+        
+        console.log('VisualEditor initialized');
+        console.log('Canvas:', this.canvas);
+        console.log('Properties Panel:', this.propertiesPanel);
+        
+        this.init();
+    }
+    
+    init() {
+        this.initDragAndDrop();
+        this.initEventListeners();
+        this.initSortable();
+        
+        // Load saved layout if present
+        this.loadSavedLayout();
+    }
+    
+    initDragAndDrop() {
+        const components = document.querySelectorAll('.component-item');
+        
+        components.forEach(component => {
+            component.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('component-type', component.dataset.component);
+            });
+        });
+        
+        // Make canvas droppable
+        this.canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            this.canvas.classList.add('drag-over');
+        });
+        
+        this.canvas.addEventListener('dragleave', (e) => {
+            if (!this.canvas.contains(e.relatedTarget)) {
+                this.canvas.classList.remove('drag-over');
+            }
+        });
+        
+        this.canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.canvas.classList.remove('drag-over');
+            
+            const componentType = e.dataTransfer.getData('component-type');
+            if (componentType) {
+                this.addComponent(componentType);
+            }
+        });
+    }
+    
+    initSortable() {
+        // Simple HTML5 drag & drop reordering within the canvas
+        this.draggedElement = null;
+
+        // Allow dropping into empty canvas area
+        this.canvas.addEventListener('dragover', (e) => {
+            if (!this.draggedElement) return;
+            e.preventDefault();
+        });
+        this.canvas.addEventListener('drop', (e) => {
+            if (!this.draggedElement) return;
+            e.preventDefault();
+            // Append at end if dropped on empty area
+            this.canvas.appendChild(this.draggedElement);
+            this.updateLayout();
+        });
+    }
+    
+    addComponent(type) {
+        const template = document.getElementById(`${type}-template`);
+        if (!template) {
+            console.error(`Template for ${type} not found`);
+            return;
+        }
+        
+        // Clone the actual editable element, regardless of wrapper structure
+        let element = null;
+        if (template.firstElementChild && template.firstElementChild.classList && template.firstElementChild.classList.contains('editable-element')) {
+            element = template.firstElementChild.cloneNode(true);
+        } else if (template.classList && template.classList.contains('editable-element')) {
+            element = template.cloneNode(true);
+        } else {
+            const inner = template.querySelector('.editable-element');
+            if (inner) element = inner.cloneNode(true);
+        }
+        if (!element) {
+            console.error('Editable element not found inside template for', type);
+            return;
+        }
+        element.id = `element-${Date.now()}`;
+        element.style.display = '';
+        
+        // Remove main drop zone if this is the first element
+        const dropZone = document.getElementById('main-drop-zone');
+        if (dropZone) {
+            dropZone.remove();
+        }
+        
+        this.canvas.appendChild(element);
+        this.attachElementListeners(element);
+        this.updateLayout();
+    }
+    
+    initializeExistingElements() {
+        console.log('Initializing existing elements');
+        // Only initialize visible elements (not templates)
+        const existingElements = document.querySelectorAll('.editable-element:not([style*="display: none"]):not([id$="-template"])');
+        console.log('Found', existingElements.length, 'visible elements');
+        
+        existingElements.forEach((element, index) => {
+            // Skip if element is inside a hidden container
+            const hiddenParent = element.closest('[style*="display: none"]');
+            if (!hiddenParent) {
+                console.log(`Initializing element ${index}:`, element);
+                this.attachElementListeners(element);
+            }
+        });
+    }
+    
+    attachElementListeners(element) {
+        console.log('Attaching listeners to:', element);
+        
+        if (!element.classList.contains('editable-element')) {
+            console.log('Element is not editable, skipping');
+            return;
+        }
+        
+        // Click to select element
+        element.onclick = (e) => {
+            e.stopPropagation();
+            console.log('Element clicked:', element);
+            this.selectElement(element);
+        };
+        
+        // Control buttons - use event delegation for better reliability
+        const controlBtns = element.querySelectorAll('.control-btn');
+        console.log('Found', controlBtns.length, 'control buttons');
+        
+        controlBtns.forEach((btn, index) => {
+            console.log(`Setting up button ${index}:`, btn, 'Action:', btn.dataset.action);
+            
+            // Remove any existing listeners to prevent duplicates
+            btn.onclick = null;
+            
+            // Use only addEventListener for clean event handling
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const action = btn.dataset.action;
+                console.log('Button clicked! Action:', action, 'Element:', element);
+                this.handleElementAction(action, element);
+            });
+        });
+
+        // Enable drag-and-drop reordering for this element
+        element.setAttribute('draggable', 'true');
+        element.addEventListener('dragstart', (e) => {
+            this.draggedElement = element;
+            e.dataTransfer.effectAllowed = 'move';
+            // Needed for Firefox
+            e.dataTransfer.setData('text/plain', element.id || 'drag');
+            element.classList.add('dragging');
+        });
+        element.addEventListener('dragend', () => {
+            if (this.draggedElement === element) {
+                this.draggedElement = null;
+            }
+            element.classList.remove('dragging');
+            this.updateLayout();
+        });
+        element.addEventListener('dragover', (e) => {
+            if (!this.draggedElement || this.draggedElement === element) return;
+            e.preventDefault();
+            const rect = element.getBoundingClientRect();
+            const before = (e.clientY - rect.top) < rect.height / 2;
+            const parent = this.canvas;
+            if (before) {
+                if (this.draggedElement.nextSibling !== element) {
+                    parent.insertBefore(this.draggedElement, element);
+                }
+            } else {
+                if (element.nextSibling !== this.draggedElement) {
+                    parent.insertBefore(this.draggedElement, element.nextSibling);
+                }
+            }
+        });
+    }
+    
+    selectElement(element) {
+        console.log('Selecting element:', element);
+        
+        // Clear previous selection
+        document.querySelectorAll('.editable-element.selected').forEach(el => {
+            el.classList.remove('selected');
+            console.log('Removed selection from:', el);
+        });
+        
+        // Select new element
+        element.classList.add('selected');
+        this.selectedElement = element;
+        console.log('Element selected, classList:', element.classList);
+        
+        // Show visual feedback
+        element.style.border = '2px solid #007bff';
+        element.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+        
+        // Show properties panel for the selected element
+        this.showProperties(element);
+    }
+    
+    showProperties(element) {
+        const type = element.dataset.type;
+        console.log('Showing properties for type:', type);
+        
+        // Build form based on type
+        let fields = '';
+        if (type === 'header') {
+            const header = element.querySelector('h1, h2, h3, h4');
+            const text = header ? header.textContent.trim() : '';
+            const tag = header ? header.tagName.toLowerCase() : 'h2';
+            const color = header ? (header.style.color || '#000000') : '#000000';
+            fields = `
+                <div class="mb-3">
+                    <label class="form-label">Texto</label>
+                    <input class="form-control" name="text" value="${text}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tamaño</label>
+                    <select class="form-select" name="size">
+                        <option value="h1" ${tag==='h1'?'selected':''}>H1</option>
+                        <option value="h2" ${tag==='h2'?'selected':''}>H2</option>
+                        <option value="h3" ${tag==='h3'?'selected':''}>H3</option>
+                        <option value="h4" ${tag==='h4'?'selected':''}>H4</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Color</label>
+                    <input class="form-control form-control-color" type="color" name="color" value="${color}">
+                </div>`;
+        } else if (type === 'text') {
+            const p = element.querySelector('p');
+            const txt = p ? p.textContent.trim() : '';
+            const fontSize = p ? (p.style.fontSize || '') : '';
+            const color = p ? (p.style.color || '#000000') : '#000000';
+            fields = `
+                <div class="mb-3">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" rows="3" name="text">${txt}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tamaño de fuente (ej. 16px)</label>
+                    <input class="form-control" name="fontSize" value="${fontSize}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Color</label>
+                    <input class="form-control form-control-color" type="color" name="color" value="${color}">
+                </div>`;
+        } else if (type === 'button') {
+            const btn = element.querySelector('button');
+            const text = btn ? btn.textContent.trim() : '';
+            const style = btn ? (Array.from(btn.classList).find(c => c.startsWith('btn-') && c !== 'btn') || 'btn-primary') : 'btn-primary';
+            fields = `
+                <div class="mb-3">
+                    <label class="form-label">Texto</label>
+                    <input class="form-control" name="text" value="${text}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Estilo</label>
+                    <select class="form-select" name="style">
+                        <option value="btn-primary" ${style==='btn-primary'?'selected':''}>Primario</option>
+                        <option value="btn-secondary" ${style==='btn-secondary'?'selected':''}>Secundario</option>
+                        <option value="btn-success" ${style==='btn-success'?'selected':''}>Éxito</option>
+                        <option value="btn-danger" ${style==='btn-danger'?'selected':''}>Peligro</option>
+                        <option value="btn-warning" ${style==='btn-warning'?'selected':''}>Advertencia</option>
+                        <option value="btn-info" ${style==='btn-info'?'selected':''}>Info</option>
+                        <option value="btn-dark" ${style==='btn-dark'?'selected':''}>Oscuro</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Enlace (opcional)</label>
+                    <input class="form-control" name="link" placeholder="https://...">
+                </div>`;
+        } else if (type === 'contact-info') {
+            fields = `
+                <div class="alert alert-info">Este bloque se rellena con los datos de tu tarjeta. Edítalos desde el perfil.</div>`;
+        } else {
+            fields = `<div class="alert alert-warning">Propiedades no disponibles para este tipo.</div>`;
+        }
+
+        const propertiesHTML = `
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>Elemento seleccionado: ${this.getTypeName(type)}
+            </div>
+            <h6 class="mb-3">Propiedades de ${this.getTypeName(type)}</h6>
+            <form id="properties-form">
+                ${fields}
+                <div class="d-flex">
+                    <button type="submit" class="btn btn-primary btn-sm me-2">
+                        <i class="fas fa-check me-1"></i>Aplicar cambios
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm me-2" id="prop-duplicate">
+                        <i class="fas fa-copy me-1"></i>Duplicar
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="prop-delete">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+            </form>`;
+
+        this.propertiesPanel.innerHTML = propertiesHTML;
+
+        // Wire up actions
+        const form = document.getElementById('properties-form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.applyProperties();
+            this.updateLayout();
+            this.showNotification('✅ Propiedades aplicadas', 'success');
+        });
+        const dupBtn = document.getElementById('prop-duplicate');
+        if (dupBtn) dupBtn.addEventListener('click', () => this.duplicateElement(this.selectedElement));
+        const delBtn = document.getElementById('prop-delete');
+        if (delBtn) delBtn.addEventListener('click', () => this.deleteElement());
+    }
+    
+    getTypeName(type) {
+        const names = {
+            'header': 'Encabezado',
+            'text': 'Texto',
+            'button': 'Botón',
+            'contact-info': 'Info de Contacto'
+        };
+        return names[type] || type;
+    }
+    
+    applyProperties() {
+        if (!this.selectedElement) return;
+        
+        const form = document.getElementById('properties-form');
+        const formData = new FormData(form);
+        const type = this.selectedElement.dataset.type;
+        
+        switch(type) {
+            case 'header':
+                const currentHeader = this.selectedElement.querySelector('h1, h2, h3, h4');
+                const newSize = formData.get('size');
+                
+                // Create new header element with selected size
+                const newHeader = document.createElement(newSize);
+                newHeader.textContent = formData.get('text');
+                if (currentHeader && currentHeader.className) newHeader.className = currentHeader.className;
+                if (formData.get('color')) newHeader.style.color = formData.get('color');
+                
+                if (currentHeader) {
+                    currentHeader.replaceWith(newHeader);
+                } else {
+                    this.selectedElement.appendChild(newHeader);
+                }
+                break;
+            
+            case 'text':
+                const text = this.selectedElement.querySelector('p');
+                text.textContent = formData.get('text');
+                text.style.fontSize = formData.get('fontSize');
+                if (formData.get('color')) text.style.color = formData.get('color');
+                break;
+            
+            case 'button':
+                const button = this.selectedElement.querySelector('button');
+                button.textContent = formData.get('text');
+                button.className = `btn ${formData.get('style')}`;
+                if (formData.get('link')) {
+                    button.onclick = () => window.open(formData.get('link'), '_blank');
+                } else {
+                    button.onclick = null;
+                }
+                break;
+        }
+
+        // After applying, update layout
+        this.updateLayout();
+    }
+    
+    handleElementAction(action, element) {
+        console.log('handleElementAction called with action:', action, 'element:', element);
+        
+        switch(action) {
+            case 'edit':
+                console.log('Edit action - calling editElement function');
+                this.editElement(element);
+                break;
+            case 'duplicate':
+                console.log('Duplicate action - calling duplicateElement function');
+                this.duplicateElement(element);
+                break;
+            case 'delete':
+                console.log('Delete action - calling deleteElement function');
+                if (confirm('¿Eliminar este elemento?')) {
+                    this.deleteElementDirectly(element);
+                }
+                break;
+            default:
+                console.log('Unknown action:', action);
+        }
+    }
+    
+    duplicateElement(element) {
+        console.log('Duplicating element:', element);
+        
+        if (!element) {
+            alert('No hay elemento seleccionado para duplicar');
+            return;
+        }
+        
+        const clone = element.cloneNode(true);
+        clone.id = `element-${Date.now()}`;
+        
+        // Insert after the original element
+        element.parentNode.insertBefore(clone, element.nextSibling);
+        
+        // Attach listeners to the new element
+        this.attachElementListeners(clone);
+        
+        console.log('Element duplicated successfully');
+        alert('✅ Elemento duplicado correctamente');
+        this.updateLayout();
+    }
+    
+    deleteElement() {
+        if (!this.selectedElement) {
+            alert('No hay elemento seleccionado para eliminar');
+            return;
+        }
+        
+        if (confirm('¿Estás seguro de que quieres eliminar este elemento?')) {
+            this.deleteElementDirectly(this.selectedElement);
+        }
+    }
+    
+    deleteElementDirectly(element) {
+        console.log('Deleting element:', element);
+        
+        // Remove the element
+        element.remove();
+        
+        // Clear selection
+        this.selectedElement = null;
+        
+        // Reset properties panel
+        this.propertiesPanel.innerHTML = `
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-mouse-pointer fa-2x mb-3"></i>
+                <p>Selecciona un elemento para editar sus propiedades</p>
+            </div>
+        `;
+        
+        console.log('Element deleted successfully');
+        alert('🗑️ Elemento eliminado correctamente');
+        this.updateLayout();
+    }
+    
+    editElement(element) {
+        if (!element) {
+            alert('No hay elemento seleccionado para editar');
+            return;
+        }
+        
+        console.log('Editing element:', element);
+        const type = element.dataset.type;
+        
+        switch(type) {
+            case 'header':
+                this.editHeader(element);
+                break;
+            case 'text':
+                this.editText(element);
+                break;
+            case 'contact-info':
+                this.editContactInfo(element);
+                break;
+            default:
+                alert('Tipo de elemento no soportado para edición: ' + type);
+        }
+    }
+    
+    editHeader(element) {
+        const headerElement = element.querySelector('h1, h2, h3, h4');
+        if (!headerElement) return;
+        
+        console.log('Starting inline edit for header');
+        this.startInlineEdit(headerElement, 'header');
+    }
+    
+    editText(element) {
+        const textElement = element.querySelector('p');
+        if (!textElement) return;
+        
+        console.log('Starting inline edit for text');
+        this.startInlineEdit(textElement, 'text');
+    }
+    
+    editContactInfo(element) {
+        console.log('Contact info editing - coming soon');
+        this.showTempMessage('La edición de información de contacto estará disponible próximamente', 'info');
+    }
+    
+    startInlineEdit(element, type) {
+        console.log('Starting inline edit for:', element, 'type:', type);
+        
+        // Store original content and style
+        const originalText = element.textContent;
+        const originalStyle = {
+            border: element.style.border,
+            backgroundColor: element.style.backgroundColor,
+            padding: element.style.padding
+        };
+        
+        // Make element editable
+        element.contentEditable = true;
+        element.style.border = '2px solid #28a745';
+        element.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+        element.style.padding = '8px';
+        element.focus();
+        
+        // Select all text
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // Show editing message
+        this.showTempMessage('✏️ Editando... Presiona Enter para guardar o Escape para cancelar', 'info');
+        
+        // Handle save/cancel
+        const saveEdit = () => {
+            element.contentEditable = false;
+            element.style.border = originalStyle.border;
+            element.style.backgroundColor = originalStyle.backgroundColor;
+            element.style.padding = originalStyle.padding;
+            
+            const newText = element.textContent.trim();
+            if (newText !== originalText && newText !== '') {
+                console.log('Content saved:', newText);
+                this.showTempMessage('✅ Cambios guardados correctamente', 'success');
+                // Update layout state after inline edit
+                this.updateLayout();
+            } else if (newText === '') {
+                element.textContent = originalText;
+                this.showTempMessage('❌ No se puede dejar vacío, cambios cancelados', 'warning');
+            } else {
+                this.showTempMessage('ℹ️ Sin cambios', 'info');
+            }
+            
+            element.removeEventListener('keydown', keyHandler);
+            element.removeEventListener('blur', blurHandler);
+        };
+        
+        const cancelEdit = () => {
+            element.contentEditable = false;
+            element.textContent = originalText;
+            element.style.border = originalStyle.border;
+            element.style.backgroundColor = originalStyle.backgroundColor;
+            element.style.padding = originalStyle.padding;
+            
+            this.showTempMessage('❌ Edición cancelada', 'warning');
+            
+            element.removeEventListener('keydown', keyHandler);
+            element.removeEventListener('blur', blurHandler);
+        };
+        
+        const keyHandler = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveEdit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit();
+            }
+        };
+        
+        const blurHandler = () => {
+            saveEdit();
+        };
+        
+        element.addEventListener('keydown', keyHandler);
+        element.addEventListener('blur', blurHandler);
+    }
+    
+    showTempMessage(message, type = 'info') {
+        const alertClass = type === 'success' ? 'alert-success' : 
+                          type === 'warning' ? 'alert-warning' : 
+                          type === 'error' ? 'alert-danger' : 'alert-info';
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert ${alertClass} position-fixed`;
+        messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close float-end" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(messageDiv);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 3000);
+    }
+    
+    updateLayout() {
+        // Save layout state
+        const layout = Array.from(this.canvas.querySelectorAll('.editable-element')).map(el => {
+            return {
+                id: el.id,
+                type: el.dataset.type,
+                content: this.getElementContent(el)
+            };
+        });
+        
+        console.log('Layout updated:', layout);
+        // Store in localStorage for persistence
+        localStorage.setItem(`card_layout_{{ card.id }}`, JSON.stringify(layout));
+    }
+    
+    getElementContent(element) {
+        const type = element.dataset.type;
+        // Extract relevant content based on type
+        switch(type) {
+            case 'header':
+                const header = element.querySelector('h1, h2, h3, h4');
+                return header ? header.textContent : '';
+            case 'text':
+                const text = element.querySelector('p');
+                return text ? text.textContent : '';
+            case 'button':
+                const button = element.querySelector('button');
+                return button ? button.textContent : '';
+            default:
+                return element.textContent || '';
+        }
+    }
+    
+    loadSavedLayout() {
+        try {
+            if (INITIAL_LAYOUT && INITIAL_LAYOUT.trim().length > 0) {
+                console.log('Loading saved server layout...');
+                this.canvas.innerHTML = INITIAL_LAYOUT;
+                // If loaded layout has no editable elements, fallback to original server-rendered HTML
+                if (this.canvas.querySelectorAll('.editable-element').length === 0) {
+                    console.warn('Loaded layout contains no editable elements. Restoring original content.');
+                    this.canvas.innerHTML = this.originalHTML || this.canvas.innerHTML;
+                }
+                // If still empty, ensure a drop zone exists
+                if (this.canvas.querySelectorAll('.editable-element').length === 0 && !this.canvas.querySelector('#main-drop-zone')) {
+                    this.canvas.innerHTML = `
+                        <div class="drop-zone" id="main-drop-zone">
+                            <div class="text-center">
+                                <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                                <p>Arrastra componentes aquí para empezar</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                // Reattach listeners to loaded elements
+                this.initializeExistingElements();
+                return;
+            } else {
+                // No saved layout; keep original server-rendered content and initialize it
+                console.log('No saved layout. Using original server-rendered content.');
+                if (this.canvas.querySelectorAll('.editable-element').length === 0 && this.originalHTML) {
+                    this.canvas.innerHTML = this.originalHTML;
+                }
+                this.initializeExistingElements();
+                return;
+            }
+            // Fallback to localStorage (optional)
+            const local = localStorage.getItem(`card_layout_{{ card.id }}`);
+            if (local) {
+                console.log('Loading layout from localStorage...');
+                // For now we don't reconstruct from JSON snapshot; keep server layout source of truth
+            }
+        } catch (e) {
+            console.error('Error loading saved layout:', e);
+        }
+    }
+    
+    togglePreviewMode() {
+        const isActive = this.previewFrame.classList.toggle('preview-mode');
+        const btn = document.getElementById('preview-btn');
+        if (btn) {
+            btn.classList.toggle('btn-outline-secondary', !isActive);
+            btn.classList.toggle('btn-primary', isActive);
+            btn.innerHTML = isActive 
+                ? '<i class="fas fa-eye-slash me-1"></i>Salir Previa'
+                : '<i class="fas fa-eye me-1"></i>Vista Previa';
+        }
+    }
+    
+    saveDesign() {
+        console.log('Saving design...');
+        const layout = this.canvas.innerHTML;
+        
+        fetch(`/dashboard/cards/{{ card.id }}/save-design`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ layout })
+        })
+        .then(async (response) => {
+            const data = await response.json().catch(() => ({ success: false, error: 'Respuesta inválida' }));
+            if (response.ok && data.success) {
+                this.showNotification('✅ Diseño guardado exitosamente', 'success');
+            } else {
+                this.showNotification('❌ Error al guardar: ' + (data.error || response.statusText), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.showNotification('❌ Error de conexión al guardar', 'error');
+        });
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <span>${message}</span>
+                <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
+    initEventListeners() {
+        // Click outside to deselect
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.editable-element') && !e.target.closest('.properties-panel')) {
+                document.querySelectorAll('.editable-element.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                this.selectedElement = null;
+            }
+        });
+        
+        // Toolbar buttons
+        document.getElementById('save-design').addEventListener('click', () => {
+            this.saveDesign();
+        });
+        
+        const previewBtn = document.getElementById('preview-btn');
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => {
+                this.togglePreviewMode();
+            });
+        }
+        
+        document.getElementById('clear-canvas').addEventListener('click', () => {
+            if (confirm('¿Estás seguro de que quieres limpiar todo el diseño?')) {
+                this.canvas.innerHTML = `
+                    <div class="drop-zone" id="main-drop-zone">
+                        <div class="text-center">
+                            <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                            <p>Arrastra componentes aquí para empezar</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        // Device preview buttons
+        document.querySelectorAll('.device-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const device = btn.dataset.device;
+                this.switchDevice(device);
+            });
+        });
+    }
+    
+    switchDevice(device) {
+        const frame = this.previewFrame;
+        
+        switch(device) {
+            case 'mobile':
+                frame.style.width = '375px';
+                frame.style.height = '667px';
+                break;
+            case 'tablet':
+                frame.style.width = '768px';
+                frame.style.height = '1024px';
+                break;
+            case 'desktop':
+                frame.style.width = '1200px';
+                frame.style.height = '800px';
+                break;
+        }
+    }
+}
+
+// Initialize editor when page loads
+let editor;
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing editor');
+    editor = new VisualEditor();
+    console.log('Editor initialized:', editor);
+});
+</script>
+{% endblock %}

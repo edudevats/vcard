@@ -1,0 +1,173 @@
+{# Componente para mostrar vista previa de temas #}
+{% macro render_theme_preview(theme, size='medium', interactive=false) %}
+    {% set sizes = {
+        'small': {'width': '150px', 'height': '200px', 'avatar': '30px', 'title': '12px', 'btn_padding': '3px 6px', 'btn_font': '7px'},
+        'medium': {'width': '200px', 'height': '280px', 'avatar': '50px', 'title': '14px', 'btn_padding': '6px 10px', 'btn_font': '9px'},
+        'large': {'width': '280px', 'height': '380px', 'avatar': '70px', 'title': '18px', 'btn_padding': '8px 12px', 'btn_font': '11px'}
+    } %}
+    {% set s = sizes[size] %}
+    
+    <div class="theme-preview {{ 'interactive' if interactive else '' }}" style="
+        width: {{ s.width }};
+        height: {{ s.height }};
+        background: linear-gradient(135deg, {{ theme.primary_color }}, {{ theme.secondary_color }});
+        border-radius: {{ '15px' if size == 'small' else '20px' if size == 'medium' else '25px' }};
+        padding: {{ '12px' if size == 'small' else '16px' if size == 'medium' else '20px' }};
+        position: relative;
+        overflow: hidden;
+        cursor: {{ 'pointer' if interactive else 'default' }};
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        font-family: {{ theme.font_family }}, sans-serif;
+    ">
+        
+        {# Card content container #}
+        <div style="
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: {{ '12px' if size == 'small' else '16px' if size == 'medium' else '20px' }};
+            padding: {{ '12px' if size == 'small' else '16px' if size == 'medium' else '20px' }};
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        ">
+            
+            {# Avatar #}
+            <div style="
+                width: {{ s.avatar }};
+                height: {{ s.avatar }};
+                margin-bottom: {{ '8px' if size == 'small' else '12px' if size == 'medium' else '16px' }};
+                {% if theme.avatar_shape == 'circle' %}
+                border-radius: 50%;
+                {% elif theme.avatar_shape == 'rounded' %}
+                border-radius: {{ '6px' if size == 'small' else '10px' if size == 'medium' else '14px' }};
+                {% else %}
+                border-radius: {{ '3px' if size == 'small' else '5px' if size == 'medium' else '7px' }};
+                {% endif %}
+                background: linear-gradient(135deg, {{ theme.primary_color }}, {{ theme.secondary_color }});
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: {{ ('12px' if size == 'small' else '18px' if size == 'medium' else '24px') }};
+                border: {{ '1px' if size == 'small' else '2px' if size == 'medium' else '3px' }} solid white;
+                box-shadow: 0 {{ '2px 6px' if size == 'small' else '3px 8px' if size == 'medium' else '5px 12px' }} rgba(0,0,0,0.15);
+            ">
+                <i class="fas fa-user"></i>
+            </div>
+            
+            {# Name #}
+            <div style="
+                color: {{ theme.primary_color }};
+                font-size: {{ s.title }};
+                font-weight: 700;
+                margin-bottom: {{ '2px' if size == 'small' else '4px' if size == 'medium' else '6px' }};
+                line-height: 1.2;
+            ">Nombre</div>
+            
+            {# Job Title #}
+            <div style="
+                color: #666;
+                font-size: {{ ('8px' if size == 'small' else '10px' if size == 'medium' else '12px') }};
+                margin-bottom: {{ '8px' if size == 'small' else '12px' if size == 'medium' else '16px' }};
+            ">Profesión</div>
+            
+            {# Action Buttons #}
+            <div style="display: flex; flex-direction: column; gap: {{ '3px' if size == 'small' else '5px' if size == 'medium' else '7px' }}; width: 100%;">
+                <div style="
+                    background: linear-gradient(135deg, {{ theme.primary_color }}, {{ theme.secondary_color }});
+                    color: white;
+                    padding: {{ s.btn_padding }};
+                    border-radius: {{ '8px' if size == 'small' else '12px' if size == 'medium' else '16px' }};
+                    font-size: {{ s.btn_font }};
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: {{ '0.3px' if size == 'small' else '0.5px' if size == 'medium' else '0.8px' }};
+                    text-align: center;
+                ">CONTACTO</div>
+                
+                <div style="
+                    background: linear-gradient(135deg, {{ theme.secondary_color }}, {{ theme.accent_color }});
+                    color: white;
+                    padding: {{ s.btn_padding }};
+                    border-radius: {{ '8px' if size == 'small' else '12px' if size == 'medium' else '16px' }};
+                    font-size: {{ s.btn_font }};
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: {{ '0.3px' if size == 'small' else '0.5px' if size == 'medium' else '0.8px' }};
+                    text-align: center;
+                ">SERVICIOS</div>
+                
+                <div style="
+                    background: transparent;
+                    color: {{ theme.primary_color }};
+                    border: 1px solid {{ theme.primary_color }}60;
+                    padding: {{ s.btn_padding }};
+                    border-radius: {{ '8px' if size == 'small' else '12px' if size == 'medium' else '16px' }};
+                    font-size: {{ s.btn_font }};
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: {{ '0.3px' if size == 'small' else '0.5px' if size == 'medium' else '0.8px' }};
+                    text-align: center;
+                ">UBICACIÓN</div>
+            </div>
+            
+            {# Theme name badge #}
+            <div style="
+                position: absolute;
+                bottom: {{ '4px' if size == 'small' else '6px' if size == 'medium' else '8px' }};
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: {{ '1px 4px' if size == 'small' else '2px 6px' if size == 'medium' else '3px 8px' }};
+                border-radius: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }};
+                font-size: {{ ('6px' if size == 'small' else '8px' if size == 'medium' else '10px') }};
+                font-weight: 600;
+                white-space: nowrap;
+                max-width: 90%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            ">{{ theme.name }}</div>
+        </div>
+        
+        {# Layout indicator #}
+        <div style="
+            position: absolute;
+            top: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }};
+            right: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }};
+            background: rgba(255,255,255,0.9);
+            color: {{ theme.primary_color }};
+            padding: {{ '2px 4px' if size == 'small' else '3px 6px' if size == 'medium' else '4px 8px' }};
+            border-radius: 4px;
+            font-size: {{ ('6px' if size == 'small' else '7px' if size == 'medium' else '8px') }};
+            font-weight: 600;
+            text-transform: capitalize;
+        ">{{ theme.layout }}</div>
+        
+        {# Color palette indicator #}
+        <div style="
+            position: absolute;
+            top: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }};
+            left: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }};
+            display: flex;
+            gap: 1px;
+        ">
+            <div style="width: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }}; height: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }}; background: {{ theme.primary_color }}; border-radius: 2px;"></div>
+            <div style="width: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }}; height: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }}; background: {{ theme.secondary_color }}; border-radius: 2px;"></div>
+            <div style="width: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }}; height: {{ '6px' if size == 'small' else '8px' if size == 'medium' else '10px' }}; background: {{ theme.accent_color }}; border-radius: 2px;"></div>
+        </div>
+    </div>
+    
+    {% if interactive %}
+    <style>
+    .theme-preview.interactive:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    </style>
+    {% endif %}
+{% endmacro %}
