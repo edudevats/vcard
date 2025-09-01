@@ -62,12 +62,13 @@ def new_user():
             is_active=form.is_active.data,
             max_cards=form.max_cards.data
         )
-        user.set_password(form.password.data)
+        password = form.password.data
+        user.set_password(password)
         
         db.session.add(user)
         db.session.commit()
         
-        flash(f'¡Usuario {user.email} creado exitosamente!', 'success')
+        flash(f'¡Usuario {user.email} creado exitosamente! Contraseña: {password}', 'success')
         return redirect(url_for('admin.users'))
     
     return render_template('admin/user_form.html', form=form, title='Nuevo Usuario')
@@ -315,6 +316,16 @@ def toggle_user_status(id):
 def pending_approvals():
     """Show pending user approval requests"""
     pending_users = User.query.filter_by(is_approved=False, is_suspended=False).order_by(User.created_at.desc()).all()
+    
+    # Calculate days waiting for each user
+    from datetime import datetime
+    today = datetime.utcnow().date()
+    for user in pending_users:
+        if user.created_at:
+            user.days_waiting = (today - user.created_at.date()).days
+        else:
+            user.days_waiting = 0
+    
     return render_template('admin/pending_approvals.html', pending_users=pending_users)
 
 @bp.route('/approve-user/<int:user_id>', methods=['POST'])

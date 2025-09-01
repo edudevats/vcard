@@ -4,60 +4,127 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
+    <div class="col-md-8 col-lg-6">
         <div class="card">
             <div class="card-body p-4">
                 <div class="text-center mb-4">
                     <i class="fas fa-id-card-alt fa-3x text-primary mb-3"></i>
-                    <h4 class="card-title">Iniciar Sesión</h4>
-                    <p class="text-muted">Accede a tu cuenta de VCard</p>
+                    <h4 class="card-title">VCard</h4>
+                    <p class="text-muted">Accede a tu cuenta o regístrate</p>
                 </div>
                 
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <div class="mb-3">
-                        {{ form.email.label(class="form-label") }}
-                        {{ form.email() }}
-                        {% if form.email.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.email.errors %}
-                                    <div>{{ error }}</div>
-                                {% endfor %}
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs nav-fill mb-3" id="authTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" 
+                                type="button" role="tab" aria-controls="login" aria-selected="true">
+                            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" 
+                                type="button" role="tab" aria-controls="register" aria-selected="false">
+                            <i class="fas fa-user-plus me-2"></i>Registrarse
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content" id="authTabsContent">
+                    <!-- Login Tab -->
+                    <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+                        <form method="POST">
+                            {{ login_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                {{ login_form.email.label(class="form-label") }}
+                                {{ login_form.email() }}
+                                {% if login_form.email.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in login_form.email.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password() }}
-                        {% if form.password.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.password.errors %}
-                                    <div>{{ error }}</div>
-                                {% endfor %}
+                            
+                            <div class="mb-3">
+                                {{ login_form.password.label(class="form-label") }}
+                                {{ login_form.password() }}
+                                {% if login_form.password.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in login_form.password.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
+                            
+                            <div class="mb-3 form-check">
+                                {{ login_form.remember_me() }}
+                                {{ login_form.remember_me.label(class="form-check-label") }}
+                            </div>
+                            
+                            {{ login_form.submit() }}
+                        </form>
+                        
+                        <div class="text-center mt-3">
+                            <p class="text-muted mb-0">
+                                <a href="{{ url_for('auth.forgot_password') }}" class="text-primary">¿Olvidaste tu contraseña?</a>
+                            </p>
+                        </div>
                     </div>
-                    
-                    <div class="mb-3 form-check">
-                        {{ form.remember_me() }}
-                        {{ form.remember_me.label(class="form-check-label") }}
+
+                    <!-- Register Tab -->
+                    <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+                        <form method="POST">
+                            {{ register_form.hidden_tag() }}
+                            
+                            <div class="mb-3">
+                                {{ register_form.email.label(class="form-label") }}
+                                {{ register_form.email() }}
+                                {% if register_form.email.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in register_form.email.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ register_form.password.label(class="form-label") }}
+                                {{ register_form.password() }}
+                                <div class="form-text">Mínimo 6 caracteres</div>
+                                {% if register_form.password.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in register_form.password.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ register_form.password2.label(class="form-label") }}
+                                {{ register_form.password2() }}
+                                {% if register_form.password2.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in register_form.password2.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {{ register_form.submit() }}
+                        </form>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Tu cuenta será revisada por un administrador antes de ser activada.</small>
+                        </div>
                     </div>
-                    
-                    {{ form.submit() }}
-                </form>
-                
-                <div class="text-center mt-3">
-                    <p class="text-muted mb-2">
-                        <a href="{{ url_for('auth.forgot_password') }}" class="text-primary">¿Olvidaste tu contraseña?</a>
-                    </p>
-                    {% if config.ALLOW_SIGNUP %}
-                    <p class="text-muted">
-                        ¿No tienes cuenta? 
-                        <a href="{{ url_for('auth.register') }}" class="text-primary">Regístrate aquí</a>
-                    </p>
-                    {% endif %}
                 </div>
             </div>
         </div>

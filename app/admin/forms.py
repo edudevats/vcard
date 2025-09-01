@@ -36,9 +36,6 @@ class NewUserForm(FlaskForm):
                        render_kw={'class': 'form-control'})
     password = PasswordField('Contraseña', validators=[DataRequired()],
                            render_kw={'class': 'form-control'})
-    password2 = PasswordField('Confirmar Contraseña', 
-                             validators=[DataRequired(), EqualTo('password')],
-                             render_kw={'class': 'form-control'})
     role = SelectField('Rol', validators=[DataRequired()],
                       choices=[('user', 'Usuario'), ('admin', 'Administrador')],
                       render_kw={'class': 'form-select'})

@@ -67,6 +67,7 @@
                                             </div>
                                         {% endif %}
                                     </div>
+                                    {% if user %}
                                     <div class="col-md-6 mb-3">
                                         {{ form.password2.label(class="form-label") }}
                                         {{ form.password2() }}
@@ -78,6 +79,7 @@
                                             </div>
                                         {% endif %}
                                     </div>
+                                    {% endif %}
                                 </div>
                                 
                                 <!-- Role and Status -->

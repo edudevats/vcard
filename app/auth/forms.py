@@ -10,7 +10,7 @@ class LoginForm(FlaskForm):
     password = PasswordField('Contraseña', validators=[DataRequired()],
                             render_kw={'class': 'form-control', 'placeholder': 'Tu contraseña'})
     remember_me = BooleanField('Recordarme', render_kw={'class': 'form-check-input'})
-    submit = SubmitField('Iniciar Sesión', render_kw={'class': 'btn btn-primary btn-lg w-100'})
+    submit = SubmitField('Iniciar Sesión', render_kw={'class': 'btn btn-primary btn-lg w-100', 'name': 'login_submit'})
 
 class RegistrationForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()],
@@ -20,7 +20,7 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField('Confirmar Contraseña', 
                              validators=[DataRequired(), EqualTo('password')],
                              render_kw={'class': 'form-control', 'placeholder': 'Repite tu contraseña'})
-    submit = SubmitField('Registrarse', render_kw={'class': 'btn btn-success btn-lg w-100'})
+    submit = SubmitField('Registrarse', render_kw={'class': 'btn btn-success btn-lg w-100', 'name': 'register_submit'})
 
     def validate_email(self, email):
         if not validate_email_unique(email.data):

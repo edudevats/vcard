@@ -63,7 +63,7 @@
                                             </div>
                                             <div class="d-flex justify-content-between">
                                                 <span><strong>Días esperando:</strong></span>
-                                                <span>{{ ((moment().date() - user.created_at.date()).days) if user.created_at else 0 }}</span>
+                                                <span>{{ user.days_waiting }}</span>
                                             </div>
                                         </div>
                                     </div>
