@@ -15,41 +15,45 @@ def login():
     login_form = LoginForm()
     register_form = RegistrationForm()
     
-    # Handle login form
-    if login_form.validate_on_submit() and 'login_submit' in request.form:
-        user = User.query.filter_by(email=login_form.email.data).first()
-        if user is None or not user.check_password(login_form.password.data):
-            flash('Email o contraseña inválidos', 'error')
-            return redirect(url_for('auth.login'))
+    if request.method == 'POST':
+        # Check which form was submitted using the hidden field
+        form_type = request.form.get('form_type')
         
-        if not user.is_active:
-            flash('Tu cuenta está desactivada. Contacta al administrador.', 'error')
-            return redirect(url_for('auth.login'))
+        # Handle login form
+        if form_type == 'login' and login_form.validate_on_submit():
+            user = User.query.filter_by(email=login_form.email.data).first()
+            if user is None or not user.check_password(login_form.password.data):
+                flash('Email o contraseña inválidos', 'error')
+                return redirect(url_for('auth.login'))
+            
+            if not user.is_active:
+                flash('Tu cuenta está desactivada. Contacta al administrador.', 'error')
+                return redirect(url_for('auth.login'))
+            
+            if user.is_suspended:
+                reason = user.suspension_reason if user.suspension_reason else "Sin motivo especificado"
+                flash(f'Tu cuenta ha sido suspendida. Motivo: {reason}', 'error')
+                return redirect(url_for('auth.login'))
+            
+            if not user.is_approved:
+                flash('Tu cuenta aún no ha sido aprobada por el administrador. Recibirás una notificación cuando tu cuenta sea activada.', 'warning')
+                return redirect(url_for('auth.login'))
+            
+            login_user(user, remember=login_form.remember_me.data)
+            next_page = request.args.get('next')
+            if not next_page or urlparse(next_page).netloc != '':
+                next_page = url_for('dashboard.index')
+            return redirect(next_page)
         
-        if user.is_suspended:
-            reason = user.suspension_reason if user.suspension_reason else "Sin motivo especificado"
-            flash(f'Tu cuenta ha sido suspendida. Motivo: {reason}', 'error')
+        # Handle registration form
+        elif form_type == 'register' and register_form.validate_on_submit():
+            user = User(email=register_form.email.data)
+            user.set_password(register_form.password.data)
+            user.is_approved = False  # Requiere aprobación del administrador
+            db.session.add(user)
+            db.session.commit()
+            flash('¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por parte del administrador. Te notificaremos por email cuando tu cuenta sea activada.', 'info')
             return redirect(url_for('auth.login'))
-        
-        if not user.is_approved:
-            flash('Tu cuenta aún no ha sido aprobada por el administrador. Recibirás una notificación cuando tu cuenta sea activada.', 'warning')
-            return redirect(url_for('auth.login'))
-        
-        login_user(user, remember=login_form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or urlparse(next_page).netloc != '':
-            next_page = url_for('dashboard.index')
-        return redirect(next_page)
-    
-    # Handle registration form
-    if register_form.validate_on_submit() and 'register_submit' in request.form:
-        user = User(email=register_form.email.data)
-        user.set_password(register_form.password.data)
-        user.is_approved = False  # Requiere aprobación del administrador
-        db.session.add(user)
-        db.session.commit()
-        flash('¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por parte del administrador. Te notificaremos por email cuando tu cuenta sea activada.', 'info')
-        return redirect(url_for('auth.login'))
     
     return render_template('auth/login.html', login_form=login_form, register_form=register_form)
 

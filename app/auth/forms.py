@@ -1,18 +1,20 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, HiddenField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
 from ..models import User
 from ..utils import validate_email_unique
 
 class LoginForm(FlaskForm):
+    form_type = HiddenField(default='login')
     email = StringField('Email', validators=[DataRequired(), Email()],
                        render_kw={'class': 'form-control', 'placeholder': 'tu@email.com'})
     password = PasswordField('Contraseña', validators=[DataRequired()],
                             render_kw={'class': 'form-control', 'placeholder': 'Tu contraseña'})
     remember_me = BooleanField('Recordarme', render_kw={'class': 'form-check-input'})
-    submit = SubmitField('Iniciar Sesión', render_kw={'class': 'btn btn-primary btn-lg w-100', 'name': 'login_submit'})
+    submit = SubmitField('Iniciar Sesión', render_kw={'class': 'btn btn-primary btn-lg w-100'})
 
 class RegistrationForm(FlaskForm):
+    form_type = HiddenField(default='register')
     email = StringField('Email', validators=[DataRequired(), Email()],
                        render_kw={'class': 'form-control', 'placeholder': 'tu@email.com'})
     password = PasswordField('Contraseña', validators=[DataRequired()],
@@ -20,7 +22,7 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField('Confirmar Contraseña', 
                              validators=[DataRequired(), EqualTo('password')],
                              render_kw={'class': 'form-control', 'placeholder': 'Repite tu contraseña'})
-    submit = SubmitField('Registrarse', render_kw={'class': 'btn btn-success btn-lg w-100', 'name': 'register_submit'})
+    submit = SubmitField('Registrarse', render_kw={'class': 'btn btn-success btn-lg w-100'})
 
     def validate_email(self, email):
         if not validate_email_unique(email.data):
