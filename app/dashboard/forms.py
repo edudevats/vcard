@@ -234,11 +234,11 @@ class ProductForm(FlaskForm):
         Optional(),
         FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'Solo se permiten imágenes JPG, PNG y WEBP.')
     ])
-    is_visible = BooleanField('Visible en tarjeta pública', 
+    is_visible = BooleanField('Visible en tarjeta pública', default=True,
                              render_kw={'class': 'form-check-input'})
     is_featured = BooleanField('Producto destacado',
                               render_kw={'class': 'form-check-input'})
-    is_available = BooleanField('Disponible para venta',
+    is_available = BooleanField('Disponible para venta', default=True,
                                render_kw={'class': 'form-check-input'})
     
     submit = SubmitField('Guardar Producto', render_kw={'class': 'btn btn-success'})

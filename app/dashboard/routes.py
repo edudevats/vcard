@@ -725,7 +725,7 @@ def card_products(id):
         
         # Handle image upload
         if form.image.data:
-            filename = save_image(form.image.data, 'products')
+            filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
             if filename:
                 product.image_path = filename
         
@@ -740,7 +740,7 @@ def card_products(id):
     
     return render_template('dashboard/products.html', card=card, products=products, form=form)
 
-@bp.route('/cards/<int:card_id>/products/<int:product_id>/edit')
+@bp.route('/cards/<int:card_id>/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_product(card_id, product_id):
     card = get_user_card_or_404(card_id)
@@ -766,7 +766,7 @@ def edit_product(card_id, product_id):
         if form.image.data:
             cleanup_files([product.image_path])
             
-            filename = save_image(form.image.data, 'products')
+            filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
             if filename:
                 product.image_path = filename
         
