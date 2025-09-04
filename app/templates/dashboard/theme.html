@@ -46,6 +46,9 @@
                 <a class="nav-link active" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
                     <i class="fas fa-palette me-2"></i>Personalizar
                 </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                </a>
                 <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
                     <i class="fas fa-qrcode me-2"></i>Código QR
                 </a>
@@ -68,6 +71,74 @@
                 {% endif %}
             </div>
             
+            <!-- Template Selection -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-layer-group me-2"></i>Seleccionar Plantilla
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Elige el diseño base para tu tarjeta. Cada plantilla ofrece un estilo completamente diferente.</p>
+                    <div class="row g-3">
+                        {% for template_name in available_templates %}
+                        <div class="col-md-6">
+                            <div class="card template-option {% if current_template == template_name %}border-primary bg-primary bg-opacity-10{% endif %}" 
+                                 data-template="{{ template_name }}">
+                                <div class="card-body text-center">
+                                    <div class="template-preview mb-3" style="height: 120px;">
+                                        {% if template_name == 'classic' %}
+                                        <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 20px; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                            <div style="background: white; border-radius: 15px; padding: 15px; text-align: center; width: 80%;">
+                                                <div style="width: 30px; height: 30px; background: #ddd; border-radius: 50%; margin: 0 auto 8px;"></div>
+                                                <div style="height: 8px; background: #6366f1; border-radius: 4px; margin-bottom: 5px;"></div>
+                                                <div style="height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 3px;"></div>
+                                                <div style="height: 6px; background: #ddd; border-radius: 3px; width: 70%;"></div>
+                                            </div>
+                                        </div>
+                                        {% elif template_name == 'business' %}
+                                        <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); border-radius: 15px; height: 100%; display: flex; align-items: center; justify-content: center;">
+                                            <div style="background: white; border-radius: 10px; padding: 12px; width: 90%; height: 80%; display: flex;">
+                                                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                                                    <div style="height: 8px; background: #1e40af; border-radius: 4px; margin-bottom: 6px; width: 80%;"></div>
+                                                    <div style="height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 4px; width: 90%;"></div>
+                                                    <div style="height: 6px; background: #ddd; border-radius: 3px; width: 60%;"></div>
+                                                </div>
+                                                <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%; margin-left: 10px;"></div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h6 class="card-title">
+                                        {{ template_name.title() }}
+                                        {% if current_template == template_name %}
+                                        <span class="badge bg-primary ms-2">Actual</span>
+                                        {% endif %}
+                                    </h6>
+                                    
+                                    <p class="small text-muted mb-3">
+                                        {% if template_name == 'classic' %}
+                                        Diseño vertical tradicional, perfecto para la mayoría de profesionales
+                                        {% elif template_name == 'business' %}
+                                        Diseño horizontal estilo tarjeta de negocio, ideal para empresarios
+                                        {% endif %}
+                                    </p>
+                                    
+                                    {% if current_template != template_name %}
+                                    <button class="btn btn-sm btn-outline-primary select-template" data-template="{{ template_name }}">
+                                        <i class="fas fa-exchange-alt me-1"></i>Cambiar a {{ template_name.title() }}
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            
             <div class="row">
                 <!-- Theme Controls -->
                 <div class="col-lg-6">
@@ -86,21 +157,183 @@
                                     <i class="fas fa-paint-brush me-2"></i>Colores
                                 </h6>
                                 
-                                <div class="row mb-3">
-                                    <div class="col-4">
-                                        {{ form.primary_color.label(class="form-label") }}
-                                        {{ form.primary_color(onchange="updatePreview()") }}
-                                        <small class="form-text">Principal</small>
+                                <!-- Predefined Color Palettes -->
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-palette me-2"></i>Paletas Predefinidas
+                                </h6>
+                                
+                                <!-- Professional Palettes -->
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-muted">PROFESIONALES</label>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#1e40af', '#3b82f6', '#60a5fa', '#ffffff')" title="Ejecutivo - Azules profesionales para negocios">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #1e40af; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #60a5fa; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Ejecutivo</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#7c3aed', '#a855f7', '#c084fc', '#ffffff')" title="Creativo - Púrpuras vibrantes para creativos">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #7c3aed; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #a855f7; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #c084fc; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Creativo</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#374151', '#6b7280', '#9ca3af', '#ffffff')" title="Elegante - Grises sofisticados y minimalistas">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #374151; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #6b7280; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #9ca3af; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Elegante</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#059669', '#10b981', '#34d399', '#ffffff')" title="Médico - Verdes confiables para salud">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #059669; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #10b981; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #34d399; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Médico</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#0f172a', '#475569', '#06b6d4', '#ffffff')" title="Tecnología - Oscuros modernos para tech">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #0f172a; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #475569; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #06b6d4; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Tecnología</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#ec4899', '#f472b6', '#f9a8d4', '#ffffff')" title="Belleza - Rosas suaves para belleza y spa">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #ec4899; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #f472b6; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #f9a8d4; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Belleza</small>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        {{ form.secondary_color.label(class="form-label") }}
-                                        {{ form.secondary_color(onchange="updatePreview()") }}
-                                        <small class="form-text">Secundario</small>
+                                </div>
+                                
+                                <!-- Business Palettes -->
+                                <div class="mb-4">
+                                    <label class="form-label small fw-semibold text-muted">NEGOCIOS</label>
+                                    <div class="row g-2">
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#1f2937', '#374151', '#6b7280', '#ffffff')" title="Corporativo - Formal para empresas grandes">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #1f2937; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #374151; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #6b7280; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Corporativo</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#0369a1', '#0284c7', '#0ea5e9', '#ffffff')" title="Consultor - Profesional para consultores">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #0369a1; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #0284c7; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #0ea5e9; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Consultor</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#166534', '#15803d', '#16a34a', '#ffffff')" title="Financiero - Verdes confiables para finanzas">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #166534; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #15803d; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #16a34a; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Financiero</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#b45309', '#d97706', '#f59e0b', '#ffffff')" title="Inmobiliario - Naranjas para bienes raíces">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #b45309; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #d97706; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #f59e0b; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Inmobiliario</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#7c2d12', '#991b1b', '#dc2626', '#ffffff')" title="Lujo - Rojos elegantes para marcas premium">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #7c2d12; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #991b1b; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #dc2626; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Lujo</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
+                                                    onclick="applyPreset('#1d4ed8', '#3b82f6', '#60a5fa', '#ffffff')" title="Educación - Azules académicos">
+                                                <div class="d-flex justify-content-center mb-1">
+                                                    <div style="width: 18px; height: 18px; background: #1d4ed8; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                    <div style="width: 18px; height: 18px; background: #60a5fa; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+                                                </div>
+                                                <small class="d-block">Educación</small>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        {{ form.accent_color.label(class="form-label") }}
-                                        {{ form.accent_color(onchange="updatePreview()") }}
-                                        <small class="form-text">Acento</small>
+                                </div>
+                                
+                                <!-- Manual Color Selection -->
+                                <div class="mb-3">
+                                    <label class="form-label">Personalización Manual</label>
+                                    <div class="row">
+                                        <div class="col-4">
+                                            {{ form.primary_color.label(class="form-label small") }}
+                                            {{ form.primary_color(onchange="updatePreview()") }}
+                                            <small class="form-text">Principal</small>
+                                        </div>
+                                        <div class="col-4">
+                                            {{ form.secondary_color.label(class="form-label small") }}
+                                            {{ form.secondary_color(onchange="updatePreview()") }}
+                                            <small class="form-text">Secundario</small>
+                                        </div>
+                                        <div class="col-4">
+                                            {{ form.accent_color.label(class="form-label small") }}
+                                            {{ form.accent_color(onchange="updatePreview()") }}
+                                            <small class="form-text">Acento</small>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-4">
+                                            {{ form.avatar_border_color.label(class="form-label small") }}
+                                            {{ form.avatar_border_color(onchange="updatePreview()") }}
+                                            <small class="form-text">Borde del Avatar</small>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -136,54 +369,7 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Color Presets -->
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-palette me-2"></i>Paletas Predefinidas
-                                </h6>
-                                
-                                <div class="row mb-4">
-                                    <div class="col-3">
-                                        <button type="button" class="btn btn-outline-secondary w-100 p-2" 
-                                                onclick="applyPreset('#1e40af', '#3b82f6', '#60a5fa')" title="Azul Clásico">
-                                            <div class="d-flex">
-                                                <div style="width: 20px; height: 20px; background: #1e40af; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #3b82f6; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #60a5fa; margin: 1px;"></div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                    <div class="col-3">
-                                        <button type="button" class="btn btn-outline-secondary w-100 p-2" 
-                                                onclick="applyPreset('#ec4899', '#f472b6', '#fbcfe8')" title="Rosa Moderno">
-                                            <div class="d-flex">
-                                                <div style="width: 20px; height: 20px; background: #ec4899; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #f472b6; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #fbcfe8; margin: 1px;"></div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                    <div class="col-3">
-                                        <button type="button" class="btn btn-outline-secondary w-100 p-2" 
-                                                onclick="applyPreset('#059669', '#10b981', '#6ee7b7')" title="Verde Minimalista">
-                                            <div class="d-flex">
-                                                <div style="width: 20px; height: 20px; background: #059669; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #10b981; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #6ee7b7; margin: 1px;"></div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                    <div class="col-3">
-                                        <button type="button" class="btn btn-outline-secondary w-100 p-2" 
-                                                onclick="applyPreset('#7c3aed', '#8b5cf6', '#c4b5fd')" title="Púrpura Elegante">
-                                            <div class="d-flex">
-                                                <div style="width: 20px; height: 20px; background: #7c3aed; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #8b5cf6; margin: 1px;"></div>
-                                                <div style="width: 20px; height: 20px; background: #c4b5fd; margin: 1px;"></div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                </div>
-                                
+                                <!-- Submit -->
                                 <div class="d-grid">
                                     {{ form.submit() }}
                                 </div>
@@ -222,12 +408,12 @@
                                         height: 80px;
                                         margin: 0 auto 15px;
                                         overflow: hidden;
-                                        border: 3px solid white;
+                                        border: 3px solid {{ card.theme.avatar_border_color or '#ffffff' }};
                                         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
                                         background: #f8f9fa;
                                     ">
                                         {% if card.has_avatar() %}
-                                            <img id="preview-avatar-img" src="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                                            <img id="preview-avatar-img" src="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
                                                  style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">
                                         {% else %}
                                             <div class="w-100 h-100 d-flex align-items-center justify-content-center" 
@@ -289,6 +475,7 @@ function updatePreview() {
     const primary = document.getElementById('primary_color').value;
     const secondary = document.getElementById('secondary_color').value;
     const accent = document.getElementById('accent_color').value;
+    const avatarBorderColor = document.getElementById('avatar_border_color').value;
     const font = document.getElementById('font_family').value;
     const layout = document.getElementById('layout').value;
     const avatarShape = document.getElementById('avatar_shape').value;
@@ -401,8 +588,18 @@ function updatePreview() {
         btnOutline.style.border = `2px solid ${primary}50`;
     }
     
-    // Update avatar shape
+    // Update avatar shape and border color
     const avatarImg = document.getElementById('preview-avatar-img');
+    
+    // Apply border color to avatar
+    if (avatar) {
+        avatar.style.borderColor = avatarBorderColor;
+        avatar.style.borderWidth = '3px';
+        avatar.style.borderStyle = 'solid';
+        console.log('Avatar border color updated to:', avatarBorderColor);
+    } else {
+        console.error('Avatar element not found');
+    }
     
     if (avatarShape === 'circle') {
         avatar.style.borderRadius = '50%';
@@ -450,20 +647,133 @@ function updatePreview() {
     }
 }
 
-function applyPreset(primary, secondary, accent) {
-    document.getElementById('primary_color').value = primary;
-    document.getElementById('secondary_color').value = secondary;
-    document.getElementById('accent_color').value = accent;
-    updatePreview();
-}
-
 // Initialize preview on page load
 document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
+    
+    // Handle template selection
+    document.querySelectorAll('.select-template').forEach(button => {
+        button.addEventListener('click', function() {
+            const template = this.dataset.template;
+            changeTemplate(template);
+        });
+    });
+    
 });
+
+// Function to change template
+function changeTemplate(templateName) {
+    const csrfToken = document.querySelector('[name=csrf_token]').value;
+    
+    // Show loading state
+    const button = document.querySelector(`[data-template="${templateName}"]`);
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cambiando...';
+    button.disabled = true;
+    
+    fetch(`/dashboard/cards/{{ card.id }}/change-template`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ template_name: templateName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showMessage(data.message, 'success');
+            // Reload to update presets for new template
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showMessage('Error al cambiar plantilla: ' + data.message, 'error');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error al cambiar plantilla', 'error');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+
+// Function to show messages
+function showMessage(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`;
+    
+    // Insert at the top of the content area
+    const contentArea = document.querySelector('.main-content');
+    contentArea.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        const alert = contentArea.querySelector('.alert');
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 3000);
+}
+
+// Function to apply color preset
+function applyPreset(primaryColor, secondaryColor, accentColor, avatarBorderColor = '#ffffff') {
+    // Update form color inputs
+    const primaryInput = document.getElementById('primary_color');
+    const secondaryInput = document.getElementById('secondary_color');
+    const accentInput = document.getElementById('accent_color');
+    const avatarBorderInput = document.getElementById('avatar_border_color');
+    
+    if (primaryInput) primaryInput.value = primaryColor;
+    if (secondaryInput) secondaryInput.value = secondaryColor;
+    if (accentInput) accentInput.value = accentColor;
+    if (avatarBorderInput) avatarBorderInput.value = avatarBorderColor;
+    
+    // Update preview
+    updatePreview();
+    
+    // Highlight selected palette
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline-secondary');
+    });
+    
+    // Find and highlight the clicked button
+    event.target.closest('.palette-btn').classList.remove('btn-outline-secondary');
+    event.target.closest('.palette-btn').classList.add('btn-primary');
+}
+
 </script>
 
 <style>
+.palette-btn {
+    transition: all 0.3s ease;
+    min-height: 70px;
+    position: relative;
+    overflow: hidden;
+}
+
+.palette-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.palette-btn:active {
+    transform: translateY(0);
+}
+
+.palette-btn.btn-primary {
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
 .form-control[type="color"] {
     height: 40px;
     padding: 2px;

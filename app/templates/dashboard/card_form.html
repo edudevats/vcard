@@ -33,6 +33,9 @@
                     <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
                         <i class="fas fa-palette me-2"></i>Personalizar
                     </a>
+                    <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+                        <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                    </a>
                     {% if config.ENABLE_VISUAL_EDITOR %}
                     <a class="nav-link" href="{{ url_for('dashboard.visual_editor', id=card.id) }}">
                         <i class="fas fa-magic me-2"></i>Editor Visual

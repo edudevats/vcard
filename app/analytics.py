@@ -185,13 +185,10 @@ class AnalyticsService:
     def track_card_view(card, request):
         """Enhanced view tracking with device and location info"""
         user_agent = request.user_agent
+        user_agent_string = str(user_agent)
         
-        # Extract device info
-        device_type = 'desktop'
-        if user_agent.platform in ['android', 'iphone']:
-            device_type = 'mobile'
-        elif user_agent.platform in ['ipad']:
-            device_type = 'tablet'
+        # Enhanced device detection
+        device_type = AnalyticsService._detect_device_type(user_agent, user_agent_string)
         
         # Get IP for geolocation (you'd implement actual geolocation service)
         ip_address = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
@@ -212,6 +209,153 @@ class AnalyticsService:
         
         db.session.add(view)
         return view
+    
+    @staticmethod
+    def _detect_device_type(user_agent, user_agent_string):
+        """Enhanced device type detection"""
+        user_agent_lower = user_agent_string.lower()
+        
+        # Mobile devices detection
+        mobile_indicators = [
+            'mobile', 'android', 'iphone', 'ipod', 'blackberry', 
+            'windows phone', 'opera mini', 'opera mobi', 'palm',
+            'webos', 'kindle', 'silk', 'fennec', 'maemo', 'mot',
+            'samsung', 'lg', 'nokia', 'sony', 'htc'
+        ]
+        
+        # Tablet detection
+        tablet_indicators = [
+            'ipad', 'tablet', 'kindle fire', 'nexus 7', 'nexus 9', 
+            'nexus 10', 'galaxy tab', 'xoom', 'sch-i800', 'playbook',
+            'tablet pc', 'kfapwi', 'kfarwi', 'kfaswi', 'kffowi', 'kfgiwi',
+            'kfmewi', 'kfot', 'kfsaw', 'kfsowi', 'kfthwi', 'kftt'
+        ]
+        
+        # Check for tablets first (more specific)
+        for indicator in tablet_indicators:
+            if indicator in user_agent_lower:
+                return 'tablet'
+        
+        # Check for mobile devices
+        for indicator in mobile_indicators:
+            if indicator in user_agent_lower:
+                return 'mobile'
+        
+        # Check platform-specific indicators
+        if user_agent.platform:
+            platform = user_agent.platform.lower()
+            if platform in ['android', 'iphone']:
+                return 'mobile'
+            elif platform == 'ipad':
+                return 'tablet'
+        
+        # Additional mobile detection based on screen size hints
+        if any(x in user_agent_lower for x in ['mobi', 'mini', 'mobile']):
+            return 'mobile'
+        
+        # Default to desktop
+        return 'desktop'
+    
+    @staticmethod
+    @cache.memoize(timeout=300)
+    def get_device_analytics(card_id=None, days=30):
+        """Get detailed device analytics with mobile vs desktop breakdown"""
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+        
+        query = db.session.query(
+            CardView.device_type,
+            func.count(CardView.id).label('count'),
+            func.count(func.distinct(CardView.ip_address)).label('unique_count')
+        )
+        
+        if card_id:
+            query = query.filter(CardView.card_id == card_id)
+        
+        device_stats = query.filter(
+            CardView.viewed_at >= start_date
+        ).group_by(CardView.device_type).all()
+        
+        # Calculate percentages and organize data
+        total_views = sum(stat.count for stat in device_stats)
+        device_breakdown = []
+        
+        for stat in device_stats:
+            device_type = stat.device_type or 'Unknown'
+            percentage = (stat.count / total_views * 100) if total_views > 0 else 0
+            
+            device_breakdown.append({
+                'device_type': device_type,
+                'count': stat.count,
+                'unique_count': stat.unique_count,
+                'percentage': round(percentage, 1)
+            })
+        
+        # Sort by count (descending)
+        device_breakdown.sort(key=lambda x: x['count'], reverse=True)
+        
+        # Calculate mobile vs desktop summary
+        mobile_count = sum(d['count'] for d in device_breakdown if d['device_type'] in ['mobile', 'tablet'])
+        desktop_count = sum(d['count'] for d in device_breakdown if d['device_type'] == 'desktop')
+        other_count = sum(d['count'] for d in device_breakdown if d['device_type'] not in ['mobile', 'tablet', 'desktop'])
+        
+        mobile_percentage = (mobile_count / total_views * 100) if total_views > 0 else 0
+        desktop_percentage = (desktop_count / total_views * 100) if total_views > 0 else 0
+        
+        return {
+            'device_breakdown': device_breakdown,
+            'total_views': total_views,
+            'mobile_vs_desktop': {
+                'mobile': {
+                    'count': mobile_count,
+                    'percentage': round(mobile_percentage, 1)
+                },
+                'desktop': {
+                    'count': desktop_count,
+                    'percentage': round(desktop_percentage, 1)
+                },
+                'other': {
+                    'count': other_count,
+                    'percentage': round((other_count / total_views * 100) if total_views > 0 else 0, 1)
+                }
+            }
+        }
+    
+    @staticmethod
+    @cache.memoize(timeout=600)
+    def get_hourly_device_pattern(card_id=None, days=7):
+        """Get device usage patterns by hour of day"""
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+        
+        query = db.session.query(
+            func.extract('hour', CardView.viewed_at).label('hour'),
+            CardView.device_type,
+            func.count(CardView.id).label('count')
+        )
+        
+        if card_id:
+            query = query.filter(CardView.card_id == card_id)
+        
+        hourly_device_stats = query.filter(
+            CardView.viewed_at >= start_date
+        ).group_by('hour', CardView.device_type).all()
+        
+        # Organize data by hour
+        hourly_pattern = {}
+        for hour in range(24):
+            hourly_pattern[hour] = {'mobile': 0, 'desktop': 0, 'tablet': 0, 'total': 0}
+        
+        for stat in hourly_device_stats:
+            hour = int(stat.hour)
+            device = stat.device_type or 'desktop'
+            count = stat.count
+            
+            if device in ['mobile', 'desktop', 'tablet']:
+                hourly_pattern[hour][device] = count
+            hourly_pattern[hour]['total'] += count
+        
+        return hourly_pattern
     
     @staticmethod
     def clear_cache():

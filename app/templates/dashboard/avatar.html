@@ -32,6 +32,9 @@
                 <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
                     <i class="fas fa-palette me-2"></i>Personalizar
                 </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                </a>
                 <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
                     <i class="fas fa-qrcode me-2"></i>Código QR
                 </a>
@@ -237,6 +240,28 @@
 </div>
 
 <script>
+// Function to force reload all avatar images
+function forceAvatarReload() {
+    const avatarImages = document.querySelectorAll('img[src*="avatar_"], img[src*="uploads/"]');
+    avatarImages.forEach(img => {
+        const src = img.src;
+        const separator = src.includes('?') ? '&' : '?';
+        const newSrc = src.split('?')[0] + separator + 'v=' + Date.now();
+        img.src = newSrc;
+    });
+    
+    // Also reload preview images
+    const previewImages = document.querySelectorAll('#preview-avatar-img, .avatar img');
+    previewImages.forEach(img => {
+        if (img.src && img.src.includes('uploads/')) {
+            const src = img.src;
+            const separator = src.includes('?') ? '&' : '?';
+            const newSrc = src.split('?')[0] + separator + 'v=' + Date.now();
+            img.src = newSrc;
+        }
+    });
+}
+
 // Preview uploaded file
 document.getElementById('avatar').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -252,6 +277,18 @@ document.getElementById('avatar').addEventListener('change', function(e) {
     }
 });
 
+// Check for successful avatar upload and force reload
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we just uploaded an avatar (look for success message)
+    const alerts = document.querySelectorAll('.alert-success');
+    alerts.forEach(alert => {
+        if (alert.textContent.includes('Avatar actualizado') || alert.textContent.includes('exitosamente')) {
+            // Force reload after a short delay to ensure file is saved
+            setTimeout(forceAvatarReload, 500);
+        }
+    });
+});
+
 function removeAvatar() {
     if (confirm('¿Estás seguro de que quieres eliminar tu avatar?')) {
         fetch(`{{ url_for('dashboard.card_avatar', id=card.id) }}`, {
@@ -262,7 +299,9 @@ function removeAvatar() {
         })
         .then(response => {
             if (response.ok) {
-                location.reload();
+                // Force reload before page refresh
+                forceAvatarReload();
+                setTimeout(() => location.reload(), 500);
             } else {
                 alert('Error al eliminar el avatar');
             }

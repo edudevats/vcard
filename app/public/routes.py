@@ -65,12 +65,29 @@ def card_view(slug):
         featured_image = card.gallery_items.filter_by(is_featured=True, is_visible=True).first()
         cache.set(featured_key, featured_image, timeout=600)
     
-    return render_template('public/card.html', 
-                         card=card, 
-                         services=services,
-                         products=products, 
-                         gallery_items=gallery_items,
-                         featured_image=featured_image)
+    # Get social networks for the card
+    social_links = card.get_primary_social_networks()
+    
+    # Get the theme template path
+    template_path = card.theme.get_template_path() if card.theme else 'public/themes/classic.html'
+    
+    # Fallback to classic if template doesn't exist
+    try:
+        return render_template(template_path, 
+                             card=card, 
+                             services=services,
+                             products=products, 
+                             gallery_items=gallery_items,
+                             featured_image=featured_image,
+                             social_links=social_links)
+    except:
+        return render_template('public/themes/classic.html', 
+                             card=card, 
+                             services=services,
+                             products=products, 
+                             gallery_items=gallery_items,
+                             featured_image=featured_image,
+                             social_links=social_links)
 
 @bp.route('/c/<slug>/services')
 def card_services(slug):

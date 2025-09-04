@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ card.title or card.name }} - Tarjeta Digital</title>
+    
+    <!-- Dynamic Favicon -->
+    {% if card.has_avatar() %}
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}">
+    {% else %}
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    {% endif %}
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{{ card.bio[:160] if card.bio else 'Tarjeta de presentación digital de ' + card.name }}">
+    <meta name="keywords" content="tarjeta digital, {{ card.name }}, {{ card.company or '' }}, contacto">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{{ card.title or card.name }}">
+    <meta property="og:description" content="{{ card.bio[:160] if card.bio else 'Tarjeta de presentación digital' }}">
+    <meta property="og:type" content="profile">
+    {% if featured_image %}
+    <meta property="og:image" content="{{ url_for('static', filename='uploads/' + featured_image.image_path) }}">
+    {% elif card.has_avatar() %}
+    <meta property="og:image" content="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}">
+    {% endif %}
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: '{{ card.theme.font_family }}', sans-serif;
+            background: {{ card.theme.primary_color }};
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            {% if card.theme.layout == 'modern' %}
+            background: linear-gradient(45deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            {% elif card.theme.layout == 'minimal' %}
+            background: radial-gradient(circle at top right, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            {% else %}
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            {% endif %}
+        }
+        
+        .business-card {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            
+            {% if card.theme.layout == 'modern' %}
+            border-radius: 0;
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+            {% elif card.theme.layout == 'minimal' %}
+            border-radius: 30px;
+            border: 2px solid {{ card.theme.accent_color }}20;
+            {% endif %}
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            
+            {% if card.theme.layout == 'modern' %}
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+            padding-bottom: 60px;
+            {% elif card.theme.layout == 'minimal' %}
+            border-radius: 30px 30px 0 0;
+            {% endif %}
+        }
+        
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="white" opacity="0.1"/><circle cx="80" cy="30" r="1.5" fill="white" opacity="0.1"/><circle cx="40" cy="70" r="1" fill="white" opacity="0.1"/><circle cx="90" cy="80" r="2" fill="white" opacity="0.1"/></svg>');
+            {% if card.theme.layout != 'minimal' %}
+            opacity: 1;
+            {% else %}
+            opacity: 0;
+            {% endif %}
+        }
+        
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: {{ '15px' if card.theme.avatar_shape == 'rectangle' else '50%' }};
+            border: 4px solid {{ card.theme.avatar_border_color or '#ffffff' }};
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            object-fit: cover;
+            margin: 0 auto 20px;
+            position: relative;
+            z-index: 2;
+            
+            {% if card.theme.layout == 'modern' %}
+            clip-path: {{ 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' if card.theme.avatar_shape == 'rectangle' else 'circle(50%)' }};
+            {% endif %}
+        }
+        
+        .name {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .title {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.3rem;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .card-body {
+            padding: 40px;
+            flex-grow: 1;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: {{ card.theme.primary_color }}08;
+            border-radius: 15px;
+            border-left: 4px solid {{ card.theme.primary_color }};
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .contact-item:hover {
+            background: {{ card.theme.primary_color }}15;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .contact-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .contact-icon i {
+            color: white;
+            font-size: 1.4rem;
+        }
+        
+        .contact-info {
+            flex-grow: 1;
+        }
+        
+        .contact-label {
+            font-size: 0.9rem;
+            color: {{ card.theme.primary_color }};
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .contact-value {
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 400;
+        }
+        
+        .bio {
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}10, {{ card.theme.secondary_color }}10);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid {{ card.theme.primary_color }}20;
+        }
+        
+        .bio-text {
+            color: #555;
+            line-height: 1.7;
+            font-size: 1.1rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .social-link {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .social-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .gallery-section {
+            margin-top: 40px;
+        }
+        
+        .gallery-title {
+            font-size: 1.8rem;
+            color: {{ card.theme.primary_color }};
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .gallery-item {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .gallery-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .products-section {
+            margin-top: 40px;
+        }
+        
+        .products-title {
+            font-size: 1.8rem;
+            color: {{ card.theme.primary_color }};
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid {{ card.theme.primary_color }}20;
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .business-card {
+                max-width: 100%;
+                margin: 10px;
+            }
+            
+            .card-header {
+                padding: 30px 20px;
+            }
+            
+            .name {
+                font-size: 2rem;
+            }
+            
+            .title {
+                font-size: 1.1rem;
+            }
+            
+            .card-body {
+                padding: 30px 20px;
+            }
+            
+            .contact-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .avatar {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="business-card">
+        <!-- Header with Avatar and Name -->
+        <div class="card-header">
+            {% if card.has_avatar() %}
+            <img src="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                 alt="{{ card.name }}" class="avatar">
+            {% endif %}
+            
+            <h1 class="name">{{ card.name }}</h1>
+            
+            {% if card.job_title %}
+            <p class="title">{{ card.job_title }}</p>
+            {% elif card.title %}
+            <p class="title">{{ card.title }}</p>
+            {% endif %}
+        </div>
+        
+        <!-- Body with Contact Info -->
+        <div class="card-body">
+            <!-- Contact Information -->
+            <div class="contact-grid">
+                {% if card.email_public %}
+                <a href="mailto:{{ card.email_public }}" class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-label">Email</div>
+                        <div class="contact-value">{{ card.email_public }}</div>
+                    </div>
+                </a>
+                {% endif %}
+                
+                {% if card.phone %}
+                <a href="tel:{{ card.phone }}" class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-label">Teléfono</div>
+                        <div class="contact-value">{{ card.phone }}</div>
+                    </div>
+                </a>
+                {% endif %}
+                
+                {% if card.company %}
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-label">Empresa</div>
+                        <div class="contact-value">{{ card.company }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if card.website %}
+                <a href="{{ card.website }}" target="_blank" class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-label">Sitio Web</div>
+                        <div class="contact-value">{{ card.website }}</div>
+                    </div>
+                </a>
+                {% endif %}
+                
+                {% if card.address %}
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-label">Dirección</div>
+                        <div class="contact-value">{{ card.address }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Bio -->
+            {% if card.bio %}
+            <div class="bio">
+                <p class="bio-text">{{ card.bio }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Social Links -->
+            {% if social_links %}
+            <div class="social-links">
+                {% for link in social_links %}
+                <a href="{{ link.url }}" target="_blank" class="social-link" title="{{ link.platform.title() }}">
+                    <i class="fab fa-{{ link.platform }}"></i>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Gallery Section -->
+            {% if gallery_items %}
+            <div class="gallery-section">
+                <h3 class="gallery-title">
+                    <i class="fas fa-images me-2"></i>Galería
+                </h3>
+                <div class="gallery-grid">
+                    {% for item in gallery_items %}
+                    <div class="gallery-item">
+                        <img src="{{ url_for('static', filename='uploads/' + item.thumbnail_path) }}" 
+                             alt="{{ item.caption or 'Imagen de galería' }}" 
+                             class="gallery-image">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Products Section -->
+            {% if products %}
+            <div class="products-section">
+                <h3 class="products-title">
+                    <i class="fas fa-box me-2"></i>Productos y Servicios
+                </h3>
+                <div class="products-grid">
+                    {% for product in products %}
+                    <div class="product-card">
+                        <h4 style="color: {{ card.theme.primary_color }}; margin-bottom: 10px;">{{ product.name }}</h4>
+                        {% if product.description %}
+                        <p style="color: #666; margin-bottom: 15px;">{{ product.description[:100] }}...</p>
+                        {% endif %}
+                        {% if product.price %}
+                        <div style="color: {{ card.theme.secondary_color }}; font-weight: 600; font-size: 1.2rem;">
+                            ${{ "%.2f"|format(product.price) }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Analytics -->
+    <script>
+        // Track card view
+        fetch('{{ url_for("public.track_view", slug=card.slug) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_agent: navigator.userAgent,
+                referrer: document.referrer || 'direct'
+            })
+        }).catch(err => console.log('Analytics error:', err));
+    </script>
+</body>
+</html>

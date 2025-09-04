@@ -52,12 +52,20 @@ class NewUserForm(FlaskForm):
 class ThemeForm(FlaskForm):
     name = StringField('Nombre del Tema', validators=[DataRequired()],
                       render_kw={'class': 'form-control'})
+    template_name = SelectField('Plantilla', validators=[DataRequired()],
+                               choices=[
+                                   ('classic', 'Clásica - Diseño tradicional'),
+                                   ('mobile', 'Móvil - Diseño moderno para móvil'),
+                               ],
+                               render_kw={'class': 'form-select'})
     primary_color = StringField('Color Primario', validators=[DataRequired()],
                                render_kw={'type': 'color', 'class': 'form-control form-control-color'})
     secondary_color = StringField('Color Secundario', validators=[DataRequired()],
                                  render_kw={'type': 'color', 'class': 'form-control form-control-color'})
     accent_color = StringField('Color de Acento', validators=[DataRequired()],
                               render_kw={'type': 'color', 'class': 'form-control form-control-color'})
+    avatar_border_color = StringField('Color del Borde del Avatar', validators=[DataRequired()],
+                                     render_kw={'type': 'color', 'class': 'form-control form-control-color'})
     font_family = SelectField('Tipografía', validators=[DataRequired()],
                              choices=FONT_FAMILY_CHOICES,
                              render_kw={'class': 'form-select'})

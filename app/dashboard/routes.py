@@ -1,11 +1,13 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify, current_app, make_response, abort
+from flask_wtf.csrf import validate_csrf
 from flask_login import login_required, current_user
 from functools import wraps
+from sqlalchemy import func
 from ..models import Card, Service, Product, GalleryItem, Theme, CardView
 from .. import db, cache
 from . import bp
-from .forms import CardForm, ServiceForm, ProductForm, GalleryUploadForm, AvatarUploadForm, ThemeCustomizationForm
-from ..utils import save_image, save_avatar, delete_file, generate_styled_qr_code, qr_to_base64, save_qr_code, admin_required, get_user_card_or_404, cleanup_files
+from .forms import CardForm, ServiceForm, ProductForm, GalleryUploadForm, AvatarUploadForm, ThemeCustomizationForm, ChangePasswordForm
+from ..utils import save_image, save_avatar, delete_file, generate_styled_qr_code, generate_qr_code, generate_qr_code_with_logo, generate_qr_code_with_logo_themed, qr_to_base64, save_qr_code, admin_required, get_user_card_or_404, cleanup_files
 from ..analytics import AnalyticsService, get_analytics_summary
 from ..cache_utils import CacheManager
 from datetime import datetime, timedelta
@@ -303,6 +305,12 @@ def card_gallery(id):
     
     form = GalleryUploadForm()
     if form.validate_on_submit():
+        # Check image limit (20 images maximum)
+        current_count = GalleryItem.query.filter_by(card_id=card.id).count()
+        if current_count >= 20:
+            flash('Límite de imágenes alcanzado. Máximo 20 imágenes por galería. Elimina una imagen para subir otra.', 'error')
+            return redirect(url_for('dashboard.card_gallery', id=card.id))
+        
         filename, thumbnail = save_image(form.image.data, 'static/uploads')
         if filename:
             # Get next order index
@@ -371,6 +379,10 @@ def card_avatar(id):
             card.avatar_rect_path = rect_filename
             card.avatar_path = square_filename  # Keep legacy field for backward compatibility
             
+            # Update the updated_at timestamp for cache busting
+            from datetime import datetime
+            card.updated_at = datetime.utcnow()
+            
             db.session.commit()
             
             # Clear cache for this card
@@ -394,13 +406,17 @@ def card_theme(id):
         # Create a copy of the current theme for this card
         current_theme = card.theme
         new_theme = Theme(
-            name=f"Tema personalizado para {card.name}",
+            name=f"Mi tema personalizado",
+            template_name=current_theme.template_name if current_theme else 'classic',
             primary_color=current_theme.primary_color if current_theme else '#6366f1',
             secondary_color=current_theme.secondary_color if current_theme else '#8b5cf6',
             accent_color=current_theme.accent_color if current_theme else '#ec4899',
+            avatar_border_color=current_theme.avatar_border_color if current_theme else '#ffffff',
             font_family=current_theme.font_family if current_theme else 'Inter',
             layout=current_theme.layout if current_theme else 'modern',
-            avatar_shape=current_theme.avatar_shape if current_theme else 'circle'
+            avatar_shape=current_theme.avatar_shape if current_theme else 'circle',
+            is_global=False,  # Personal theme
+            created_by_id=current_user.id  # Owned by current user
         )
         db.session.add(new_theme)
         db.session.commit()
@@ -417,6 +433,7 @@ def card_theme(id):
         theme.primary_color = form.primary_color.data
         theme.secondary_color = form.secondary_color.data
         theme.accent_color = form.accent_color.data
+        theme.avatar_border_color = form.avatar_border_color.data
         theme.font_family = form.font_family.data
         theme.layout = form.layout.data
         theme.avatar_shape = form.avatar_shape.data
@@ -429,7 +446,120 @@ def card_theme(id):
         flash('¡Tema personalizado exitosamente!', 'success')
         return redirect(url_for('dashboard.card_theme', id=card.id))
     
-    return render_template('dashboard/theme.html', card=card, form=form)
+    # Get themes available for current user
+    available_themes = Theme.get_available_themes_for_user(current_user)
+    
+    # Import presets
+    from ..theme_presets import get_all_templates
+    
+    # Get template data
+    available_templates = get_all_templates()
+    current_template = card.theme.template_name if card.theme else 'classic'
+    
+    return render_template('dashboard/theme.html', 
+                         card=card, 
+                         form=form, 
+                         available_themes=available_themes,
+                         available_templates=available_templates,
+                         current_template=current_template)
+
+@bp.route('/cards/<int:id>/change-theme', methods=['POST'])
+@login_required
+def change_card_theme(id):
+    """Change card theme via AJAX"""
+    card = get_user_card_or_404(id)
+    
+    data = request.get_json()
+    if not data or 'theme_id' not in data:
+        return jsonify({'success': False, 'message': 'ID de tema requerido'})
+    
+    theme_id = data['theme_id']
+    theme = Theme.query.filter_by(id=theme_id, is_active=True).first()
+    
+    if not theme:
+        return jsonify({'success': False, 'message': 'Tema no encontrado'})
+    
+    # Check if user can access this theme
+    if not theme.can_user_access(current_user):
+        return jsonify({'success': False, 'message': 'No tienes acceso a este tema'})
+    
+    # Update card theme
+    card.theme_id = theme.id
+    db.session.commit()
+    
+    # Clear cache for the card
+    CacheManager.invalidate_card(card.id)
+    
+    return jsonify({'success': True, 'message': 'Tema cambiado exitosamente'})
+
+@bp.route('/cards/<int:id>/change-template', methods=['POST'])
+@login_required
+def change_card_template(id):
+    """Change card template via AJAX"""
+    card = get_user_card_or_404(id)
+    
+    data = request.get_json()
+    if not data or 'template_name' not in data:
+        return jsonify({'success': False, 'message': 'Nombre de plantilla requerido'})
+    
+    template_name = data['template_name']
+    
+    # Import presets
+    from ..theme_presets import get_all_templates
+    
+    # Validate template exists
+    if template_name not in get_all_templates():
+        return jsonify({'success': False, 'message': 'Plantilla no válida'})
+    
+    # Update current theme's template
+    if card.theme:
+        card.theme.template_name = template_name
+        db.session.commit()
+    
+    # Clear cache for the card
+    CacheManager.invalidate_card(card.id)
+    
+    return jsonify({'success': True, 'message': 'Plantilla cambiada exitosamente'})
+
+@bp.route('/cards/<int:id>/apply-preset', methods=['POST'])
+@login_required
+def apply_theme_preset(id):
+    """Apply a preset configuration to card theme"""
+    card = get_user_card_or_404(id)
+    
+    data = request.get_json()
+    if not data or 'preset_key' not in data:
+        return jsonify({'success': False, 'message': 'Preset requerido'})
+    
+    preset_key = data['preset_key']
+    
+    # Import presets
+    from ..theme_presets import get_preset_config
+    
+    # Get current template
+    current_template = card.theme.template_name if card.theme else 'classic'
+    
+    # Get preset configuration
+    preset_config = get_preset_config(current_template, preset_key)
+    if not preset_config:
+        return jsonify({'success': False, 'message': 'Preset no encontrado'})
+    
+    # Apply preset to current theme
+    if card.theme:
+        card.theme.primary_color = preset_config['primary_color']
+        card.theme.secondary_color = preset_config['secondary_color']
+        card.theme.accent_color = preset_config['accent_color']
+        card.theme.font_family = preset_config['font_family']
+        card.theme.layout = preset_config['layout']
+        card.theme.avatar_shape = preset_config['avatar_shape']
+        
+        db.session.commit()
+    
+    # Clear cache for the card
+    CacheManager.invalidate_card(card.id)
+    
+    return jsonify({'success': True, 'message': f'Preset "{preset_config["name"]}" aplicado exitosamente'})
+
 
 @bp.route('/cards/<int:id>/qr')
 @login_required
@@ -452,23 +582,56 @@ def card_qr(id):
 def download_qr(id):
     card = get_user_card_or_404(id)
     
+    # Get parameters for QR style and size
+    style = request.args.get('style', 'themed')  # 'themed', 'classic', 'logo'
+    size = int(request.args.get('size', 800))
+    
     # Generate the public URL for the QR code
     card_url = url_for('public.card_view', slug=card.slug, _external=True)
     
-    # Generate QR code
-    qr_img = generate_styled_qr_code(card_url, card.theme, size=(800, 800))
-    
-    # Save to memory buffer
-    img_buffer = io.BytesIO()
-    qr_img.save(img_buffer, format='PNG')
-    img_buffer.seek(0)
-    
-    # Create response
-    response = make_response(img_buffer.getvalue())
-    response.headers['Content-Type'] = 'image/png'
-    response.headers['Content-Disposition'] = f'attachment; filename="qr_{card.slug}.png"'
-    
-    return response
+    # Generate QR code based on style
+    try:
+        if style == 'themed':
+            qr_img = generate_styled_qr_code(card_url, card.theme, size=(size, size))
+        elif style == 'logo' and card.get_avatar_path():
+            avatar_path = os.path.join(current_app.root_path, 'static', 'uploads', card.get_avatar_path())
+            qr_img = generate_qr_code_with_logo(card_url, avatar_path, size=(size, size))
+        elif style == 'logo-themed' and card.get_avatar_path():
+            avatar_path = os.path.join(current_app.root_path, 'static', 'uploads', card.get_avatar_path())
+            qr_img = generate_qr_code_with_logo_themed(card_url, avatar_path, card.theme, size=(size, size))
+        else:
+            # Classic style or fallback
+            qr_img = generate_qr_code(card_url, size=(size, size))
+        
+        # Save to memory buffer
+        img_buffer = io.BytesIO()
+        qr_img.save(img_buffer, format='PNG')
+        img_buffer.seek(0)
+        
+        # Create response with descriptive filename
+        style_suffix = f"_{style}" if style != 'themed' else ""
+        filename = f"qr_{card.slug}{style_suffix}_{size}px.png"
+        
+        response = make_response(img_buffer.getvalue())
+        response.headers['Content-Type'] = 'image/png'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error generating QR for download: {e}")
+        # Fallback to basic QR
+        qr_img = generate_qr_code(card_url, size=(size, size))
+        
+        img_buffer = io.BytesIO()
+        qr_img.save(img_buffer, format='PNG')
+        img_buffer.seek(0)
+        
+        response = make_response(img_buffer.getvalue())
+        response.headers['Content-Type'] = 'image/png'
+        response.headers['Content-Disposition'] = f'attachment; filename="qr_{card.slug}.png"'
+        
+        return response
 
 @bp.route('/cards/<int:id>/qr/generate', methods=['POST'])
 @login_required
@@ -486,11 +649,12 @@ def generate_qr(id):
         if style == 'themed':
             qr_img = generate_styled_qr_code(card_url, card.theme, size=(size, size))
         elif style == 'logo' and card.avatar_path:
-            from ..utils import generate_qr_code_with_logo
             avatar_path = os.path.join(current_app.root_path, 'static', 'uploads', card.avatar_path)
             qr_img = generate_qr_code_with_logo(card_url, avatar_path, size=(size, size))
+        elif style == 'logo-themed' and card.avatar_path:
+            avatar_path = os.path.join(current_app.root_path, 'static', 'uploads', card.avatar_path)
+            qr_img = generate_qr_code_with_logo_themed(card_url, avatar_path, card.theme, size=(size, size))
         else:
-            from ..utils import generate_qr_code
             qr_img = generate_qr_code(card_url, size=(size, size))
         
         # Convert to base64
@@ -535,7 +699,7 @@ def save_card_qr(id):
         }), 500
 
 # Product routes
-@bp.route('/cards/<int:id>/products')
+@bp.route('/cards/<int:id>/products', methods=['GET', 'POST'])
 @login_required
 def card_products(id):
     card = get_user_card_or_404(id)
@@ -626,6 +790,51 @@ def analytics():
     # Get user's analytics data
     analytics_data = AnalyticsService.get_user_analytics(current_user.id, days)
     
+    # Get device analytics for all user's cards
+    card_ids = [card['card_id'] for card in analytics_data.get('cards_analytics', [])]
+    device_analytics = {}
+    if card_ids:
+        device_analytics = AnalyticsService.get_device_analytics(None, days)  # Global for user
+        # Filter by user's cards
+        user_device_query = db.session.query(
+            CardView.device_type,
+            func.count(CardView.id).label('count')
+        ).filter(
+            CardView.card_id.in_(card_ids),
+            CardView.viewed_at >= datetime.utcnow() - timedelta(days=days)
+        ).group_by(CardView.device_type).all()
+        
+        total_user_views = sum(stat.count for stat in user_device_query)
+        user_device_breakdown = []
+        
+        for stat in user_device_query:
+            device_type = stat.device_type or 'Unknown'
+            percentage = (stat.count / total_user_views * 100) if total_user_views > 0 else 0
+            user_device_breakdown.append({
+                'device_type': device_type,
+                'count': stat.count,
+                'percentage': round(percentage, 1)
+            })
+        
+        # Calculate mobile vs desktop for user
+        mobile_count = sum(d['count'] for d in user_device_breakdown if d['device_type'] in ['mobile', 'tablet'])
+        desktop_count = sum(d['count'] for d in user_device_breakdown if d['device_type'] == 'desktop')
+        
+        device_analytics = {
+            'device_breakdown': user_device_breakdown,
+            'total_views': total_user_views,
+            'mobile_vs_desktop': {
+                'mobile': {
+                    'count': mobile_count,
+                    'percentage': round((mobile_count / total_user_views * 100) if total_user_views > 0 else 0, 1)
+                },
+                'desktop': {
+                    'count': desktop_count,
+                    'percentage': round((desktop_count / total_user_views * 100) if total_user_views > 0 else 0, 1)
+                }
+            }
+        }
+    
     # Calculate growth rate
     prev_period_views = 0
     if analytics_data['cards_analytics']:
@@ -708,7 +917,8 @@ def analytics():
     return render_template('dashboard/analytics.html', 
                          analytics=aggregated_analytics, 
                          growth_rate=growth_rate,
-                         cards_data=analytics_data['cards_analytics'])
+                         cards_data=analytics_data['cards_analytics'],
+                         device_analytics=device_analytics)
 
 
 @bp.route('/analytics-data')
@@ -719,6 +929,41 @@ def analytics_data():
     
     # Get fresh analytics data
     analytics_data = AnalyticsService.get_user_analytics(current_user.id, days)
+    
+    # Get device analytics for AJAX updates
+    card_ids = [card['card_id'] for card in analytics_data.get('cards_analytics', [])]
+    device_analytics = {}
+    if card_ids:
+        user_device_query = db.session.query(
+            CardView.device_type,
+            func.count(CardView.id).label('count')
+        ).filter(
+            CardView.card_id.in_(card_ids),
+            CardView.viewed_at >= datetime.utcnow() - timedelta(days=days)
+        ).group_by(CardView.device_type).all()
+        
+        total_user_views = sum(stat.count for stat in user_device_query)
+        user_device_breakdown = []
+        
+        for stat in user_device_query:
+            device_type = stat.device_type or 'Unknown'
+            percentage = (stat.count / total_user_views * 100) if total_user_views > 0 else 0
+            user_device_breakdown.append({
+                'device_type': device_type,
+                'count': stat.count,
+                'percentage': round(percentage, 1)
+            })
+        
+        mobile_count = sum(d['count'] for d in user_device_breakdown if d['device_type'] in ['mobile', 'tablet'])
+        desktop_count = sum(d['count'] for d in user_device_breakdown if d['device_type'] == 'desktop')
+        
+        device_analytics = {
+            'device_breakdown': user_device_breakdown,
+            'mobile_vs_desktop': {
+                'mobile': {'count': mobile_count},
+                'desktop': {'count': desktop_count}
+            }
+        }
     
     # Calculate growth rate
     prev_period_start = datetime.utcnow() - timedelta(days=days*2)
@@ -1032,3 +1277,56 @@ def admin_export_full_backup():
     response.headers['Content-Disposition'] = f'attachment; filename="full_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json"'
     
     return response
+
+@bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    """User profile and password change"""
+    form = ChangePasswordForm()
+    
+    if form.validate_on_submit():
+        # Verify current password
+        if not current_user.check_password(form.current_password.data):
+            flash('La contraseña actual es incorrecta.', 'error')
+            return redirect(url_for('dashboard.profile'))
+        
+        # Update password
+        current_user.set_password(form.new_password.data)
+        db.session.commit()
+        
+        flash('¡Contraseña cambiada exitosamente!', 'success')
+        return redirect(url_for('dashboard.profile'))
+    
+    return render_template('dashboard/profile.html', form=form)
+
+@bp.route('/cards/<int:id>/social-networks', methods=['GET', 'POST'])
+@login_required
+def card_social_networks(id):
+    """Configure social network display preferences for a card"""
+    card = get_user_card_or_404(id)
+    
+    if request.method == 'POST':
+        # Validate CSRF token
+        validate_csrf(request.form.get('csrf_token'))
+        
+        # Get selected primary networks from form
+        primary_networks = request.form.getlist('primary_networks')
+        
+        # Save preferences
+        card.set_primary_social_networks(primary_networks)
+        db.session.commit()
+        
+        # Clear cache for the parent card
+        CacheManager.invalidate_card(card.id)
+        
+        flash('Configuración de redes sociales actualizada correctamente', 'success')
+        return redirect(url_for('dashboard.card_social_networks', id=card.id))
+    
+    # Get available networks and current preferences
+    available_networks = card.get_available_social_networks()
+    primary_fields = card.get_primary_social_network_fields()
+    
+    return render_template('dashboard/social_networks.html', 
+                         card=card, 
+                         available_networks=available_networks,
+                         primary_fields=primary_fields)

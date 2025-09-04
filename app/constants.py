@@ -67,6 +67,14 @@ SOCIAL_NETWORKS_PRIMARY = [
         'priority': 1
     },
     {
+        'name': 'Email',
+        'field': 'email_public',
+        'icon': 'fas fa-envelope',
+        'color': '#EA4335',
+        'base_url': 'mailto:',
+        'priority': 1
+    },
+    {
         'name': 'LinkedIn',
         'field': 'linkedin',
         'icon': 'fab fa-linkedin',

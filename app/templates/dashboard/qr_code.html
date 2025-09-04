@@ -32,6 +32,9 @@
                 <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
                     <i class="fas fa-palette me-2"></i>Personalizar
                 </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                </a>
                 <a class="nav-link active" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
                     <i class="fas fa-qrcode me-2"></i>Código QR
                 </a>
@@ -103,7 +106,7 @@
                             
                             <!-- Action Buttons -->
                             <div class="d-flex flex-wrap gap-2 justify-content-center">
-                                <a href="{{ url_for('dashboard.download_qr', id=card.id) }}" 
+                                <a id="download-qr-btn" href="{{ url_for('dashboard.download_qr', id=card.id) }}" 
                                    class="btn btn-primary">
                                     <i class="fas fa-download me-1"></i>Descargar PNG
                                 </a>
@@ -155,7 +158,14 @@
                                     <input class="form-check-input" type="radio" name="qr-style" 
                                            id="style-logo" value="logo">
                                     <label class="form-check-label" for="style-logo">
-                                        Con tu avatar al centro
+                                        Con tu avatar al centro (clásico)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="qr-style" 
+                                           id="style-logo-themed" value="logo-themed">
+                                    <label class="form-check-label" for="style-logo-themed">
+                                        Con tu avatar + colores del tema
                                     </label>
                                 </div>
                                 {% endif %}
@@ -263,6 +273,9 @@ function regenerateQR() {
     
     console.log('Regenerating QR with style:', style, 'and size:', size);
     
+    // Update download link with current style and size
+    updateDownloadLink(style, size);
+    
     // Show loading
     const qrImage = document.getElementById('qr-image');
     const regenerateBtn = document.querySelector('button[onclick="regenerateQR()"]');
@@ -309,6 +322,17 @@ function regenerateQR() {
         regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
         regenerateBtn.disabled = false;
     });
+}
+
+function updateDownloadLink(style, size) {
+    const downloadBtn = document.getElementById('download-qr-btn');
+    const baseUrl = "{{ url_for('dashboard.download_qr', id=card.id) }}";
+    const params = new URLSearchParams();
+    params.append('style', style);
+    params.append('size', size);
+    
+    downloadBtn.href = `${baseUrl}?${params.toString()}`;
+    console.log('Updated download link:', downloadBtn.href);
 }
 
 function saveQR() {
@@ -437,6 +461,11 @@ function copyQRLink() {
 // Add event listeners when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('QR code page loaded');
+    
+    // Initialize download link with default values
+    const defaultStyle = document.querySelector('input[name="qr-style"]:checked').value;
+    const defaultSize = document.getElementById('qr-size').value;
+    updateDownloadLink(defaultStyle, defaultSize);
     
     // Add event listeners to QR style radio buttons
     const styleRadios = document.querySelectorAll('input[name="qr-style"]');

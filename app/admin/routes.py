@@ -57,11 +57,11 @@ def new_user():
     form = NewUserForm()
     if form.validate_on_submit():
         user = User(
-            email=form.email.data,
             role=form.role.data,
             is_active=form.is_active.data,
             max_cards=form.max_cards.data
         )
+        user.set_email(form.email.data)  # Normalize email
         password = form.password.data
         user.set_password(password)
         
@@ -81,7 +81,7 @@ def edit_user(id):
     
     form = UserForm(original_email=user.email, obj=user)
     if form.validate_on_submit():
-        user.email = form.email.data
+        user.set_email(form.email.data)  # Normalize email
         user.role = form.role.data
         user.is_active = form.is_active.data
         user.max_cards = form.max_cards.data
@@ -119,12 +119,16 @@ def new_theme():
     if form.validate_on_submit():
         theme = Theme(
             name=form.name.data,
+            template_name=form.template_name.data,
             primary_color=form.primary_color.data,
             secondary_color=form.secondary_color.data,
             accent_color=form.accent_color.data,
+            avatar_border_color=form.avatar_border_color.data,
             font_family=form.font_family.data,
             layout=form.layout.data,
-            avatar_shape=form.avatar_shape.data
+            avatar_shape=form.avatar_shape.data,
+            is_global=True,  # Admin themes are global
+            created_by_id=None  # Admin themes don't have owner
         )
         
         db.session.add(theme)
@@ -144,9 +148,11 @@ def edit_theme(id):
     form = ThemeForm(obj=theme)
     if form.validate_on_submit():
         theme.name = form.name.data
+        theme.template_name = form.template_name.data
         theme.primary_color = form.primary_color.data
         theme.secondary_color = form.secondary_color.data
         theme.accent_color = form.accent_color.data
+        theme.avatar_border_color = form.avatar_border_color.data
         theme.font_family = form.font_family.data
         theme.layout = form.layout.data
         theme.avatar_shape = form.avatar_shape.data

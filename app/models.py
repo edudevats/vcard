@@ -35,6 +35,23 @@ class User(UserMixin, db.Model):
     # Relationships
     cards = db.relationship('Card', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
     
+    def normalize_email(self, email):
+        """Normalize email to lowercase for case-insensitive comparison"""
+        if email:
+            return email.lower().strip()
+        return email
+    
+    @staticmethod
+    def find_by_email(email):
+        """Find user by email (case-insensitive)"""
+        if email:
+            return User.query.filter_by(email=email.lower().strip()).first()
+        return None
+    
+    def set_email(self, email):
+        """Set email with automatic normalization"""
+        self.email = self.normalize_email(email)
+    
     def set_password(self, password):
         self.password_hash = hash_password(password)
     
@@ -117,17 +134,55 @@ class User(UserMixin, db.Model):
 class Theme(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    template_name = db.Column(db.String(50), default='classic')  # template file name (classic, mobile, elegant, etc.)
     primary_color = db.Column(db.String(7), default='#6366f1')  # hex color
     secondary_color = db.Column(db.String(7), default='#8b5cf6')
     accent_color = db.Column(db.String(7), default='#ec4899')
+    avatar_border_color = db.Column(db.String(7), default='#ffffff')  # avatar border color
     font_family = db.Column(db.String(100), default='Inter')
     layout = db.Column(Enum('classic', 'modern', 'minimal', name='theme_layouts'), default='modern')
     avatar_shape = db.Column(Enum('circle', 'rounded', 'square', 'rectangle', name='avatar_shapes'), default='circle')
     bg_image_path = db.Column(db.String(255))  # optional background image
+    preview_image = db.Column(db.String(255))  # preview screenshot for theme selection
+    is_active = db.Column(db.Boolean, default=True)  # admin can disable themes
+    is_global = db.Column(db.Boolean, default=False)  # True for admin themes visible to all, False for personal themes
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # NULL for admin themes, user_id for personal themes
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     cards = db.relationship('Card', backref='theme', lazy='dynamic')
+    
+    def get_template_path(self):
+        """Get the template file path for this theme"""
+        return f'public/themes/{self.template_name}.html'
+    
+    @staticmethod
+    def get_available_themes_for_user(user):
+        """Get themes available for a specific user"""
+        if user.is_admin():
+            # Admin can see all themes
+            return Theme.query.filter_by(is_active=True).all()
+        else:
+            # Regular user can see global themes + their own themes
+            return Theme.query.filter(
+                db.and_(
+                    Theme.is_active == True,
+                    db.or_(
+                        Theme.is_global == True,
+                        Theme.created_by_id == user.id
+                    )
+                )
+            ).all()
+    
+    def can_user_access(self, user):
+        """Check if user can access this theme"""
+        if user.is_admin():
+            return True
+        return self.is_global or self.created_by_id == user.id
+    
+    def is_personal(self):
+        """Check if this is a personal theme"""
+        return not self.is_global and self.created_by_id is not None
     
     def __repr__(self):
         return f'<Theme {self.name}>'
@@ -170,6 +225,9 @@ class Card(db.Model):
     github = db.Column(db.String(255))
     behance = db.Column(db.String(255))
     dribbble = db.Column(db.String(255))
+    
+    # Social network display preferences (JSON list of network field names to show as primary)
+    primary_social_networks = db.Column(db.Text)
     
     # Relationships
     services = db.relationship('Service', backref='card', lazy='dynamic', cascade='all, delete-orphan')
@@ -290,6 +348,8 @@ class Card(db.Model):
                 value = self.get_whatsapp_full_number()
             elif field_name == 'website':
                 value = self.website
+            elif field_name == 'email_public':
+                value = self.email_public
             elif hasattr(self, field_name):
                 # Clean social values for known networks
                 if field_name in ['instagram', 'facebook', 'linkedin', 'twitter']:
@@ -311,13 +371,129 @@ class Card(db.Model):
         
         return social_networks
     
+    def get_social_networks_by_preference(self, is_primary=True):
+        """Get social networks based on user preferences
+        
+        Args:
+            is_primary (bool): True for primary networks, False for secondary
+        """
+        import json
+        from .constants import SOCIAL_NETWORKS
+        
+        # Get user's preferred primary networks from stored preferences
+        primary_fields = []
+        if self.primary_social_networks:
+            try:
+                primary_fields = json.loads(self.primary_social_networks)
+            except (json.JSONDecodeError, TypeError):
+                primary_fields = []
+        
+        # If no preferences set, use default primary networks
+        if not primary_fields:
+            primary_fields = ['instagram', 'facebook', 'whatsapp_business', 'email_public', 'linkedin', 'twitter', 'youtube']
+        
+        social_networks = []
+        for network in SOCIAL_NETWORKS:
+            field_name = network['field']
+            
+            # Determine if this network should be shown based on preference
+            is_network_primary = field_name in primary_fields
+            if is_primary != is_network_primary:
+                continue  # Skip if doesn't match requested type
+            
+            # Handle special cases for value retrieval
+            if field_name == 'whatsapp_business':
+                value = self.get_whatsapp_full_number()
+            elif field_name == 'website':
+                value = self.website
+            elif field_name == 'email_public':
+                value = self.email_public
+            elif hasattr(self, field_name):
+                # Clean social values for known networks
+                if field_name in ['instagram', 'facebook', 'linkedin', 'twitter']:
+                    value = self._clean_social_value(getattr(self, field_name), field_name)
+                else:
+                    value = getattr(self, field_name)
+            else:
+                continue
+                
+            if value:  # Only add networks with values
+                social_networks.append({
+                    'name': network['name'],
+                    'value': value,
+                    'icon': network['icon'],
+                    'color': network['color'],
+                    'base_url': network['base_url'],
+                    'field': field_name,
+                    'priority': 1 if is_primary else 2
+                })
+        
+        return social_networks
+    
+    def set_primary_social_networks(self, network_fields):
+        """Set which social networks should be displayed as primary
+        
+        Args:
+            network_fields (list): List of field names to show as primary
+        """
+        import json
+        if isinstance(network_fields, list):
+            self.primary_social_networks = json.dumps(network_fields)
+        else:
+            self.primary_social_networks = None
+    
+    def get_primary_social_network_fields(self):
+        """Get list of field names configured as primary"""
+        import json
+        if self.primary_social_networks:
+            try:
+                return json.loads(self.primary_social_networks)
+            except (json.JSONDecodeError, TypeError):
+                return []
+        # Default primary networks
+        return ['instagram', 'facebook', 'whatsapp_business', 'email_public', 'linkedin', 'twitter', 'youtube']
+    
+    def get_available_social_networks(self):
+        """Get all available social networks with their current values"""
+        from .constants import SOCIAL_NETWORKS
+        
+        networks = []
+        for network in SOCIAL_NETWORKS:
+            field_name = network['field']
+            
+            # Get current value
+            if field_name == 'whatsapp_business':
+                value = self.get_whatsapp_full_number()
+            elif field_name == 'website':
+                value = self.website
+            elif field_name == 'email_public':
+                value = self.email_public
+            elif hasattr(self, field_name):
+                if field_name in ['instagram', 'facebook', 'linkedin', 'twitter']:
+                    value = self._clean_social_value(getattr(self, field_name), field_name)
+                else:
+                    value = getattr(self, field_name)
+            else:
+                value = None
+                
+            networks.append({
+                'field': field_name,
+                'name': network['name'],
+                'icon': network['icon'],
+                'color': network['color'],
+                'has_value': bool(value),
+                'value': value
+            })
+        
+        return networks
+    
     def get_primary_social_networks(self):
-        """Get primary social networks (Instagram, LinkedIn, Twitter, Facebook, YouTube, TikTok)"""
-        return self.get_social_networks(priority=1)
+        """Get user-customized primary social networks"""
+        return self.get_social_networks_by_preference(is_primary=True)
     
     def get_secondary_social_networks(self):
-        """Get secondary social networks (WhatsApp, Telegram, GitHub, etc.)"""
-        return self.get_social_networks(priority=2)
+        """Get user-customized secondary social networks"""
+        return self.get_social_networks_by_preference(is_primary=False)
     
     def get_total_views(self):
         """Get total number of views for this card"""
@@ -357,6 +533,19 @@ class Card(db.Model):
         else:
             # Use square version for circle, rounded, square shapes
             return self.avatar_square_path or self.avatar_path or self.avatar_rect_path
+    
+    def get_avatar_url_with_cache_busting(self):
+        """Get avatar URL with cache busting parameter"""
+        from flask import url_for
+        import time
+        
+        avatar_path = self.get_avatar_path()
+        if not avatar_path:
+            return None
+        
+        # Use updated_at timestamp as cache busting parameter
+        timestamp = int(self.updated_at.timestamp()) if self.updated_at else int(time.time())
+        return url_for('static', filename=f'uploads/{avatar_path}', v=timestamp)
     
     def has_avatar(self):
         """Check if card has any avatar version"""

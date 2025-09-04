@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField, DecimalField, HiddenField
-from wtforms.validators import DataRequired, Email, Optional, URL, NumberRange, Length, ValidationError
+from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField, DecimalField, HiddenField, PasswordField
+from wtforms.validators import DataRequired, Email, Optional, URL, NumberRange, Length, ValidationError, EqualTo
 import re
 from ..models import Theme
 from ..constants import FONT_FAMILY_CHOICES, LAYOUT_CHOICES, AVATAR_SHAPE_CHOICES
@@ -182,6 +182,8 @@ class ThemeCustomizationForm(FlaskForm):
                                  render_kw={'type': 'color', 'class': 'form-control form-control-color'})
     accent_color = StringField('Color de Acento', validators=[DataRequired()],
                               render_kw={'type': 'color', 'class': 'form-control form-control-color'})
+    avatar_border_color = StringField('Color del Borde del Avatar', validators=[DataRequired()],
+                                     render_kw={'type': 'color', 'class': 'form-control form-control-color'})
     font_family = SelectField('Tipografía', validators=[DataRequired()],
                              choices=FONT_FAMILY_CHOICES,
                              render_kw={'class': 'form-select'})
@@ -240,3 +242,13 @@ class ProductForm(FlaskForm):
                                render_kw={'class': 'form-check-input'})
     
     submit = SubmitField('Guardar Producto', render_kw={'class': 'btn btn-success'})
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField('Contraseña Actual', validators=[DataRequired()],
+                                   render_kw={'class': 'form-control'})
+    new_password = PasswordField('Nueva Contraseña', validators=[DataRequired(), Length(min=6)],
+                               render_kw={'class': 'form-control'})
+    confirm_password = PasswordField('Confirmar Nueva Contraseña', 
+                                   validators=[DataRequired(), EqualTo('new_password', 'Las contraseñas no coinciden')],
+                                   render_kw={'class': 'form-control'})
+    submit = SubmitField('Cambiar Contraseña', render_kw={'class': 'btn btn-primary'})

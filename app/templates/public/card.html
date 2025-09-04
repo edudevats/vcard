@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ card.title or card.name }} - Tarjeta Digital</title>
     
+    <!-- Dynamic Favicon -->
+    {% if card.has_avatar() %}
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}">
+    {% else %}
+    <link rel="icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/icons/favicon.ico">
+    {% endif %}
+    
     <!-- SEO Meta Tags -->
     <meta name="description" content="{{ card.bio[:160] if card.bio else 'Tarjeta de presentación digital de ' + card.name }}">
     <meta name="keywords" content="tarjeta digital, {{ card.name }}, {{ card.company or '' }}, contacto">

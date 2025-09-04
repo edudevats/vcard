@@ -21,7 +21,7 @@ def login():
         
         # Handle login form
         if form_type == 'login' and login_form.validate_on_submit():
-            user = User.query.filter_by(email=login_form.email.data).first()
+            user = User.find_by_email(login_form.email.data)
             if user is None or not user.check_password(login_form.password.data):
                 flash('Email o contraseña inválidos', 'error')
                 return redirect(url_for('auth.login'))
@@ -47,7 +47,8 @@ def login():
         
         # Handle registration form
         elif form_type == 'register' and register_form.validate_on_submit():
-            user = User(email=register_form.email.data)
+            user = User()
+            user.set_email(register_form.email.data)  # This will normalize the email
             user.set_password(register_form.password.data)
             user.is_approved = False  # Requiere aprobación del administrador
             db.session.add(user)
@@ -92,7 +93,7 @@ def forgot_password():
     
     form = RequestPasswordResetForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.find_by_email(form.email.data)
         if user:
             send_password_reset_email(user)
             db.session.commit()

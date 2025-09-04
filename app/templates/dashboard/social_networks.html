@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Configurar Redes Sociales - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="sidebar">
+            <h5 class="mb-3">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h5>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home me-2"></i>Inicio
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+                    <i class="fas fa-box me-2"></i>Productos
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+                    <i class="fas fa-images me-2"></i>Galería
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+                    <i class="fas fa-user-circle me-2"></i>Avatar
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+                    <i class="fas fa-palette me-2"></i>Personalizar
+                </a>
+                <a class="nav-link active" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+                    <i class="fas fa-qrcode me-2"></i>Código QR
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="main-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-share-alt me-2"></i>Configurar Redes Sociales
+                    <small class="text-muted">- {{ card.name }}</small>
+                </h2>
+                {% if card.is_public %}
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
+                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Explanation -->
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>¿Cómo funciona?</h5>
+                <p class="mb-2">Puedes personalizar qué redes sociales aparecen en la <strong>parte superior</strong> (principales) y cuáles en la <strong>parte inferior</strong> (adicionales) de tu tarjeta.</p>
+                <ul class="mb-0">
+                    <li><strong>Redes Principales:</strong> Se muestran como íconos grandes en la parte superior, más visibles</li>
+                    <li><strong>Redes Adicionales:</strong> Se muestran como íconos más pequeños en la parte inferior</li>
+                    <li><strong>Solo aparecerán:</strong> Las redes sociales que hayas configurado con valores</li>
+                </ul>
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>Configuración de Display
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Primary Networks Selection -->
+                            <div class="col-lg-6 col-md-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-star me-2"></i>Redes Principales (Parte Superior)
+                                </h6>
+                                <p class="text-muted small mb-3">Selecciona las redes sociales que quieres mostrar de forma prominente en la parte superior de tu tarjeta.</p>
+                                
+                                <div class="social-networks-list">
+                                    {% for network in available_networks %}
+                                    <div class="social-network-item {% if not network.has_value %}disabled{% endif %}">
+                                        <div class="d-flex align-items-center">
+                                            <input class="form-check-input me-3" type="checkbox" 
+                                                   name="primary_networks" 
+                                                   value="{{ network.field }}"
+                                                   id="primary_{{ network.field }}"
+                                                   {{ 'checked' if network.field in primary_fields else '' }}
+                                                   {{ 'disabled' if not network.has_value else '' }}>
+                                            <label class="form-check-label d-flex align-items-center justify-content-between w-100" for="primary_{{ network.field }}">
+                                                <div class="d-flex align-items-center flex-grow-1">
+                                                    <i class="{{ network.icon }} me-2" style="color: {{ network.color }}; width: 20px;"></i>
+                                                    <span>{{ network.name }}</span>
+                                                </div>
+                                                {% if network.has_value %}
+                                                    <small class="text-success ms-2">
+                                                        <i class="fas fa-check-circle me-1"></i>Configurado
+                                                    </small>
+                                                {% else %}
+                                                    <small class="text-muted ms-2">
+                                                        <i class="fas fa-times-circle me-1"></i>Sin configurar
+                                                    </small>
+                                                {% endif %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Preview -->
+                            <div class="col-lg-6 col-md-12 mt-lg-0 mt-4">
+                                <h6 class="text-secondary mb-3">
+                                    <i class="fas fa-eye me-2"></i>Vista Previa
+                                </h6>
+                                
+                                <!-- Primary Networks Preview -->
+                                <div class="preview-section mb-4">
+                                    <div class="preview-label">Redes Principales (Parte Superior)</div>
+                                    <div class="preview-primary-networks" id="preview-primary">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Secondary Networks Preview -->
+                                <div class="preview-section">
+                                    <div class="preview-label">Redes Adicionales (Parte Inferior)</div>
+                                    <div class="preview-secondary-networks" id="preview-secondary">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Guardar Configuración
+                            </button>
+                            <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-arrow-left me-1"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Network data for JavaScript
+const networks = {
+    {% for network in available_networks %}
+    '{{ network.field }}': {
+        name: '{{ network.name }}',
+        icon: '{{ network.icon }}',
+        color: '{{ network.color }}',
+        hasValue: {{ 'true' if network.has_value else 'false' }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+};
+
+function updatePreviews() {
+    const primaryContainer = document.getElementById('preview-primary');
+    const secondaryContainer = document.getElementById('preview-secondary');
+    
+    // Get checked primary networks
+    const checkedPrimary = Array.from(document.querySelectorAll('input[name="primary_networks"]:checked'))
+        .map(input => input.value)
+        .filter(field => networks[field].hasValue);
+    
+    // Get all networks with values that are not primary
+    const allNetworks = Object.keys(networks).filter(field => networks[field].hasValue);
+    const secondaryNetworks = allNetworks.filter(field => !checkedPrimary.includes(field));
+    
+    // Update primary preview
+    primaryContainer.innerHTML = '';
+    if (checkedPrimary.length > 0) {
+        checkedPrimary.forEach(field => {
+            const network = networks[field];
+            const icon = document.createElement('i');
+            icon.className = `${network.icon} me-2`;
+            icon.style.color = network.color;
+            icon.style.fontSize = '24px';
+            icon.title = network.name;
+            primaryContainer.appendChild(icon);
+        });
+    } else {
+        primaryContainer.innerHTML = '<small class="text-muted">Ninguna red seleccionada</small>';
+    }
+    
+    // Update secondary preview
+    secondaryContainer.innerHTML = '';
+    if (secondaryNetworks.length > 0) {
+        secondaryNetworks.forEach(field => {
+            const network = networks[field];
+            const icon = document.createElement('i');
+            icon.className = `${network.icon} me-2`;
+            icon.style.color = network.color;
+            icon.style.fontSize = '18px';
+            icon.title = network.name;
+            secondaryContainer.appendChild(icon);
+        });
+    } else {
+        secondaryContainer.innerHTML = '<small class="text-muted">Ninguna red adicional</small>';
+    }
+}
+
+// Update previews when checkboxes change
+document.addEventListener('DOMContentLoaded', function() {
+    updatePreviews();
+    
+    document.querySelectorAll('input[name="primary_networks"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updatePreviews);
+    });
+});
+</script>
+
+<style>
+.social-network-item {
+    padding: 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.social-network-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+}
+
+.social-network-item.disabled {
+    background: #f8f9fa;
+    opacity: 0.6;
+}
+
+.social-network-item .form-check-input {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.social-network-item .form-check-label {
+    margin-bottom: 0;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .social-network-item {
+        padding: 10px;
+        margin-bottom: 6px;
+    }
+    
+    .social-network-item .form-check-input {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .social-network-item .form-check-label {
+        font-size: 13px;
+        line-height: 1.3;
+    }
+    
+    /* Status text smaller on mobile */
+    .social-network-item small {
+        font-size: 11px !important;
+    }
+    
+    /* Icon size adjustment for mobile */
+    .social-network-item i[class*="fa-"] {
+        font-size: 14px;
+        width: 16px !important;
+    }
+    
+    /* Preview sections responsive */
+    .preview-primary-networks,
+    .preview-secondary-networks {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .preview-primary-networks i {
+        font-size: 20px !important;
+    }
+    
+    .preview-secondary-networks i {
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small devices */
+    .social-network-item {
+        padding: 8px;
+    }
+    
+    .social-network-item .form-check-input {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .social-network-item .form-check-label {
+        font-size: 12px;
+    }
+    
+    .social-network-item small {
+        font-size: 10px !important;
+    }
+    
+    /* Make status text stack on very small screens */
+    .social-network-item .form-check-label {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .social-network-item .form-check-label > div {
+        width: 100%;
+    }
+}
+
+.preview-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.preview-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.preview-primary-networks {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.preview-secondary-networks {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.social-networks-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.alert-info {
+    border-left: 4px solid #17a2b8;
+}
+
+/* Mobile layout improvements */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 15px !important;
+    }
+    
+    .card-body {
+        padding: 15px !important;
+    }
+    
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    
+    .d-flex.justify-content-between.align-items-center h2 {
+        font-size: 1.3rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center h2 small {
+        display: block;
+        margin-top: 5px;
+    }
+    
+    .alert {
+        font-size: 13px;
+        padding: 12px;
+    }
+    
+    .alert h5 {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .alert p, .alert ul {
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+    
+    .btn {
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Sidebar becomes full width on very small screens */
+    .col-md-3 {
+        margin-bottom: 20px;
+    }
+    
+    .sidebar {
+        display: none; /* Hide sidebar on very small screens, or make it collapsible */
+    }
+    
+    .col-md-9 {
+        padding: 0 10px;
+    }
+    
+    .main-content {
+        padding: 10px !important;
+    }
+    
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .social-networks-list {
+        max-height: 400px; /* Reduce height on mobile */
+    }
+}
+</style>
+{% endblock %}

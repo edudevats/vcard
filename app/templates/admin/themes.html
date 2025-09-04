@@ -209,6 +209,23 @@
                                         </div>
                                     </div>
                                     
+                                    <!-- Privacy Status -->
+                                    <div class="mb-3">
+                                        {% if theme.is_personal() %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-user me-1"></i>Personal
+                                        </span>
+                                        {% if theme.created_by %}
+                                        <small class="text-muted ms-2">por {{ theme.created_by.email }}</small>
+                                        {% endif %}
+                                        {% elif theme.is_global %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-globe me-1"></i>Global
+                                        </span>
+                                        <small class="text-muted ms-2">disponible para todos</small>
+                                        {% endif %}
+                                    </div>
+                                    
                                     <!-- Theme Stats -->
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between align-items-center">

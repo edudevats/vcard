@@ -303,23 +303,34 @@ def cleanup_files(file_paths):
                 pass  # Ignore cleanup errors
 
 def validate_email_unique(email, exclude_user_id=None):
-    """Validate email uniqueness across users"""
+    """Validate email uniqueness across users (case-insensitive)"""
     from .models import User
     
-    query = User.query.filter_by(email=email)
+    # Normalize email for case-insensitive comparison
+    normalized_email = email.lower().strip() if email else email
+    
+    query = User.query.filter_by(email=normalized_email)
     if exclude_user_id:
         query = query.filter(User.id != exclude_user_id)
     
     return query.first() is None
 
-def generate_qr_code(data, size=(300, 300), border=4, fill_color="black", back_color="white"):
+def generate_qr_code(data, size=(300, 300), border=4, fill_color="black", back_color="white", error_correction="M"):
     """
     Generate QR code for given data
     Returns: PIL Image object
     """
+    # Set error correction level
+    error_levels = {
+        "L": qrcode.constants.ERROR_CORRECT_L,  # ~7% correction
+        "M": qrcode.constants.ERROR_CORRECT_M,  # ~15% correction
+        "Q": qrcode.constants.ERROR_CORRECT_Q,  # ~25% correction
+        "H": qrcode.constants.ERROR_CORRECT_H,  # ~30% correction (best for logos)
+    }
+    
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        error_correction=error_levels.get(error_correction, qrcode.constants.ERROR_CORRECT_M),
         box_size=10,
         border=border,
     )
@@ -336,45 +347,153 @@ def generate_qr_code(data, size=(300, 300), border=4, fill_color="black", back_c
 
 def generate_qr_code_with_logo(data, logo_path=None, size=(300, 300)):
     """
-    Generate QR code with optional logo in the center
+    Generate high-quality QR code with optional logo in the center
+    Based on the qrejemplo.py implementation
     Returns: PIL Image object
     """
-    # Generate basic QR code
-    qr_img = generate_qr_code(data, size=size, back_color="white", fill_color="black")
+    from PIL import ImageDraw
+    
+    # Generate QR with high error correction for logo compatibility
+    qr_img = generate_qr_code(data, size=size, back_color="white", fill_color="black", 
+                             border=4, error_correction="H")
+    
+    if not logo_path or not os.path.exists(logo_path):
+        return qr_img
+    
+    try:
+        # Convert QR to RGBA for transparency support
+        qr_img = qr_img.convert('RGBA')
+        
+        # Calculate center area for logo (about 1/3 of QR code size) - exact same as example
+        qr_width, qr_height = qr_img.size
+        logo_size = min(qr_width, qr_height) // 3
+        
+        # Create a transparent square in the center - exact same as example
+        draw = ImageDraw.Draw(qr_img)
+        center_x = (qr_width - logo_size) // 2
+        center_y = (qr_height - logo_size) // 2
+        draw.rectangle(
+            [(center_x, center_y), (center_x + logo_size, center_y + logo_size)],
+            fill=(255, 255, 255, 0)  # Transparent
+        )
+        
+        # Round the outer corners of the QR code - exact same as example
+        mask = Image.new('L', qr_img.size, 0)
+        mask_draw = ImageDraw.Draw(mask)
+        mask_draw.rounded_rectangle(
+            [(0, 0), qr_img.size],
+            radius=20,  # Fixed radius like your example
+            fill=255
+        )
+        qr_img.putalpha(mask)
+        
+        # Open and prepare logo - simplified like your example
+        logo = Image.open(logo_path).convert('RGBA')
+        
+        # Remove logo background if it exists - exact same logic as your example
+        if logo.mode == 'RGBA':
+            # Create a transparent background
+            new_logo = Image.new('RGBA', logo.size, (0, 0, 0, 0))
+            # Paste logo preserving transparency
+            new_logo.paste(logo, (0, 0), logo)
+            logo = new_logo
+        
+        # Resize logo to fit the transparent area - exact same as example
+        logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
+        
+        # Calculate position to center the logo - exact same as example
+        logo_position = (center_x, center_y)
+        
+        # Paste logo into the transparent center - exact same as example
+        qr_img.paste(logo, logo_position, logo)
+        
+    except Exception as e:
+        print(f"Error adding logo to QR code: {e}")
+        # Return basic QR on error
+        return generate_qr_code(data, size=size, back_color="white", fill_color="black")
+    
+    return qr_img
+
+def generate_qr_code_with_logo_themed(data, logo_path=None, card_theme=None, size=(300, 300)):
+    """
+    Generate high-quality QR code with logo and theme colors
+    Returns: PIL Image object
+    """
+    # Use theme colors with validation
+    fill_color = "black"  # default fallback
+    
+    if card_theme and card_theme.primary_color:
+        hex_color = card_theme.primary_color.strip()
+        if hex_color.startswith('#') and len(hex_color) == 7:
+            try:
+                int(hex_color[1:], 16)
+                fill_color = hex_color
+            except ValueError:
+                fill_color = "black"
+        elif hex_color.startswith('#') and len(hex_color) == 4:
+            try:
+                hex_expanded = '#' + ''.join([c*2 for c in hex_color[1:]])
+                int(hex_expanded[1:], 16)
+                fill_color = hex_expanded
+            except ValueError:
+                fill_color = "black"
+    
+    # Generate themed QR code with high error correction
+    qr_img = generate_qr_code(data, size=size, back_color="white", fill_color=fill_color, 
+                             border=4, error_correction="H")
     
     if logo_path and os.path.exists(logo_path):
         try:
-            # Open and process logo
-            logo = Image.open(logo_path)
+            from PIL import ImageDraw
             
-            # Calculate logo size (10% of QR code)
-            logo_size = int(size[0] * 0.1)
+            # Convert QR to RGBA for transparency support
+            qr_img = qr_img.convert('RGBA')
             
-            # Convert logo to RGBA if necessary
-            if logo.mode != 'RGBA':
-                logo = logo.convert('RGBA')
+            # Calculate center area for logo (about 1/3 of QR code size) - same as example
+            qr_width, qr_height = qr_img.size
+            logo_size = min(qr_width, qr_height) // 3
             
-            # Resize logo
+            # Create a transparent square in the center - same as example
+            draw = ImageDraw.Draw(qr_img)
+            center_x = (qr_width - logo_size) // 2
+            center_y = (qr_height - logo_size) // 2
+            draw.rectangle(
+                [(center_x, center_y), (center_x + logo_size, center_y + logo_size)],
+                fill=(255, 255, 255, 0)  # Transparent
+            )
+            
+            # Round the outer corners of the QR code - same as example
+            mask = Image.new('L', qr_img.size, 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle(
+                [(0, 0), qr_img.size],
+                radius=20,  # Fixed radius like example
+                fill=255
+            )
+            qr_img.putalpha(mask)
+            
+            # Open and prepare logo - same logic as example
+            logo = Image.open(logo_path).convert('RGBA')
+            
+            # Remove logo background if it exists - same as example
+            if logo.mode == 'RGBA':
+                # Create a transparent background
+                new_logo = Image.new('RGBA', logo.size, (0, 0, 0, 0))
+                # Paste logo preserving transparency
+                new_logo.paste(logo, (0, 0), logo)
+                logo = new_logo
+            
+            # Resize logo to fit the transparent area - same as example
             logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
             
-            # Create a white background for the logo area
-            logo_bg_size = int(logo_size * 1.2)
-            logo_bg = Image.new('RGBA', (logo_bg_size, logo_bg_size), 'white')
+            # Calculate position to center the logo - same as example
+            logo_position = (center_x, center_y)
             
-            # Paste logo on background
-            logo_pos = ((logo_bg_size - logo_size) // 2, (logo_bg_size - logo_size) // 2)
-            logo_bg.paste(logo, logo_pos, logo)
-            
-            # Calculate position to center logo on QR code
-            qr_center_x = size[0] // 2
-            qr_center_y = size[1] // 2
-            logo_pos = (qr_center_x - logo_bg_size // 2, qr_center_y - logo_bg_size // 2)
-            
-            # Paste logo background on QR code
-            qr_img.paste(logo_bg, logo_pos)
+            # Paste logo into the transparent center - same as example
+            qr_img.paste(logo, logo_position, logo)
             
         except Exception as e:
-            print(f"Error adding logo to QR code: {e}")
+            print(f"Error adding themed logo to QR code: {e}")
     
     return qr_img
 
@@ -383,8 +502,27 @@ def generate_styled_qr_code(data, card_theme, size=(300, 300)):
     Generate QR code with card theme colors
     Returns: PIL Image object
     """
-    # Use theme colors
-    fill_color = card_theme.primary_color if card_theme.primary_color else "black"
+    # Use theme colors with proper validation
+    fill_color = "black"  # default fallback
+    
+    if card_theme and card_theme.primary_color:
+        # Validate hex color format
+        hex_color = card_theme.primary_color.strip()
+        if hex_color.startswith('#') and len(hex_color) == 7:
+            try:
+                # Test if it's a valid hex color
+                int(hex_color[1:], 16)
+                fill_color = hex_color
+            except ValueError:
+                fill_color = "black"
+        elif hex_color.startswith('#') and len(hex_color) == 4:
+            # Convert short hex to full hex (e.g., #abc to #aabbcc)
+            try:
+                hex_expanded = '#' + ''.join([c*2 for c in hex_color[1:]])
+                int(hex_expanded[1:], 16)
+                fill_color = hex_expanded
+            except ValueError:
+                fill_color = "black"
     
     qr_img = generate_qr_code(data, size=size, fill_color=fill_color, back_color="white")
     

@@ -32,6 +32,9 @@
                 <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
                     <i class="fas fa-palette me-2"></i>Personalizar
                 </a>
+                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                </a>
                 <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
                     <i class="fas fa-qrcode me-2"></i>Código QR
                 </a>
@@ -43,10 +46,18 @@
     <div class="col-md-9">
         <div class="main-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-images me-2"></i>Galería
-                    <small class="text-muted">- {{ card.name }}</small>
-                </h2>
+                <div>
+                    <h2>
+                        <i class="fas fa-images me-2"></i>Galería
+                        <small class="text-muted">- {{ card.name }}</small>
+                    </h2>
+                    <div class="text-muted">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            {{ gallery_items|length }}/20 imágenes utilizadas
+                        </small>
+                    </div>
+                </div>
                 {% if card.is_public %}
                     <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
                         <i class="fas fa-external-link-alt me-1"></i>Ver Pública
@@ -59,35 +70,52 @@
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-cloud-upload-alt me-2"></i>Subir Nueva Imagen
+                        {% if gallery_items|length >= 20 %}
+                            <span class="badge bg-warning ms-2">Límite alcanzado</span>
+                        {% endif %}
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" enctype="multipart/form-data">
-                        {{ form.hidden_tag() }}
-                        
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                {{ form.image.label(class="form-label required") }}
-                                {{ form.image() }}
-                                <div class="form-text">
-                                    Formatos soportados: JPG, PNG, WEBP. Máximo 5MB.
-                                </div>
-                                {% if form.image.errors %}
-                                    <div class="text-danger small">
-                                        {% for error in form.image.errors %}{{ error }}{% endfor %}
+                    {% if gallery_items|length >= 20 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Límite alcanzado:</strong> Has alcanzado el máximo de 20 imágenes por galería. 
+                            Para subir una nueva imagen, primero debes eliminar una existente.
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-secondary" disabled>
+                                <i class="fas fa-upload me-1"></i>Subir Imagen (Límite alcanzado)
+                            </button>
+                        </div>
+                    {% else %}
+                        <form method="POST" enctype="multipart/form-data">
+                            {{ form.hidden_tag() }}
+                            
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    {{ form.image.label(class="form-label required") }}
+                                    {{ form.image() }}
+                                    <div class="form-text">
+                                        Formatos soportados: JPG, PNG, WEBP. Máximo 5MB.
+                                        <br><strong>Límite:</strong> {{ 20 - gallery_items|length }} imágenes restantes.
                                     </div>
-                                {% endif %}
+                                    {% if form.image.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.image.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.caption.label(class="form-label") }}
+                                    {{ form.caption() }}
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                {{ form.caption.label(class="form-label") }}
-                                {{ form.caption() }}
+                            
+                            <div class="text-end">
+                                {{ form.submit() }}
                             </div>
-                        </div>
-                        
-                        <div class="text-end">
-                            {{ form.submit() }}
-                        </div>
-                    </form>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
             
@@ -95,9 +123,18 @@
             {% if gallery_items %}
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-th me-2"></i>Imágenes ({{ gallery_items|length }})
-                        </h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-th me-2"></i>Imágenes ({{ gallery_items|length }}/20)
+                            </h5>
+                            {% if gallery_items|length >= 20 %}
+                                <span class="badge bg-danger">Límite alcanzado</span>
+                            {% elif gallery_items|length >= 16 %}
+                                <span class="badge bg-warning">Cerca del límite</span>
+                            {% else %}
+                                <span class="badge bg-success">{{ 20 - gallery_items|length }} disponibles</span>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="row g-3" id="gallery-grid">
