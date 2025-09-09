@@ -146,7 +146,7 @@
                                             </td>
                                             <td>
                                                 <small class="text-muted">
-                                                    {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '-' }}
+                                                    {{ user.created_at|local_date if user.created_at else '-' }}
                                                 </small>
                                             </td>
                                             <td>

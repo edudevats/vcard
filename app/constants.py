@@ -83,11 +83,11 @@ SOCIAL_NETWORKS_PRIMARY = [
         'priority': 1
     },
     {
-        'name': 'Twitter',
+        'name': 'X (Twitter)',
         'field': 'twitter',
-        'icon': 'fab fa-twitter',
-        'color': '#1DA1F2',
-        'base_url': 'https://twitter.com/',
+        'icon': 'fab fa-x-twitter',
+        'color': '#000000',
+        'base_url': 'https://x.com/',
         'priority': 1
     },
     {

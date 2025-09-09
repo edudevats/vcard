@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, desc, and_, or_
 from .models import Card, CardView, User
 from . import db, cache
+from .timezone_utils import now_utc_for_db, get_date_range_utc, get_month_range_utc
 import json
 from collections import defaultdict
 
@@ -14,8 +15,7 @@ class AnalyticsService:
     @cache.memoize(timeout=300)  # Cache for 5 minutes
     def get_card_analytics(card_id, days=30):
         """Get comprehensive analytics for a specific card"""
-        end_date = datetime.utcnow()
-        start_date = end_date - timedelta(days=days)
+        start_date, end_date = get_date_range_utc(days)
         
         # Basic metrics
         total_views = CardView.query.filter_by(card_id=card_id).count()
@@ -70,9 +70,19 @@ class AnalyticsService:
             CardView.viewed_at >= start_date
         ).group_by('hour').all()
         
+        # Views today
+        from .timezone_utils import get_today_range_utc
+        today_start, today_end = get_today_range_utc()
+        views_today = CardView.query.filter(
+            CardView.card_id == card_id,
+            CardView.viewed_at >= today_start,
+            CardView.viewed_at <= today_end
+        ).count()
+        
         return {
             'total_views': total_views,
             'period_views': period_views,
+            'views_today': views_today,
             'daily_views': [{'date': str(d.date), 'views': d.views} for d in daily_views],
             'device_stats': [{'device': d.device_type or 'Unknown', 'count': d.count} for d in device_stats],
             'browser_stats': [{'browser': b.browser or 'Unknown', 'count': b.count} for b in browser_stats],
@@ -84,8 +94,7 @@ class AnalyticsService:
     @cache.memoize(timeout=600)  # Cache for 10 minutes
     def get_user_analytics(user_id, days=30):
         """Get analytics for all user's cards"""
-        end_date = datetime.utcnow()
-        start_date = end_date - timedelta(days=days)
+        start_date, end_date = get_date_range_utc(days)
         
         # Get user's cards
         cards = Card.query.filter_by(owner_id=user_id).all()
@@ -145,8 +154,7 @@ class AnalyticsService:
     @cache.memoize(timeout=300)
     def get_global_analytics(days=30):
         """Get platform-wide analytics (admin only)"""
-        end_date = datetime.utcnow()
-        start_date = end_date - timedelta(days=days)
+        start_date, end_date = get_date_range_utc(days)
         
         # Platform stats
         total_users = User.query.count()
@@ -200,7 +208,7 @@ class AnalyticsService:
             device_type=device_type,
             browser=user_agent.browser,
             platform=user_agent.platform,
-            viewed_at=datetime.utcnow()
+            viewed_at=now_utc_for_db()
         )
         
         # You could add geolocation lookup here
@@ -260,8 +268,7 @@ class AnalyticsService:
     @cache.memoize(timeout=300)
     def get_device_analytics(card_id=None, days=30):
         """Get detailed device analytics with mobile vs desktop breakdown"""
-        end_date = datetime.utcnow()
-        start_date = end_date - timedelta(days=days)
+        start_date, end_date = get_date_range_utc(days)
         
         query = db.session.query(
             CardView.device_type,
@@ -325,8 +332,7 @@ class AnalyticsService:
     @cache.memoize(timeout=600)
     def get_hourly_device_pattern(card_id=None, days=7):
         """Get device usage patterns by hour of day"""
-        end_date = datetime.utcnow()
-        start_date = end_date - timedelta(days=days)
+        start_date, end_date = get_date_range_utc(days)
         
         query = db.session.query(
             func.extract('hour', CardView.viewed_at).label('hour'),
@@ -368,8 +374,9 @@ def get_analytics_summary(card_id, days=7):
     analytics = AnalyticsService.get_card_analytics(card_id, days)
     
     # Calculate growth rate
-    prev_period_start = datetime.utcnow() - timedelta(days=days*2)
-    prev_period_end = datetime.utcnow() - timedelta(days=days)
+    prev_start, prev_end = get_date_range_utc(days*2)
+    prev_period_start = prev_start
+    prev_period_end = prev_end - timedelta(days=days)
     
     prev_views = CardView.query.filter(
         CardView.card_id == card_id,

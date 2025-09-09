@@ -3,13 +3,35 @@ from flask_wtf.csrf import validate_csrf
 from flask_login import login_required, current_user
 from functools import wraps
 from sqlalchemy import func
-from ..models import Card, Service, Product, GalleryItem, Theme, CardView
+from ..models import Card, Service, Product, GalleryItem, Theme, CardView, Category
 from .. import db, cache
 from . import bp
 from .forms import CardForm, ServiceForm, ProductForm, GalleryUploadForm, AvatarUploadForm, ThemeCustomizationForm, ChangePasswordForm
 from ..utils import save_image, save_avatar, delete_file, generate_styled_qr_code, generate_qr_code, generate_qr_code_with_logo, generate_qr_code_with_logo_themed, qr_to_base64, save_qr_code, admin_required, get_user_card_or_404, cleanup_files
+
+def handle_category_creation(form, category_type):
+    """
+    Handle creation of new category if needed.
+    Returns the category name to use.
+    """
+    # If user entered a new category, use that
+    if form.new_category.data and form.new_category.data.strip():
+        category_name = form.new_category.data.strip()
+        
+        # Create or get the category for this user
+        Category.get_or_create(
+            user_id=current_user.id,
+            name=category_name,
+            category_type=category_type
+        )
+        
+        return category_name
+    
+    # Otherwise use the selected category
+    return form.category.data if form.category.data else None
 from ..analytics import AnalyticsService, get_analytics_summary
 from ..cache_utils import CacheManager
+from ..timezone_utils import now_utc_for_db, get_date_range_utc, format_local_datetime, now_local
 from datetime import datetime, timedelta
 import os
 import io
@@ -212,11 +234,14 @@ def card_services(id):
             if filename:
                 image_path = filename
         
+        # Handle category creation
+        category_name = handle_category_creation(form, 'service')
+        
         service = Service(
             card_id=card.id,
             title=form.title.data,
             description=form.description.data,
-            category=form.category.data if form.category.data else None,
+            category=category_name,
             price_from=form.price_from.data,
             duration_minutes=parse_duration_to_minutes(form.duration_minutes.data),
             availability=form.availability.data,
@@ -260,9 +285,12 @@ def edit_service(card_id, service_id):
             if filename:
                 service.image_path = filename
         
+        # Handle category creation
+        category_name = handle_category_creation(form, 'service')
+        
         service.title = form.title.data
         service.description = form.description.data
-        service.category = form.category.data if form.category.data else None
+        service.category = category_name
         service.price_from = form.price_from.data
         service.duration_minutes = parse_duration_to_minutes(form.duration_minutes.data)
         service.availability = form.availability.data
@@ -381,7 +409,7 @@ def card_avatar(id):
             
             # Update the updated_at timestamp for cache busting
             from datetime import datetime
-            card.updated_at = datetime.utcnow()
+            card.updated_at = now_utc_for_db()
             
             db.session.commit()
             
@@ -707,10 +735,13 @@ def card_products(id):
     form = ProductForm()
     
     if form.validate_on_submit():
+        # Handle category creation
+        category_name = handle_category_creation(form, 'product')
+        
         product = Product(
             name=form.name.data,
             description=form.description.data,
-            category=form.category.data,
+            category=category_name,
             brand=form.brand.data,
             price=form.price.data,
             original_price=form.original_price.data,
@@ -749,9 +780,12 @@ def edit_product(card_id, product_id):
     form = ProductForm(obj=product)
     
     if form.validate_on_submit():
+        # Handle category creation
+        category_name = handle_category_creation(form, 'product')
+        
         product.name = form.name.data
         product.description = form.description.data
-        product.category = form.category.data
+        product.category = category_name
         product.brand = form.brand.data
         product.price = form.price.data
         product.original_price = form.original_price.data
@@ -801,7 +835,7 @@ def analytics():
             func.count(CardView.id).label('count')
         ).filter(
             CardView.card_id.in_(card_ids),
-            CardView.viewed_at >= datetime.utcnow() - timedelta(days=days)
+            CardView.viewed_at >= get_date_range_utc(days)[0]
         ).group_by(CardView.device_type).all()
         
         total_user_views = sum(stat.count for stat in user_device_query)
@@ -838,8 +872,9 @@ def analytics():
     # Calculate growth rate
     prev_period_views = 0
     if analytics_data['cards_analytics']:
-        prev_period_start = datetime.utcnow() - timedelta(days=days*2)
-        prev_period_end = datetime.utcnow() - timedelta(days=days)
+        prev_start, _ = get_date_range_utc(days*2)
+        _, prev_period_end = get_date_range_utc(days)
+        prev_period_start = prev_start
         
         card_ids = [card['card_id'] for card in analytics_data['cards_analytics']]
         if card_ids:
@@ -852,6 +887,18 @@ def analytics():
     growth_rate = 0
     if prev_period_views > 0:
         growth_rate = ((analytics_data['period_views'] - prev_period_views) / prev_period_views) * 100
+    
+    # Global views today
+    global_views_today = 0
+    if analytics_data['cards_analytics']:
+        card_ids = [card['card_id'] for card in analytics_data['cards_analytics']]
+        if card_ids:
+            today_start, today_end = get_date_range_utc(1)
+            global_views_today = CardView.query.filter(
+                CardView.card_id.in_(card_ids),
+                CardView.viewed_at >= today_start,
+                CardView.viewed_at <= today_end
+            ).count()
     
     # Aggregate data across all cards for charts
     all_daily_views = {}
@@ -907,6 +954,8 @@ def analytics():
     aggregated_analytics = {
         'total_views': analytics_data['total_views'],
         'period_views': analytics_data['period_views'],
+        'views_today': global_views_today,
+        'growth_rate': growth_rate,
         'daily_views': [{'date': date, 'views': views} for date, views in sorted(all_daily_views.items())],
         'device_stats': [{'device': device, 'count': count} for device, count in all_device_stats.items()],
         'browser_stats': [{'browser': browser, 'count': count} for browser, count in all_browser_stats.items()],
@@ -915,9 +964,8 @@ def analytics():
     }
     
     return render_template('dashboard/analytics.html', 
-                         analytics=aggregated_analytics, 
-                         growth_rate=growth_rate,
-                         cards_data=analytics_data['cards_analytics'],
+                         global_stats=aggregated_analytics,
+                         cards_analytics=analytics_data['cards_analytics'],
                          device_analytics=device_analytics)
 
 
@@ -939,7 +987,7 @@ def analytics_data():
             func.count(CardView.id).label('count')
         ).filter(
             CardView.card_id.in_(card_ids),
-            CardView.viewed_at >= datetime.utcnow() - timedelta(days=days)
+            CardView.viewed_at >= get_date_range_utc(days)[0]
         ).group_by(CardView.device_type).all()
         
         total_user_views = sum(stat.count for stat in user_device_query)
@@ -964,23 +1012,6 @@ def analytics_data():
                 'desktop': {'count': desktop_count}
             }
         }
-    
-    # Calculate growth rate
-    prev_period_start = datetime.utcnow() - timedelta(days=days*2)
-    prev_period_end = datetime.utcnow() - timedelta(days=days)
-    
-    card_ids = [card['card_id'] for card in analytics_data['cards_analytics']]
-    prev_period_views = 0
-    if card_ids:
-        prev_period_views = CardView.query.filter(
-            CardView.card_id.in_(card_ids),
-            CardView.viewed_at >= prev_period_start,
-            CardView.viewed_at < prev_period_end
-        ).count()
-    
-    growth_rate = 0
-    if prev_period_views > 0:
-        growth_rate = ((analytics_data['period_views'] - prev_period_views) / prev_period_views) * 100
     
     # Aggregate data similar to analytics route
     all_daily_views = {}
@@ -1127,7 +1158,7 @@ def export_analytics():
     output.seek(0)
     response = make_response(output.getvalue())
     response.headers['Content-Type'] = 'text/csv'
-    response.headers['Content-Disposition'] = f'attachment; filename="analytics_{datetime.now().strftime("%Y%m%d")}.csv"'
+    response.headers['Content-Disposition'] = f'attachment; filename="analytics_{now_local().strftime("%Y%m%d")}.csv"'
     
     return response
 
@@ -1246,7 +1277,7 @@ def admin_export_full_backup():
         'users': [],
         'cards': [],
         'views': [],
-        'export_date': datetime.utcnow().isoformat()
+        'export_date': now_utc_for_db().isoformat()
     }
     
     # Export users (without passwords)
@@ -1274,7 +1305,7 @@ def admin_export_full_backup():
     output = json.dumps(backup_data, indent=2)
     response = make_response(output)
     response.headers['Content-Type'] = 'application/json'
-    response.headers['Content-Disposition'] = f'attachment; filename="full_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json"'
+    response.headers['Content-Disposition'] = f'attachment; filename="full_backup_{now_local().strftime("%Y%m%d_%H%M%S")}.json"'
     
     return response
 

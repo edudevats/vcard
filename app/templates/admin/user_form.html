@@ -167,8 +167,8 @@
                                 
                                 <div class="small text-muted">
                                     <div><strong>Último acceso:</strong> -</div>
-                                    <div><strong>Registro:</strong> {{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '-' }}</div>
-                                    <div><strong>Actualizado:</strong> {{ user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '-' }}</div>
+                                    <div><strong>Registro:</strong> {{ user.created_at|local_datetime('%d/%m/%Y %H:%M') if user.created_at else '-' }}</div>
+                                    <div><strong>Actualizado:</strong> {{ user.updated_at|local_datetime('%d/%m/%Y %H:%M') if user.updated_at else '-' }}</div>
                                 </div>
                             </div>
                         </div>

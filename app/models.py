@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime, timedelta
 from .security import hash_password, verify_password
+from .timezone_utils import now_utc_for_db, today_start_utc, get_date_range_utc, get_month_range_utc
 from sqlalchemy import Enum
 import string
 import secrets
@@ -29,8 +30,8 @@ class User(UserMixin, db.Model):
     email_verified_at = db.Column(db.DateTime)
     reset_token = db.Column(db.String(255))
     reset_token_expires = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
     # Relationships
     cards = db.relationship('Card', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
@@ -67,7 +68,7 @@ class User(UserMixin, db.Model):
     def approve(self, approved_by_user):
         """Approve user registration"""
         self.is_approved = True
-        self.approved_at = datetime.utcnow()
+        self.approved_at = now_utc_for_db()
         self.approved_by_id = approved_by_user.id if approved_by_user else None
         
     def is_pending_approval(self):
@@ -78,7 +79,7 @@ class User(UserMixin, db.Model):
         """Suspend user with reason"""
         self.is_suspended = True
         self.suspension_reason = reason
-        self.suspended_at = datetime.utcnow()
+        self.suspended_at = now_utc_for_db()
         self.suspended_by_id = suspended_by_user.id
         
         # Also mark all cards as not public
@@ -96,7 +97,7 @@ class User(UserMixin, db.Model):
         """Generate password reset token"""
         from flask import current_app
         self.reset_token = secrets.token_urlsafe(32)
-        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        self.reset_token_expires = now_utc_for_db() + timedelta(hours=1)
         return self.reset_token
     
     def verify_reset_token(self, token):
@@ -105,7 +106,7 @@ class User(UserMixin, db.Model):
             return False
         if self.reset_token != token:
             return False
-        if datetime.utcnow() > self.reset_token_expires:
+        if now_utc_for_db() > self.reset_token_expires:
             return False
         return True
     
@@ -117,7 +118,7 @@ class User(UserMixin, db.Model):
     def verify_email(self):
         """Mark email as verified"""
         self.email_verified = True
-        self.email_verified_at = datetime.utcnow()
+        self.email_verified_at = now_utc_for_db()
     
     def get_total_card_views(self):
         """Get total views across all user's cards"""
@@ -147,7 +148,7 @@ class Theme(db.Model):
     is_active = db.Column(db.Boolean, default=True)  # admin can disable themes
     is_global = db.Column(db.Boolean, default=False)  # True for admin themes visible to all, False for personal themes
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # NULL for admin themes, user_id for personal themes
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
     
     # Relationships
     cards = db.relationship('Card', backref='theme', lazy='dynamic')
@@ -206,8 +207,8 @@ class Card(db.Model):
     avatar_path = db.Column(db.String(255))  # Legacy - kept for backward compatibility
     avatar_square_path = db.Column(db.String(255))  # Square version for circle/rounded/square
     avatar_rect_path = db.Column(db.String(255))   # Rectangular version for rectangle shape
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
     # Social media fields
     instagram = db.Column(db.String(255))
@@ -251,7 +252,7 @@ class Card(db.Model):
     def publish(self):
         """Publish the card"""
         self.is_public = True
-        self.published_at = datetime.utcnow()
+        self.published_at = now_utc_for_db()
         
         # Clear cache when publishing
         try:
@@ -308,13 +309,15 @@ class Card(db.Model):
                     value = value.split('linkedin.com/')[-1].rstrip('/')
             return value
             
-        # Handle Twitter: remove @ if present
+        # Handle X (Twitter): remove @ if present
         if network_type == 'twitter':
             if value.startswith('@'):
                 value = value[1:]
             if value.startswith(('http://', 'https://')):
                 if 'twitter.com/' in value:
                     value = value.split('twitter.com/')[-1].rstrip('/')
+                elif 'x.com/' in value:
+                    value = value.split('x.com/')[-1].rstrip('/')
             return value
             
         # For other networks, just clean URLs
@@ -506,19 +509,18 @@ class Card(db.Model):
     
     def get_views_today(self):
         """Get views for today"""
-        from datetime import date
-        today = date.today()
+        start_utc, end_utc = get_date_range_utc(days=1)
         return self.views.filter(
-            db.func.date(CardView.viewed_at) == today
+            CardView.viewed_at >= start_utc,
+            CardView.viewed_at <= end_utc
         ).count()
     
     def get_views_this_month(self):
         """Get views for current month"""
-        from datetime import date
-        today = date.today()
+        start_utc, end_utc = get_month_range_utc()
         return self.views.filter(
-            db.func.extract('month', CardView.viewed_at) == today.month,
-            db.func.extract('year', CardView.viewed_at) == today.year
+            CardView.viewed_at >= start_utc,
+            CardView.viewed_at <= end_utc
         ).count()
     
     def get_avatar_path(self):
@@ -581,7 +583,7 @@ class Service(db.Model):
     availability = db.Column(db.String(200))  # availability description
     order_index = db.Column(db.Integer, default=0)
     is_visible = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
     
     def get_duration_display(self):
         """Convert minutes to human readable format"""
@@ -598,6 +600,43 @@ class Service(db.Model):
     
     def __repr__(self):
         return f'<Service {self.title}>'
+
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.Enum('service', 'product', name='category_types'), nullable=False)
+    description = db.Column(db.String(255))
+    color = db.Column(db.String(7), default='#6c757d')  # hex color
+    icon = db.Column(db.String(50))  # font awesome icon
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    
+    # Unique constraint to prevent duplicate categories per user and type
+    __table_args__ = (db.UniqueConstraint('user_id', 'name', 'type', name='unique_user_category'),)
+    
+    @staticmethod
+    def get_or_create(user_id, name, category_type):
+        """Get existing category or create new one"""
+        category = Category.query.filter_by(
+            user_id=user_id, 
+            name=name, 
+            type=category_type
+        ).first()
+        
+        if not category:
+            category = Category(
+                user_id=user_id,
+                name=name,
+                type=category_type
+            )
+            db.session.add(category)
+            db.session.flush()  # Get the ID without committing
+        
+        return category
+    
+    def __repr__(self):
+        return f'<Category {self.name} ({self.type})>'
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -616,7 +655,7 @@ class Product(db.Model):
     external_link = db.Column(db.String(500))  # link to buy/more info
     order_index = db.Column(db.Integer, default=0)
     is_visible = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
     
     def has_discount(self):
         """Check if product has a discount"""
@@ -659,7 +698,7 @@ class GalleryItem(db.Model):
     order_index = db.Column(db.Integer, default=0)
     is_visible = db.Column(db.Boolean, default=True)
     is_featured = db.Column(db.Boolean, default=False)  # featured image for card preview
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
     
     def __repr__(self):
         return f'<GalleryItem {self.image_path}>'
@@ -676,7 +715,7 @@ class CardView(db.Model):
     country = db.Column(db.String(100))  # User's country
     city = db.Column(db.String(100))  # User's city
     session_id = db.Column(db.String(100))  # Session tracking
-    viewed_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    viewed_at = db.Column(db.DateTime, default=now_utc_for_db, index=True)
     
     # Relationship
     card = db.relationship('Card', backref=db.backref('views', lazy='dynamic', cascade='all, delete-orphan'))

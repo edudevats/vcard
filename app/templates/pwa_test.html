@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}PWA Test - VCard Digital{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-mobile-alt me-2"></i>PWA Test Panel</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Installation Status -->
+                        <div class="col-md-6 mb-4">
+                            <h5><i class="fas fa-download me-2"></i>Estado de Instalación</h5>
+                            <div id="install-status" class="alert alert-info">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    Verificando estado...
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button id="test-install" class="btn btn-primary">
+                                    <i class="fas fa-download me-2"></i>Probar Instalación
+                                </button>
+                                <button id="show-install-instructions" class="btn btn-outline-primary">
+                                    <i class="fas fa-question-circle me-2"></i>Ver Instrucciones
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Service Worker Status -->
+                        <div class="col-md-6 mb-4">
+                            <h5><i class="fas fa-cogs me-2"></i>Service Worker</h5>
+                            <div id="sw-status" class="alert alert-info">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    Verificando Service Worker...
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button id="test-offline" class="btn btn-warning">
+                                    <i class="fas fa-wifi me-2"></i>Simular Offline
+                                </button>
+                                <button id="clear-cache" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash me-2"></i>Limpiar Cache
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Notifications -->
+                        <div class="col-md-6 mb-4">
+                            <h5><i class="fas fa-bell me-2"></i>Notificaciones</h5>
+                            <div id="notification-status" class="alert alert-info">
+                                Verificando permisos...
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button id="request-notifications" class="btn btn-info">
+                                    <i class="fas fa-bell me-2"></i>Solicitar Permisos
+                                </button>
+                                <button id="test-notification" class="btn btn-outline-info" disabled>
+                                    <i class="fas fa-paper-plane me-2"></i>Probar Notificación
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Share API -->
+                        <div class="col-md-6 mb-4">
+                            <h5><i class="fas fa-share-alt me-2"></i>Web Share API</h5>
+                            <div id="share-status" class="alert alert-info">
+                                Verificando soporte...
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button id="test-share" class="btn btn-success">
+                                    <i class="fas fa-share me-2"></i>Probar Compartir
+                                </button>
+                                <button id="test-share-files" class="btn btn-outline-success">
+                                    <i class="fas fa-file me-2"></i>Compartir Archivos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PWA Features Testing -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-flask me-2"></i>Pruebas de Funcionalidad</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6>Conectividad</h6>
+                                    <p>Estado: <span id="connection-status" class="badge bg-success">Online</span></p>
+                                    <small class="text-muted">Desconecta tu WiFi/datos para probar el modo offline</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Modo de Visualización</h6>
+                                    <p>Modo: <span id="display-mode" class="badge bg-info">Browser</span></p>
+                                    <small class="text-muted">Instala la app para ver "Standalone"</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Orientación</h6>
+                                    <p>Actual: <span id="orientation-status" class="badge bg-secondary">Portrait</span></p>
+                                    <small class="text-muted">Rota tu dispositivo para probar</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Debug Information -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-bug me-2"></i>Información de Debug</h6>
+                        </div>
+                        <div class="card-body">
+                            <pre id="debug-info" class="bg-light p-3 rounded" style="font-size: 0.8rem; max-height: 200px; overflow-y: auto;"></pre>
+                            <button id="refresh-debug" class="btn btn-sm btn-outline-secondary mt-2">
+                                <i class="fas fa-refresh me-1"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const installStatus = document.getElementById('install-status');
+    const swStatus = document.getElementById('sw-status');
+    const notificationStatus = document.getElementById('notification-status');
+    const shareStatus = document.getElementById('share-status');
+    const connectionStatus = document.getElementById('connection-status');
+    const displayMode = document.getElementById('display-mode');
+    const orientationStatus = document.getElementById('orientation-status');
+    const debugInfo = document.getElementById('debug-info');
+
+    // Check PWA installation status
+    function checkInstallStatus() {
+        let status = 'No instalada';
+        let className = 'alert-warning';
+        let icon = 'fas fa-exclamation-triangle';
+
+        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+            status = '✅ Instalada (Standalone)';
+            className = 'alert-success';
+            icon = 'fas fa-check-circle';
+        } else if (window.navigator.standalone === true) {
+            status = '✅ Instalada (iOS Standalone)';
+            className = 'alert-success';
+            icon = 'fas fa-check-circle';
+        }
+
+        installStatus.className = `alert ${className}`;
+        installStatus.innerHTML = `<i class="${icon} me-2"></i>${status}`;
+    }
+
+    // Check Service Worker status
+    function checkServiceWorkerStatus() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                swStatus.className = 'alert alert-success';
+                swStatus.innerHTML = `<i class="fas fa-check-circle me-2"></i>✅ Service Worker activo (Scope: ${registration.scope})`;
+            }).catch(error => {
+                swStatus.className = 'alert alert-danger';
+                swStatus.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>❌ Error: ${error.message}`;
+            });
+        } else {
+            swStatus.className = 'alert alert-danger';
+            swStatus.innerHTML = '<i class="fas fa-times-circle me-2"></i>❌ Service Workers no soportados';
+        }
+    }
+
+    // Check notification status
+    function checkNotificationStatus() {
+        if (!('Notification' in window)) {
+            notificationStatus.className = 'alert alert-danger';
+            notificationStatus.innerHTML = '<i class="fas fa-times-circle me-2"></i>❌ Notificaciones no soportadas';
+            return;
+        }
+
+        const permission = Notification.permission;
+        let className = 'alert-warning';
+        let icon = 'fas fa-exclamation-triangle';
+        let status = '';
+
+        switch (permission) {
+            case 'granted':
+                className = 'alert-success';
+                icon = 'fas fa-check-circle';
+                status = '✅ Permisos concedidos';
+                document.getElementById('test-notification').disabled = false;
+                break;
+            case 'denied':
+                className = 'alert-danger';
+                icon = 'fas fa-times-circle';
+                status = '❌ Permisos denegados';
+                break;
+            default:
+                status = '⚠️ Permisos no solicitados';
+                break;
+        }
+
+        notificationStatus.className = `alert ${className}`;
+        notificationStatus.innerHTML = `<i class="${icon} me-2"></i>${status}`;
+    }
+
+    // Check share API status
+    function checkShareStatus() {
+        if (navigator.share) {
+            shareStatus.className = 'alert alert-success';
+            shareStatus.innerHTML = '<i class="fas fa-check-circle me-2"></i>✅ Web Share API soportado';
+        } else {
+            shareStatus.className = 'alert alert-warning';
+            shareStatus.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>⚠️ Web Share API no soportado (se usará fallback)';
+        }
+    }
+
+    // Update connection status
+    function updateConnectionStatus() {
+        if (navigator.onLine) {
+            connectionStatus.className = 'badge bg-success';
+            connectionStatus.textContent = 'Online';
+        } else {
+            connectionStatus.className = 'badge bg-danger';
+            connectionStatus.textContent = 'Offline';
+        }
+    }
+
+    // Update display mode
+    function updateDisplayMode() {
+        let mode = 'Browser';
+        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+            mode = 'Standalone';
+            displayMode.className = 'badge bg-success';
+        } else if (window.navigator.standalone === true) {
+            mode = 'iOS Standalone';
+            displayMode.className = 'badge bg-success';
+        } else {
+            displayMode.className = 'badge bg-info';
+        }
+        displayMode.textContent = mode;
+    }
+
+    // Update orientation
+    function updateOrientation() {
+        const orientation = screen.orientation || screen.msOrientation || screen.mozOrientation || {};
+        const angle = orientation.angle || window.orientation || 0;
+        
+        let orientationText = 'Portrait';
+        if (Math.abs(angle) === 90) {
+            orientationText = 'Landscape';
+        }
+        
+        orientationStatus.textContent = orientationText;
+    }
+
+    // Update debug info
+    function updateDebugInfo() {
+        const info = {
+            'User Agent': navigator.userAgent,
+            'Platform': navigator.platform,
+            'Language': navigator.language,
+            'Cookied Enabled': navigator.cookieEnabled,
+            'Online': navigator.onLine,
+            'Screen Resolution': `${screen.width}x${screen.height}`,
+            'Viewport Size': `${window.innerWidth}x${window.innerHeight}`,
+            'Device Pixel Ratio': window.devicePixelRatio,
+            'PWA Manager': !!window.pwaManager,
+            'Service Worker Support': 'serviceWorker' in navigator,
+            'Notification Support': 'Notification' in window,
+            'Push Manager Support': 'PushManager' in window,
+            'Share API Support': 'share' in navigator,
+            'Manifest': document.querySelector('link[rel="manifest"]') ? 'Present' : 'Missing',
+            'Theme Color': document.querySelector('meta[name="theme-color"]')?.content || 'Not set',
+        };
+
+        debugInfo.textContent = Object.entries(info)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('\n');
+    }
+
+    // Event listeners
+    document.getElementById('test-install').addEventListener('click', () => {
+        if (window.pwaManager) {
+            window.pwaManager.triggerInstall();
+        } else if (window.showPWAInstallPrompt) {
+            window.showPWAInstallPrompt();
+        } else {
+            alert('PWA Manager no disponible');
+        }
+    });
+
+    document.getElementById('show-install-instructions').addEventListener('click', () => {
+        window.showPWAInstallPrompt?.() || alert('Instrucciones de instalación no disponibles');
+    });
+
+    document.getElementById('test-offline').addEventListener('click', () => {
+        if (window.pwaManager) {
+            window.pwaManager.showConnectionStatus('Simulando modo offline', 'warning');
+        }
+        alert('Para probar realmente el modo offline, desconecta tu internet');
+    });
+
+    document.getElementById('clear-cache').addEventListener('click', async () => {
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            alert('Cache limpiada exitosamente');
+        } else {
+            alert('Cache API no soportada');
+        }
+    });
+
+    document.getElementById('request-notifications').addEventListener('click', async () => {
+        if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            checkNotificationStatus();
+        } else {
+            alert('Notificaciones no soportadas');
+        }
+    });
+
+    document.getElementById('test-notification').addEventListener('click', () => {
+        if (Notification.permission === 'granted') {
+            new Notification('PWA Test', {
+                body: '¡Esta es una notificación de prueba!',
+                icon: '/static/icons/icon-192x192.svg',
+                badge: '/static/icons/icon-72x72.svg'
+            });
+        }
+    });
+
+    document.getElementById('test-share').addEventListener('click', async () => {
+        const shareData = {
+            title: 'VCard Digital - PWA Test',
+            text: 'Probando la funcionalidad de compartir de VCard Digital',
+            url: window.location.href
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+                console.log('Compartido exitosamente');
+            } catch (error) {
+                console.log('Error compartiendo:', error);
+            }
+        } else {
+            // Fallback
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(shareData.url);
+                alert('Enlace copiado al portapapeles');
+            } else {
+                alert('Web Share API no soportado y clipboard no disponible');
+            }
+        }
+    });
+
+    document.getElementById('refresh-debug').addEventListener('click', updateDebugInfo);
+
+    // Event listeners for status changes
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(updateOrientation, 100);
+    });
+
+    // Initial checks
+    checkInstallStatus();
+    checkServiceWorkerStatus();
+    checkNotificationStatus();
+    checkShareStatus();
+    updateConnectionStatus();
+    updateDisplayMode();
+    updateOrientation();
+    updateDebugInfo();
+
+    // Periodic updates
+    setInterval(() => {
+        updateConnectionStatus();
+        updateDisplayMode();
+        updateOrientation();
+    }, 5000);
+});
+</script>
+{% endblock %}

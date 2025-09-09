@@ -3,8 +3,9 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, TextAreaField, SelectField, BooleanField, SubmitField, DecimalField, HiddenField, PasswordField
 from wtforms.validators import DataRequired, Email, Optional, URL, NumberRange, Length, ValidationError, EqualTo
 import re
-from ..models import Theme
+from ..models import Theme, Category
 from ..constants import FONT_FAMILY_CHOICES, LAYOUT_CHOICES, AVATAR_SHAPE_CHOICES
+from flask_login import current_user
 
 def flexible_url_validator(form, field):
     """Custom URL validator that is more flexible than the default URL validator"""
@@ -124,20 +125,9 @@ class ServiceForm(FlaskForm):
                                render_kw={'class': 'form-control', 'rows': 3,
                                          'placeholder': 'Describe tu servicio...'})
     category = SelectField('Categoría', validators=[Optional()],
-                          choices=[
-                              ('', 'Sin categoría'),
-                              ('belleza', 'Belleza y Estética'),
-                              ('salud', 'Salud y Bienestar'),
-                              ('tecnologia', 'Tecnología'),
-                              ('educacion', 'Educación'),
-                              ('consultoria', 'Consultoría'),
-                              ('diseño', 'Diseño'),
-                              ('fotografia', 'Fotografía'),
-                              ('eventos', 'Eventos'),
-                              ('hogar', 'Hogar y Mantenimiento'),
-                              ('otros', 'Otros')
-                          ],
                           render_kw={'class': 'form-select'})
+    new_category = StringField('Nueva Categoría', validators=[Optional()],
+                              render_kw={'class': 'form-control', 'placeholder': 'Escribe una nueva categoría...'})
     price_from = DecimalField('Precio Desde', validators=[Optional(), NumberRange(min=0)],
                              render_kw={'class': 'form-control', 'placeholder': '25000', 'step': '1'})
     duration_minutes = StringField('Duración', validators=[Optional()],
@@ -156,6 +146,47 @@ class ServiceForm(FlaskForm):
                              render_kw={'class': 'form-check-input'})
     
     submit = SubmitField('Guardar Servicio', render_kw={'class': 'btn btn-primary'})
+    
+    def __init__(self, *args, **kwargs):
+        super(ServiceForm, self).__init__(*args, **kwargs)
+        # Load user's service categories
+        choices = [('', 'Sin categoría')]
+        
+        try:
+            if current_user and current_user.is_authenticated:
+                user_categories = Category.query.filter_by(
+                    user_id=current_user.id, 
+                    type='service',
+                    is_active=True
+                ).order_by(Category.name).all()
+                
+                for cat in user_categories:
+                    choices.append((cat.name, cat.name))
+        except Exception:
+            # In case there's an issue with current_user context, just continue
+            pass
+        
+        # Add default categories as fallback
+        default_categories = [
+            ('belleza', 'Belleza y Estética'),
+            ('salud', 'Salud y Bienestar'),
+            ('tecnologia', 'Tecnología'),
+            ('educacion', 'Educación'),
+            ('consultoria', 'Consultoría'),
+            ('diseño', 'Diseño'),
+            ('fotografia', 'Fotografía'),
+            ('eventos', 'Eventos'),
+            ('hogar', 'Hogar y Mantenimiento'),
+            ('otros', 'Otros')
+        ]
+        
+        # Add defaults that aren't already in user categories
+        existing_values = [choice[0] for choice in choices]
+        for value, label in default_categories:
+            if value not in existing_values:
+                choices.append((value, label))
+        
+        self.category.choices = choices
 
 class GalleryUploadForm(FlaskForm):
     image = FileField('Imagen', validators=[
@@ -203,21 +234,9 @@ class ProductForm(FlaskForm):
                                render_kw={'class': 'form-control', 'rows': 3,
                                          'placeholder': 'Describe tu producto...'})
     category = SelectField('Categoría', validators=[Optional()],
-                          choices=[
-                              ('', 'Sin categoría'),
-                              ('ropa', 'Ropa y Accesorios'),
-                              ('tecnologia', 'Tecnología'),
-                              ('hogar', 'Hogar y Decoración'),
-                              ('deportes', 'Deportes y Fitness'),
-                              ('belleza', 'Belleza y Cuidado Personal'),
-                              ('libros', 'Libros y Papelería'),
-                              ('juguetes', 'Juguetes y Juegos'),
-                              ('alimentacion', 'Alimentación'),
-                              ('arte', 'Arte y Manualidades'),
-                              ('electronica', 'Electrónica'),
-                              ('otros', 'Otros')
-                          ],
                           render_kw={'class': 'form-select'})
+    new_category = StringField('Nueva Categoría', validators=[Optional()],
+                              render_kw={'class': 'form-control', 'placeholder': 'Escribe una nueva categoría...'})
     brand = StringField('Marca', validators=[Optional()],
                        render_kw={'class': 'form-control', 'placeholder': 'ej: Nike, Apple, Samsung'})
     price = DecimalField('Precio', validators=[Optional(), NumberRange(min=0)],
@@ -242,6 +261,48 @@ class ProductForm(FlaskForm):
                                render_kw={'class': 'form-check-input'})
     
     submit = SubmitField('Guardar Producto', render_kw={'class': 'btn btn-success'})
+    
+    def __init__(self, *args, **kwargs):
+        super(ProductForm, self).__init__(*args, **kwargs)
+        # Load user's product categories
+        choices = [('', 'Sin categoría')]
+        
+        try:
+            if current_user and current_user.is_authenticated:
+                user_categories = Category.query.filter_by(
+                    user_id=current_user.id, 
+                    type='product',
+                    is_active=True
+                ).order_by(Category.name).all()
+                
+                for cat in user_categories:
+                    choices.append((cat.name, cat.name))
+        except Exception:
+            # In case there's an issue with current_user context, just continue
+            pass
+        
+        # Add default categories as fallback
+        default_categories = [
+            ('ropa', 'Ropa y Accesorios'),
+            ('tecnologia', 'Tecnología'),
+            ('hogar', 'Hogar y Decoración'),
+            ('deportes', 'Deportes y Fitness'),
+            ('belleza', 'Belleza y Cuidado Personal'),
+            ('libros', 'Libros y Papelería'),
+            ('juguetes', 'Juguetes y Juegos'),
+            ('alimentacion', 'Alimentación'),
+            ('arte', 'Arte y Manualidades'),
+            ('electronica', 'Electrónica'),
+            ('otros', 'Otros')
+        ]
+        
+        # Add defaults that aren't already in user categories
+        existing_values = [choice[0] for choice in choices]
+        for value, label in default_categories:
+            if value not in existing_values:
+                choices.append((value, label))
+        
+        self.category.choices = choices
 
 class ChangePasswordForm(FlaskForm):
     current_password = PasswordField('Contraseña Actual', validators=[DataRequired()],

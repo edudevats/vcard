@@ -185,7 +185,8 @@ class MemoryOptimizer:
             # Clear expired cache entries
             if hasattr(cache, 'clear'):
                 # Clear old analytics cache (older than 1 hour)
-                cutoff_time = datetime.utcnow() - timedelta(hours=1)
+                from .timezone_utils import now_utc_for_db
+                cutoff_time = now_utc_for_db() - timedelta(hours=1)
                 
                 # Clean up user login tracking
                 expired_users = User.query.filter(

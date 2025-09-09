@@ -110,7 +110,7 @@
                                             <small class="text-muted">{{ card.get_unique_views() }} únicas</small>
                                         </td>
                                         <td>
-                                            <span class="text-muted">{{ card.created_at.strftime('%d/%m/%Y') }}</span>
+                                            <span class="text-muted">{{ card.created_at|local_date }}</span>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm">

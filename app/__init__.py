@@ -41,6 +41,19 @@ def create_app(config_name=None):
         from .models import User
         return User.query.get(int(user_id))
     
+    # Register template filters
+    from .template_filters import register_filters
+    register_filters(app)
+    
+    # Add global template context for timezone
+    @app.context_processor
+    def inject_timezone_utils():
+        from .timezone_utils import format_local_datetime, now_local
+        return {
+            'format_local_datetime': format_local_datetime,
+            'now_local': now_local
+        }
+    
     # Register blueprints
     from .auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')

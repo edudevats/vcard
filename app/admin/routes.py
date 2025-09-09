@@ -324,8 +324,8 @@ def pending_approvals():
     pending_users = User.query.filter_by(is_approved=False, is_suspended=False).order_by(User.created_at.desc()).all()
     
     # Calculate days waiting for each user
-    from datetime import datetime
-    today = datetime.utcnow().date()
+    from ..timezone_utils import now_local
+    today = now_local().date()
     for user in pending_users:
         if user.created_at:
             user.days_waiting = (today - user.created_at.date()).days

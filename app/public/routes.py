@@ -160,3 +160,45 @@ def card_products(slug):
 def offline():
     """Offline page for PWA"""
     return render_template('offline.html')
+
+@bp.route('/share-target', methods=['GET', 'POST'])
+def share_target():
+    """PWA Share Target API handler"""
+    from flask import redirect, url_for, session
+    from flask_login import current_user
+    
+    if not current_user.is_authenticated:
+        # Store shared content in session and redirect to login
+        if request.method == 'POST':
+            session['shared_content'] = {
+                'title': request.form.get('title', ''),
+                'text': request.form.get('text', ''),
+                'url': request.form.get('url', ''),
+                'files': request.files.getlist('files') if 'files' in request.files else []
+            }
+        return redirect(url_for('auth.login') + '?next=' + url_for('dashboard.new_card') + '&shared=true')
+    
+    if request.method == 'POST':
+        # Handle shared content
+        shared_title = request.form.get('title', '')
+        shared_text = request.form.get('text', '')
+        shared_url = request.form.get('url', '')
+        shared_files = request.files.getlist('files') if 'files' in request.files else []
+        
+        # Store in session for use in new card creation
+        session['shared_content'] = {
+            'title': shared_title,
+            'text': shared_text,
+            'url': shared_url,
+            'files': shared_files
+        }
+        
+        return redirect(url_for('dashboard.new_card', shared='true'))
+    
+    # GET request - redirect to dashboard
+    return redirect(url_for('dashboard.index', shared='true'))
+
+@bp.route('/pwa-test')
+def pwa_test():
+    """PWA functionality test page"""
+    return render_template('pwa_test.html')

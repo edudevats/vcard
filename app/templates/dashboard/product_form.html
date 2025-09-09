@@ -92,6 +92,13 @@
                             <div class="col-md-6 mb-3">
                                 {{ form.category.label(class="form-label") }}
                                 {{ form.category() }}
+                                
+                                <!-- Campo para nueva categoría -->
+                                <div class="mt-2">
+                                    {{ form.new_category.label(class="form-label text-muted small") }}
+                                    {{ form.new_category() }}
+                                    <div class="form-text">Si no encuentras tu categoría, escríbela aquí</div>
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 {{ form.brand.label(class="form-label") }}
@@ -186,4 +193,30 @@
         </div>
     </div>
 </div>
+
+{% block extra_scripts %}
+<script>
+// Handle dynamic category interaction
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const newCategoryInput = document.getElementById('new_category');
+    
+    if (categorySelect && newCategoryInput) {
+        // When user types in new category, clear the select
+        newCategoryInput.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                categorySelect.value = '';
+            }
+        });
+        
+        // When user selects from dropdown, clear new category input
+        categorySelect.addEventListener('change', function() {
+            if (this.value !== '') {
+                newCategoryInput.value = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

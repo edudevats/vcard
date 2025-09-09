@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-md-2 text-end">
                             <small class="text-muted">Creada</small>
-                            <div>{{ card.created_at.strftime('%d/%m/%Y') }}</div>
+                            <div>{{ card.created_at|local_date }}</div>
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                                     {% for view in views.items %}
                                     <tr>
                                         <td>
-                                            {{ view.viewed_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                                            {{ view.viewed_at|local_datetime('%d/%m/%Y %H:%M:%S') }}
                                         </td>
                                         <td>
                                             <code>{{ view.ip_address or 'N/A' }}</code>

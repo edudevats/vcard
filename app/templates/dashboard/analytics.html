@@ -14,8 +14,14 @@
                 <a class="nav-link" href="{{ url_for('dashboard.index') }}">
                     <i class="fas fa-home me-2"></i>Inicio
                 </a>
-                <a class="nav-link active" href="#">
+                <a class="nav-link" href="{{ url_for('dashboard.new_card') }}">
+                    <i class="fas fa-plus me-2"></i>Nueva Tarjeta
+                </a>
+                <a class="nav-link active" href="{{ url_for('dashboard.analytics') }}">
                     <i class="fas fa-chart-line me-2"></i>Analytics
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.advanced_features') }}">
+                    <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
                 </a>
             </nav>
         </div>
@@ -24,6 +30,7 @@
     <!-- Main Content -->
     <div class="col-md-9">
         <div class="main-content">
+            <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>
                     <i class="fas fa-chart-line me-2"></i>Analytics Dashboard
@@ -35,270 +42,237 @@
                 </div>
             </div>
             
-            <!-- Summary Cards -->
+            <!-- Global Summary Cards -->
             <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0" id="total-views">{{ analytics.total_views }}</h4>
-                                    <small>Total de Visitas</small>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-eye fa-2x opacity-75"></i>
-                                </div>
-                            </div>
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-globe me-2"></i>Resumen Global - Todas las Tarjetas
+                            </h5>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card bg-success text-white">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0" id="period-views">{{ analytics.period_views }}</h4>
-                                    <small>Visitas del Período</small>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h3 class="text-primary mb-1" id="global-total-views">{{ global_stats.total_views }}</h3>
+                                        <small class="text-muted">Total de Visitas</small>
+                                    </div>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-calendar fa-2x opacity-75"></i>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h3 class="text-success mb-1" id="global-period-views">{{ global_stats.period_views }}</h3>
+                                        <small class="text-muted">Visitas del Período</small>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0" id="growth-rate">+{{ "%.1f"|format(growth_rate) }}%</h4>
-                                    <small>Crecimiento</small>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h3 class="text-info mb-1" id="global-growth-rate">{{ "%.1f"|format(global_stats.growth_rate or 0) }}%</h3>
+                                        <small class="text-muted">Crecimiento</small>
+                                    </div>
                                 </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-trending-up fa-2x opacity-75"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card bg-warning text-dark">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="mb-0" id="avg-daily">{{ "%.0f"|format(analytics.period_views / 30) }}</h4>
-                                    <small>Promedio Diario</small>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-chart-bar fa-2x opacity-75"></i>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h3 class="text-warning mb-1" id="global-views-today">{{ global_stats.views_today or 0 }}</h3>
+                                        <small class="text-muted">Visitas Hoy</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Charts Row -->
+
+            <!-- Global Charts Row -->
             <div class="row mb-4">
-                <!-- Daily Views Chart -->
+                <!-- Global Daily Views Chart -->
                 <div class="col-lg-8 mb-4">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="fas fa-chart-area me-2"></i>Visitas Diarias
+                                <i class="fas fa-chart-area me-2"></i>Visitas Diarias - Global
                             </h5>
                         </div>
                         <div class="card-body">
-                            <canvas id="dailyViewsChart" width="400" height="200"></canvas>
+                            <div style="height: 300px;">
+                                <canvas id="globalDailyChart" width="400" height="300"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Device Distribution -->
+                <!-- Global Device Distribution -->
                 <div class="col-lg-4 mb-4">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="fas fa-mobile-alt me-2"></i>Dispositivos
+                                <i class="fas fa-mobile-alt me-2"></i>Dispositivos - Global
                             </h5>
                         </div>
                         <div class="card-body">
-                            <!-- Mobile vs Desktop Summary -->
-                            {% if device_analytics and device_analytics.mobile_vs_desktop %}
-                            <div class="row mb-3">
-                                <div class="col-6 text-center">
-                                    <div class="d-flex align-items-center justify-content-center mb-2">
-                                        <i class="fas fa-mobile-alt text-primary me-2"></i>
-                                        <strong>Móvil</strong>
-                                    </div>
-                                    <div class="h4 text-primary mb-0">{{ device_analytics.mobile_vs_desktop.mobile.percentage }}%</div>
-                                    <small class="text-muted">{{ device_analytics.mobile_vs_desktop.mobile.count }} visitas</small>
-                                </div>
-                                <div class="col-6 text-center">
-                                    <div class="d-flex align-items-center justify-content-center mb-2">
-                                        <i class="fas fa-desktop text-success me-2"></i>
-                                        <strong>Escritorio</strong>
-                                    </div>
-                                    <div class="h4 text-success mb-0">{{ device_analytics.mobile_vs_desktop.desktop.percentage }}%</div>
-                                    <small class="text-muted">{{ device_analytics.mobile_vs_desktop.desktop.count }} visitas</small>
-                                </div>
+                            <div style="height: 300px;">
+                                <canvas id="globalDeviceChart" width="300" height="300"></canvas>
                             </div>
-                            <hr>
-                            {% endif %}
-                            
-                            <!-- Detailed Device Chart -->
-                            <canvas id="deviceChart" width="300" height="200"></canvas>
-                            
-                            <!-- Device Details List -->
-                            {% if device_analytics and device_analytics.device_breakdown %}
-                            <div class="mt-3">
-                                <small class="text-muted d-block mb-2">Detalle por tipo:</small>
-                                {% for device in device_analytics.device_breakdown %}
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-{% if device.device_type == 'mobile' %}mobile-alt{% elif device.device_type == 'tablet' %}tablet-alt{% else %}desktop{% endif %} me-2 text-muted small"></i>
-                                        <span class="small">{{ device.device_type.title() }}</span>
-                                    </div>
-                                    <div class="text-end">
-                                        <strong class="small">{{ device.percentage }}%</strong>
-                                        <small class="text-muted d-block">{{ device.count }} visitas</small>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Mobile vs Desktop Comparison -->
-            {% if device_analytics and device_analytics.mobile_vs_desktop %}
+
+            <!-- Individual Cards Analytics -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="fas fa-chart-bar me-2"></i>Móvil vs Escritorio - Análisis Detallado
+                                <i class="fas fa-id-card me-2"></i>Analytics por Tarjeta Individual
                             </h5>
                         </div>
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-lg-8">
-                                    <!-- Progress bars for mobile vs desktop -->
-                                    <div class="mb-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-mobile-alt text-primary me-2"></i>
-                                                <span class="fw-bold">Dispositivos Móviles</span>
+                            {% if cards_analytics %}
+                                <!-- Cards Tabs -->
+                                <ul class="nav nav-tabs mb-4" id="cardsTab" role="tablist">
+                                    {% for card_data in cards_analytics %}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ 'active' if loop.first }}" 
+                                                id="card-{{ card_data.card_id }}-tab" 
+                                                data-bs-toggle="tab" 
+                                                data-bs-target="#card-{{ card_data.card_id }}" 
+                                                type="button" role="tab">
+                                            {{ card_data.card_name }}
+                                            <span class="badge bg-primary ms-2">{{ card_data.views }}</span>
+                                        </button>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                
+                                <!-- Tab Content -->
+                                <div class="tab-content" id="cardsTabContent">
+                                    {% for card_data in cards_analytics %}
+                                    <div class="tab-pane fade {{ 'show active' if loop.first }}" 
+                                         id="card-{{ card_data.card_id }}" 
+                                         role="tabpanel">
+                                         
+                                        <!-- Card Summary -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-primary mb-1">{{ card_data.analytics.total_views }}</h4>
+                                                        <small>Total Visitas</small>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span class="fw-bold text-primary">{{ device_analytics.mobile_vs_desktop.mobile.count }} visitas ({{ device_analytics.mobile_vs_desktop.mobile.percentage }}%)</span>
-                                        </div>
-                                        <div class="progress mb-3" style="height: 10px;">
-                                            <div class="progress-bar bg-primary" style="width: {{ device_analytics.mobile_vs_desktop.mobile.percentage }}%"></div>
+                                            <div class="col-md-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-success mb-1">{{ card_data.analytics.period_views }}</h4>
+                                                        <small>Período Actual</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-info mb-1">{{ card_data.analytics.device_stats|length }}</h4>
+                                                        <small>Tipos de Dispositivos</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="card bg-light">
+                                                    <div class="card-body text-center">
+                                                        <h4 class="text-warning mb-1">{{ card_data.analytics.views_today or 0 }}</h4>
+                                                        <small>Visitas Hoy</small>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-desktop text-success me-2"></i>
-                                                <span class="fw-bold">Dispositivos de Escritorio</span>
+                                        <!-- Individual Card Charts -->
+                                        <div class="row">
+                                            <!-- Daily Views for this card -->
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">Visitas Diarias</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 250px;">
+                                                            <canvas id="dailyChart-{{ card_data.card_id }}" width="400" height="250"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <span class="fw-bold text-success">{{ device_analytics.mobile_vs_desktop.desktop.count }} visitas ({{ device_analytics.mobile_vs_desktop.desktop.percentage }}%)</span>
+                                            
+                                            <!-- Device stats for this card -->
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">Dispositivos</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 250px;">
+                                                            <canvas id="deviceChart-{{ card_data.card_id }}" width="300" height="250"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="progress mb-3" style="height: 10px;">
-                                            <div class="progress-bar bg-success" style="width: {{ device_analytics.mobile_vs_desktop.desktop.percentage }}%"></div>
+                                        
+                                        <!-- Additional Details -->
+                                        <div class="row">
+                                            <!-- Browser Stats -->
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">Navegadores Más Usados</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        {% if card_data.analytics.browser_stats %}
+                                                            {% for browser in card_data.analytics.browser_stats[:5] %}
+                                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                <span>{{ browser.browser }}</span>
+                                                                <span class="badge bg-secondary">{{ browser.count }}</span>
+                                                            </div>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <p class="text-muted">No hay datos de navegadores</p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Daily Views List -->
+                                            <div class="col-lg-6 mb-4">
+                                                <div class="card">
+                                                    <div class="card-header">
+                                                        <h6 class="mb-0">Visitas por Día (Últimos 7 días)</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        {% if card_data.analytics.daily_views %}
+                                                            {% for day in card_data.analytics.daily_views[-7:] %}
+                                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                <span>{{ day.date }}</span>
+                                                                <span class="badge bg-info">{{ day.views }}</span>
+                                                            </div>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <p class="text-muted">No hay datos de visitas diarias</p>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-lg-4">
-                                    <!-- Mobile vs Desktop Pie Chart -->
-                                    <canvas id="mobileDesktopChart" width="200" height="200"></canvas>
-                                </div>
-                            </div>
-                            
-                            <!-- Insights -->
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-lightbulb me-2"></i>
-                                        <strong>Insights:</strong>
-                                        {% if device_analytics.mobile_vs_desktop.mobile.percentage > device_analytics.mobile_vs_desktop.desktop.percentage %}
-                                            La mayoría de tus visitantes ({{ device_analytics.mobile_vs_desktop.mobile.percentage }}%) acceden desde dispositivos móviles. 
-                                            Asegúrate de que tu tarjeta esté optimizada para móviles.
-                                        {% elif device_analytics.mobile_vs_desktop.desktop.percentage > device_analytics.mobile_vs_desktop.mobile.percentage %}
-                                            La mayoría de tus visitantes ({{ device_analytics.mobile_vs_desktop.desktop.percentage }}%) acceden desde escritorio. 
-                                            Tu audiencia prefiere ver tu tarjeta en pantallas grandes.
-                                        {% else %}
-                                            Tienes un equilibrio perfecto entre visitantes móviles y de escritorio. 
-                                            Tu tarjeta funciona bien en ambos formatos.
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Additional Analytics -->
-            <div class="row mb-4">
-                <!-- Browser Stats -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fab fa-chrome me-2"></i>Navegadores
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="browserChart" width="400" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Location Stats -->
-                <div class="col-lg-6 mb-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-globe me-2"></i>Ubicaciones
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="locationStats">
-                                {% if analytics.location_stats %}
-                                    {% for location in analytics.location_stats %}
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span>{{ location.country }}</span>
-                                        <span class="badge bg-primary">{{ location.count }}</span>
                                     </div>
                                     {% endfor %}
-                                {% else %}
-                                    <p class="text-muted">No hay datos de ubicación disponibles</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Hourly Activity -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-clock me-2"></i>Actividad por Hora
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="hourlyChart" width="800" height="200"></canvas>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                                    <h5>No hay datos de analytics disponibles</h5>
+                                    <p class="text-muted">Crea una tarjeta y compártela para ver las estadísticas.</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -309,139 +283,67 @@
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 // Chart configurations
-let dailyChart, deviceChart, browserChart, hourlyChart, mobileDesktopChart;
+let globalCharts = {};
+let individualCharts = {};
 
 // Initialize charts with current data
 document.addEventListener('DOMContentLoaded', function() {
-    initializeCharts();
+    initializeGlobalCharts();
+    initializeIndividualCharts();
 });
 
-function initializeCharts() {
-    // Daily Views Chart
-    const dailyCtx = document.getElementById('dailyViewsChart').getContext('2d');
-    const dailyData = {{ analytics.daily_views | tojson }};
-    
-    dailyChart = new Chart(dailyCtx, {
-        type: 'line',
-        data: {
-            labels: dailyData.map(d => d.date),
-            datasets: [{
-                label: 'Visitas',
-                data: dailyData.map(d => d.views),
-                borderColor: '#007bff',
-                backgroundColor: '#007bff20',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    // Device Chart
-    const deviceCtx = document.getElementById('deviceChart').getContext('2d');
-    const deviceData = {{ analytics.device_stats | tojson }};
-    
-    deviceChart = new Chart(deviceCtx, {
-        type: 'doughnut',
-        data: {
-            labels: deviceData.map(d => d.device),
-            datasets: [{
-                data: deviceData.map(d => d.count),
-                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
-    });
-    
-    // Browser Chart
-    const browserCtx = document.getElementById('browserChart').getContext('2d');
-    const browserData = {{ analytics.browser_stats | tojson }};
-    
-    browserChart = new Chart(browserCtx, {
-        type: 'bar',
-        data: {
-            labels: browserData.map(d => d.browser),
-            datasets: [{
-                label: 'Visitas',
-                data: browserData.map(d => d.count),
-                backgroundColor: '#17a2b8'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    // Hourly Chart
-    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-    const hourlyData = {{ analytics.hourly_stats | tojson }};
-    
-    // Fill missing hours with 0
-    const allHours = Array.from({length: 24}, (_, i) => i);
-    const hourlyMap = {};
-    hourlyData.forEach(h => {
-        hourlyMap[h.hour] = h.count;
-    });
-    
-    hourlyChart = new Chart(hourlyCtx, {
-        type: 'bar',
-        data: {
-            labels: allHours.map(h => `${h}:00`),
-            datasets: [{
-                label: 'Visitas',
-                data: allHours.map(h => hourlyMap[h] || 0),
-                backgroundColor: '#6f42c1'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-    
-    // Mobile vs Desktop Chart
-    {% if device_analytics and device_analytics.mobile_vs_desktop %}
-    const mobileDesktopCtx = document.getElementById('mobileDesktopChart');
-    if (mobileDesktopCtx) {
-        const mobileDesktopData = [
-            {{ device_analytics.mobile_vs_desktop.mobile.count }},
-            {{ device_analytics.mobile_vs_desktop.desktop.count }}
-        ];
+function initializeGlobalCharts() {
+    // Global Daily Views Chart
+    const globalDailyCtx = document.getElementById('globalDailyChart');
+    if (globalDailyCtx) {
+        const dailyData = {{ global_stats.daily_views | tojson }};
         
-        mobileDesktopChart = new Chart(mobileDesktopCtx, {
+        globalCharts.daily = new Chart(globalDailyCtx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(d => d.date),
+                datasets: [{
+                    label: 'Visitas',
+                    data: dailyData.map(d => d.views),
+                    borderColor: '#007bff',
+                    backgroundColor: '#007bff20',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Global Device Chart
+    const globalDeviceCtx = document.getElementById('globalDeviceChart');
+    if (globalDeviceCtx) {
+        const deviceData = {{ global_stats.device_stats | tojson }};
+        
+        globalCharts.device = new Chart(globalDeviceCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Móvil', 'Escritorio'],
+                labels: deviceData.map(d => d.device),
                 datasets: [{
-                    data: mobileDesktopData,
-                    backgroundColor: ['#007bff', '#28a745'],
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    data: deviceData.map(d => d.count),
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1']
                 }]
             },
             options: {
@@ -449,26 +351,74 @@ function initializeCharts() {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            usePointStyle: true
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = mobileDesktopData.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return `${context.label}: ${context.parsed} visitas (${percentage}%)`;
-                            }
-                        }
+                        position: 'bottom'
                     }
                 }
             }
         });
     }
-    {% endif %}
+}
+
+function initializeIndividualCharts() {
+    {% for card_data in cards_analytics %}
+    // Daily chart for card {{ card_data.card_id }}
+    const dailyCtx{{ card_data.card_id }} = document.getElementById('dailyChart-{{ card_data.card_id }}');
+    if (dailyCtx{{ card_data.card_id }}) {
+        const dailyData{{ card_data.card_id }} = {{ card_data.analytics.daily_views | tojson }};
+        
+        individualCharts['daily-{{ card_data.card_id }}'] = new Chart(dailyCtx{{ card_data.card_id }}, {
+            type: 'bar',
+            data: {
+                labels: dailyData{{ card_data.card_id }}.map(d => d.date),
+                datasets: [{
+                    label: 'Visitas',
+                    data: dailyData{{ card_data.card_id }}.map(d => d.views),
+                    backgroundColor: '#28a745'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Device chart for card {{ card_data.card_id }}
+    const deviceCtx{{ card_data.card_id }} = document.getElementById('deviceChart-{{ card_data.card_id }}');
+    if (deviceCtx{{ card_data.card_id }}) {
+        const deviceData{{ card_data.card_id }} = {{ card_data.analytics.device_stats | tojson }};
+        
+        individualCharts['device-{{ card_data.card_id }}'] = new Chart(deviceCtx{{ card_data.card_id }}, {
+            type: 'pie',
+            data: {
+                labels: deviceData{{ card_data.card_id }}.map(d => d.device),
+                datasets: [{
+                    data: deviceData{{ card_data.card_id }}.map(d => d.count),
+                    backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    {% endfor %}
 }
 
 function loadAnalytics(days) {
@@ -478,48 +428,8 @@ function loadAnalytics(days) {
     });
     event.target.classList.add('active');
     
-    // Fetch new data (you'd implement this endpoint)
-    fetch(`/dashboard/analytics-data?days=${days}`)
-        .then(response => response.json())
-        .then(data => {
-            // Update summary cards
-            document.getElementById('total-views').textContent = data.total_views;
-            document.getElementById('period-views').textContent = data.period_views;
-            document.getElementById('growth-rate').textContent = `+${data.growth_rate.toFixed(1)}%`;
-            document.getElementById('avg-daily').textContent = Math.round(data.period_views / days);
-            
-            // Update charts
-            updateCharts(data);
-        })
-        .catch(error => {
-            console.error('Error loading analytics:', error);
-        });
-}
-
-function updateCharts(data) {
-    // Update daily chart
-    dailyChart.data.labels = data.daily_views.map(d => d.date);
-    dailyChart.data.datasets[0].data = data.daily_views.map(d => d.views);
-    dailyChart.update();
-    
-    // Update device chart
-    deviceChart.data.labels = data.device_stats.map(d => d.device);
-    deviceChart.data.datasets[0].data = data.device_stats.map(d => d.count);
-    deviceChart.update();
-    
-    // Update browser chart
-    browserChart.data.labels = data.browser_stats.map(d => d.browser);
-    browserChart.data.datasets[0].data = data.browser_stats.map(d => d.count);
-    browserChart.update();
-    
-    // Update hourly chart
-    const hourlyMap = {};
-    data.hourly_stats.forEach(h => {
-        hourlyMap[h.hour] = h.count;
-    });
-    const allHours = Array.from({length: 24}, (_, i) => i);
-    hourlyChart.data.datasets[0].data = allHours.map(h => hourlyMap[h] || 0);
-    hourlyChart.update();
+    // Reload page with new days parameter
+    window.location.href = `${window.location.pathname}?days=${days}`;
 }
 </script>
 
@@ -543,8 +453,48 @@ function updateCharts(data) {
     border-radius: 5px;
 }
 
-.opacity-75 {
-    opacity: 0.75;
+.nav-tabs .nav-link {
+    border-radius: 10px 10px 0 0;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+/* Fix canvas sizing issues */
+canvas {
+    max-width: 100% !important;
+    max-height: 400px !important;
+}
+
+/* Ensure proper canvas container sizing */
+.card-body > div[style*="height"] {
+    position: relative;
+}
+
+.card-body > div[style*="height"] canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Prevent canvas from growing excessively */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+.chart-container canvas {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
 }
 </style>
 {% endblock %}
