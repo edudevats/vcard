@@ -80,8 +80,6 @@
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">Elige el diseño base para tu tarjeta. Cada plantilla ofrece un estilo completamente diferente.</p>
-                    
-                    
                     <div class="row g-3">
                         {% for template_name in available_templates %}
                         <div class="col-md-6">
@@ -109,20 +107,6 @@
                                                 <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%; margin-left: 10px;"></div>
                                             </div>
                                         </div>
-                                        {% elif template_name == 'mobile' %}
-                                        <div style="background: linear-gradient(135deg, #ec4899, #f472b6); border-radius: 25px; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                            <div style="background: white; border-radius: 20px; padding: 12px; text-align: center; width: 70%; height: 85%;">
-                                                <div style="width: 25px; height: 25px; background: #ddd; border-radius: 50%; margin: 0 auto 6px;"></div>
-                                                <div style="height: 6px; background: #ec4899; border-radius: 3px; margin-bottom: 4px;"></div>
-                                                <div style="height: 4px; background: #ddd; border-radius: 2px; margin-bottom: 3px;"></div>
-                                                <div style="height: 4px; background: #ddd; border-radius: 2px; width: 80%; margin: 0 auto 8px;"></div>
-                                                <div style="display: flex; gap: 2px; justify-content: center;">
-                                                    <div style="width: 8px; height: 8px; background: #f472b6; border-radius: 2px;"></div>
-                                                    <div style="width: 8px; height: 8px; background: #f472b6; border-radius: 2px;"></div>
-                                                    <div style="width: 8px; height: 8px; background: #f472b6; border-radius: 2px;"></div>
-                                                </div>
-                                            </div>
-                                        </div>
                                         {% endif %}
                                     </div>
                                     
@@ -138,10 +122,6 @@
                                         Diseño vertical tradicional, perfecto para la mayoría de profesionales
                                         {% elif template_name == 'business' %}
                                         Diseño horizontal estilo tarjeta de negocio, ideal para empresarios
-                                        {% elif template_name == 'mobile' %}
-                                        Diseño optimizado para móviles con botones grandes y navegación táctil
-                                        {% else %}
-                                        Plantilla personalizada con diseño único
                                         {% endif %}
                                     </p>
                                     
@@ -542,12 +522,6 @@ function updatePreview() {
     const btnServices = document.getElementById('btn-services');
     const btnOutline = document.getElementById('btn-outline');
     
-    // Ensure elements exist (they might not exist immediately after template change)
-    if (!previewCard || !avatar || !btnContact || !btnServices || !btnOutline) {
-        console.warn('Preview elements not found, skipping style updates');
-        return;
-    }
-    
     // Font is applied above with setTimeout
     
     // Apply layout-specific styles
@@ -675,9 +649,6 @@ function updatePreview() {
 
 // Initialize preview on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize preview with current template
-    const currentTemplate = '{{ current_template }}';
-    updatePreviewTemplate(currentTemplate);
     updatePreview();
     
     // Handle template selection
@@ -690,71 +661,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
 });
 
-// Function to update preview based on current template
-function updatePreviewTemplate(templateName) {
-    const previewContainer = document.getElementById('preview-card');
-    if (!previewContainer) return;
-    
-    const cardData = {
-        name: '{{ card.title or card.name }}',
-        job_title: '{{ card.job_title }}',
-        avatar: '{{ card.get_avatar_url_with_cache_busting() or "" }}'
-    };
-    
-    let previewHTML = '';
-    
-    if (templateName === 'business') {
-        // Business template: Horizontal layout
-        previewHTML = `
-            <div style="display: flex; align-items: center; gap: 20px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                <div style="flex: 1;">
-                    <h3 style="color: var(--preview-primary, {{ card.theme.primary_color }}); font-size: 16px; font-weight: 700; margin-bottom: 8px;">${cardData.name}</h3>
-                    ${cardData.job_title ? `<p style="color: #666; font-size: 12px; margin-bottom: 15px;">${cardData.job_title}</p>` : ''}
-                    <div style="display: flex; gap: 6px;">
-                        <button id="btn-contact" style="padding: 6px 12px; font-size: 10px; border: none; border-radius: 8px; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white;">Contactar</button>
-                        <button id="btn-services" style="padding: 6px 12px; font-size: 10px; border: none; border-radius: 8px; background: var(--preview-secondary, {{ card.theme.secondary_color }}); color: white;">Servicios</button>
-                    </div>
-                </div>
-                <div id="preview-avatar" style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 3px solid var(--preview-accent, {{ card.theme.accent_color }}); background: #f8f9fa;">
-                    ${cardData.avatar ? `<img src="${cardData.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">` : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-size: 20px;"><i class="fas fa-user"></i></div>'}
-                </div>
-            </div>
-        `;
-    } else if (templateName === 'mobile') {
-        // Mobile template: Vertical optimized for mobile
-        previewHTML = `
-            <div style="text-align: center; padding: 25px; background: white; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); max-width: 280px;">
-                <div id="preview-avatar" style="width: 70px; height: 70px; margin: 0 auto 15px; border-radius: 50%; overflow: hidden; border: 3px solid var(--preview-accent, {{ card.theme.accent_color }}); background: #f8f9fa;">
-                    ${cardData.avatar ? `<img src="${cardData.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">` : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-size: 24px;"><i class="fas fa-user"></i></div>'}
-                </div>
-                <h3 style="color: var(--preview-primary, {{ card.theme.primary_color }}); font-size: 18px; font-weight: 700; margin-bottom: 8px;">${cardData.name}</h3>
-                ${cardData.job_title ? `<p style="color: #666; font-size: 14px; margin-bottom: 20px;">${cardData.job_title}</p>` : ''}
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button id="btn-contact" style="padding: 12px 20px; font-size: 14px; border: none; border-radius: 25px; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-weight: 600;">📞 Contactar</button>
-                    <button id="btn-services" style="padding: 12px 20px; font-size: 14px; border: none; border-radius: 25px; background: var(--preview-secondary, {{ card.theme.secondary_color }}); color: white; font-weight: 600;">🛍️ Servicios</button>
-                    <button id="btn-outline" style="padding: 12px 20px; font-size: 14px; border: 2px solid var(--preview-primary, {{ card.theme.primary_color }}); border-radius: 25px; background: transparent; color: var(--preview-primary, {{ card.theme.primary_color }}); font-weight: 600;">📍 Ubicación</button>
-                </div>
-            </div>
-        `;
-    } else {
-        // Classic template: Default vertical layout
-        previewHTML = `
-            <div id="preview-avatar" style="width: 80px; height: 80px; margin: 0 auto 15px; overflow: hidden; border: 3px solid var(--preview-accent, {{ card.theme.accent_color }}); box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #f8f9fa; border-radius: 50%;">
-                ${cardData.avatar ? `<img id="preview-avatar-img" src="${cardData.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">` : '<div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, var(--preview-primary, {{ card.theme.primary_color }}), var(--preview-secondary, {{ card.theme.secondary_color }})); color: white; font-size: 30px;"><i class="fas fa-user"></i></div>'}
-            </div>
-            <h3 id="preview-title" style="color: var(--preview-primary, {{ card.theme.primary_color }}); font-size: 18px; font-weight: 700; margin-bottom: 5px;">${cardData.name}</h3>
-            ${cardData.job_title ? `<p style="color: #666; font-size: 14px; margin-bottom: 15px;">${cardData.job_title}</p>` : ''}
-            <div id="preview-buttons" style="display: flex; flex-direction: column; gap: 8px;">
-                <button id="btn-contact" style="padding: 10px 20px; border: none; border-radius: 8px; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-weight: 500;">Contactar</button>
-                <button id="btn-services" style="padding: 10px 20px; border: none; border-radius: 8px; background: var(--preview-secondary, {{ card.theme.secondary_color }}); color: white; font-weight: 500;">Servicios</button>
-                <button id="btn-outline" style="padding: 10px 20px; border: 2px solid var(--preview-primary, {{ card.theme.primary_color }}); border-radius: 8px; background: transparent; color: var(--preview-primary, {{ card.theme.primary_color }}); font-weight: 500;">Ubicación</button>
-            </div>
-        `;
-    }
-    
-    previewContainer.innerHTML = previewHTML;
-}
-
 // Function to change template
 function changeTemplate(templateName) {
     const csrfToken = document.querySelector('[name=csrf_token]').value;
@@ -764,9 +670,6 @@ function changeTemplate(templateName) {
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cambiando...';
     button.disabled = true;
-    
-    // Update preview immediately for better UX
-    updatePreviewTemplate(templateName);
     
     fetch(`/dashboard/cards/{{ card.id }}/change-template`, {
         method: 'POST',
@@ -787,8 +690,6 @@ function changeTemplate(templateName) {
             showMessage('Error al cambiar plantilla: ' + data.message, 'error');
             button.innerHTML = originalText;
             button.disabled = false;
-            // Revert preview on error
-            updatePreviewTemplate('{{ current_template }}');
         }
     })
     .catch(error => {

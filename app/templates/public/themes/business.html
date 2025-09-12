@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- BUSSINESS -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -249,6 +250,87 @@
             color: white;
             text-decoration: none;
         }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .action-btn {
+            padding: 15px 25px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            border-radius: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+        
+        .btn-contact {
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            color: white;
+            box-shadow: 0 5px 15px {{ card.theme.primary_color }}40;
+        }
+        
+        .btn-services {
+            background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
+            color: white;
+            box-shadow: 0 5px 15px {{ card.theme.secondary_color }}40;
+        }
+        
+        .btn-products {
+            background: linear-gradient(135deg, {{ card.theme.accent_color }}, {{ card.theme.primary_color }});
+            color: white;
+            box-shadow: 0 5px 15px {{ card.theme.accent_color }}40;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: {{ card.theme.primary_color }};
+            border: 2px solid {{ card.theme.primary_color }}50;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .btn-outline:hover {
+            background: {{ card.theme.primary_color }};
+            color: white;
+        }
+
+        /* Primary Social Links */
+        .primary-social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Secondary Social Links */
+        .secondary-social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
         
         .gallery-section {
             margin-top: 40px;
@@ -350,6 +432,37 @@
                 width: 100px;
                 height: 100px;
             }
+            
+            .action-buttons {
+                gap: 12px;
+                margin: 25px 0;
+            }
+            
+            .action-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .primary-social-links,
+            .secondary-social-links {
+                gap: 12px;
+            }
+            
+            .social-link {
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
+            
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -443,13 +556,88 @@
             </div>
             {% endif %}
             
-            <!-- Social Links -->
-            {% if social_links %}
-            <div class="social-links">
-                {% for link in social_links %}
-                <a href="{{ link.url }}" target="_blank" class="social-link" title="{{ link.platform.title() }}">
-                    <i class="fab fa-{{ link.platform }}"></i>
-                </a>
+            <!-- Primary Social Networks -->
+            {% set primary_socials = card.get_primary_social_networks() %}
+            {% if primary_socials %}
+            <div class="primary-social-links">
+                {% for network in primary_socials %}
+                    {% set url = network.base_url + network.value %}
+                    {% if network.name == 'WhatsApp' %}
+                        {% if card.get_whatsapp_full_number() %}
+                            {% set url = network.base_url + card.get_whatsapp_full_number() %}
+                        {% endif %}
+                    {% endif %}
+                    
+                    <a href="{{ url }}" 
+                       target="_blank" 
+                       class="social-link"
+                       style="background-color: {{ network.color }};"
+                       title="{{ network.name }}"
+                       rel="noopener noreferrer">
+                        <i class="{{ network.icon }}"></i>
+                    </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                {% if card.phone or card.email_public %}
+                    <a href="#contact" class="action-btn btn-contact" onclick="showContact()">
+                        <i class="fas fa-phone"></i> CONTACTO
+                    </a>
+                {% endif %}
+                
+                {% if services %}
+                    <a href="{{ url_for('public.card_services', slug=card.slug) }}" class="action-btn btn-services">
+                        <i class="fas fa-concierge-bell"></i> SERVICIOS
+                    </a>
+                {% endif %}
+                
+                {% if products %}
+                    <a href="{{ url_for('public.card_products', slug=card.slug) }}" class="action-btn btn-products">
+                        <i class="fas fa-box"></i> PRODUCTOS
+                    </a>
+                {% endif %}
+                
+                {% if card.location %}
+                    <a href="#location" class="action-btn btn-outline" onclick="showLocation()">
+                        <i class="fas fa-map-marker-alt"></i> UBICACIÓN
+                    </a>
+                {% endif %}
+                
+                {% if gallery_items %}
+                    <a href="{{ url_for('public.card_gallery', slug=card.slug) }}" class="action-btn btn-outline">
+                        <i class="fas fa-images"></i> GALERÍA
+                    </a>
+                {% endif %}
+
+                <!-- Share Button -->
+                <button class="action-btn btn-share" onclick="shareCard()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                    <i class="fas fa-share-alt"></i> COMPARTIR
+                </button>
+            </div>
+
+            <!-- Secondary Social Networks -->
+            {% set secondary_socials = card.get_secondary_social_networks() %}
+            {% if secondary_socials %}
+            <div class="secondary-social-links">
+                {% for network in secondary_socials %}
+                    {% set url = network.base_url + network.value %}
+                    {% if network.name == 'WhatsApp' %}
+                        {% if card.get_whatsapp_full_number() %}
+                            {% set url = network.base_url + card.get_whatsapp_full_number() %}
+                        {% endif %}
+                    {% endif %}
+                    
+                    <a href="{{ url }}" 
+                       target="_blank" 
+                       class="social-link"
+                       style="background-color: {{ network.color }};"
+                       title="{{ network.name }}"
+                       rel="noopener noreferrer">
+                        <i class="{{ network.icon }}"></i>
+                    </a>
                 {% endfor %}
             </div>
             {% endif %}
@@ -498,19 +686,59 @@
         </div>
     </div>
 
-    <!-- Analytics -->
     <script>
-        // Track card view
-        fetch('{{ url_for("public.track_view", slug=card.slug) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                user_agent: navigator.userAgent,
-                referrer: document.referrer || 'direct'
-            })
-        }).catch(err => console.log('Analytics error:', err));
+        // Contact functionality
+        function showContact() {
+            {% if card.phone %}
+                if (confirm('¿Quieres llamar a {{ card.name }}?')) {
+                    window.location.href = 'tel:{{ card.phone }}';
+                }
+            {% elif card.email_public %}
+                window.location.href = 'mailto:{{ card.email_public }}';
+            {% endif %}
+        }
+        
+        // Location functionality
+        function showLocation() {
+            {% if card.location %}
+                const query = encodeURIComponent('{{ card.location }}');
+                window.open(`https://maps.google.com/maps?q=${query}`, '_blank');
+            {% endif %}
+        }
+        
+        // Gallery functionality
+        function openImage(src) {
+            window.open(src, '_blank');
+        }
+        
+        // PWA Share functionality
+        function shareCard() {
+            const cardData = {
+                title: '{{ card.name }} - Tarjeta Digital',
+                text: '{{ card.bio[:100] if card.bio else "Conoce mi tarjeta de presentación digital" }}',
+                url: window.location.href
+            };
+            
+            if (window.pwaManager) {
+                window.pwaManager.shareCard(cardData);
+            } else if (navigator.share) {
+                navigator.share(cardData).catch(console.error);
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('¡Enlace copiado al portapapeles!');
+                }).catch(() => {
+                    // Manual fallback
+                    const textArea = document.createElement('textarea');
+                    textArea.value = window.location.href;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('¡Enlace copiado al portapapeles!');
+                });
+            }
+        }
     </script>
 </body>
 </html>

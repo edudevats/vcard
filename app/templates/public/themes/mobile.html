@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- MOBILE -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -251,14 +252,6 @@
                 });
             }
         }
-        
-        // Track visit
-        fetch('{{ url_for("public.track_view", slug=card.slug) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
     </script>
 </body>
 </html>

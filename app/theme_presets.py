@@ -139,6 +139,54 @@ THEME_PRESETS = {
             'avatar_shape': 'circle',
             'preview_class': 'preset-luxury'
         }
+    },
+    'business': {
+        'business': {
+            'name': 'Ejecutivo',
+            'description': 'Estilo profesional para negocios',
+            'primary_color': '#1e40af',  # Blue
+            'secondary_color': '#3b82f6',
+            'accent_color': '#60a5fa',
+            'font_family': 'Inter',
+            'layout': 'modern',
+            'avatar_shape': 'circle',
+            'preview_class': 'preset-business'
+        },
+        'creative': {
+            'name': 'Creativo',
+            'description': 'Colores vibrantes para profesionales creativos',
+            'primary_color': '#7c3aed',  # Purple
+            'secondary_color': '#a855f7',
+            'accent_color': '#c084fc',
+            'font_family': 'Poppins',
+            'layout': 'modern',
+            'avatar_shape': 'rounded',
+            'preview_class': 'preset-creative'
+        }
+    },
+    'mobile': {
+        'business': {
+            'name': 'Ejecutivo',
+            'description': 'Estilo profesional para negocios',
+            'primary_color': '#1e40af',  # Blue
+            'secondary_color': '#3b82f6',
+            'accent_color': '#60a5fa',
+            'font_family': 'Inter',
+            'layout': 'modern',
+            'avatar_shape': 'circle',
+            'preview_class': 'preset-business'
+        },
+        'creative': {
+            'name': 'Creativo',
+            'description': 'Colores vibrantes para profesionales creativos',
+            'primary_color': '#7c3aed',  # Purple
+            'secondary_color': '#a855f7',
+            'accent_color': '#c084fc',
+            'font_family': 'Poppins',
+            'layout': 'modern',
+            'avatar_shape': 'rounded',
+            'preview_class': 'preset-creative'
+        }
     }
 }
 

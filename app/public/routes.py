@@ -198,6 +198,7 @@ def share_target():
     # GET request - redirect to dashboard
     return redirect(url_for('dashboard.index', shared='true'))
 
+
 @bp.route('/pwa-test')
 def pwa_test():
     """PWA functionality test page"""
