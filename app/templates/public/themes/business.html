@@ -31,6 +31,7 @@
     
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
     
@@ -42,198 +43,135 @@
         }
         
         body {
-            font-family: '{{ card.theme.font_family }}', sans-serif;
-            background: {{ card.theme.primary_color }};
+            font-family: '{{ card.theme.font_family }}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            {% if card.theme.layout == 'modern' %}
-            background: linear-gradient(45deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
-            {% elif card.theme.layout == 'minimal' %}
-            background: radial-gradient(circle at top right, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
-            {% else %}
-            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
-            {% endif %}
         }
         
         .business-card {
             background: white;
             width: 100%;
-            max-width: 600px;
-            height: auto;
+            max-width: 550px;
+            padding: 35px;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative;
             overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            
-            {% if card.theme.layout == 'modern' %}
-            border-radius: 0;
-            clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
-            {% elif card.theme.layout == 'minimal' %}
-            border-radius: 30px;
-            border: 2px solid {{ card.theme.accent_color }}20;
-            {% endif %}
         }
         
-        .card-header {
-            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
-            padding: 40px;
-            text-align: center;
-            position: relative;
-            
-            {% if card.theme.layout == 'modern' %}
-            clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
-            padding-bottom: 60px;
-            {% elif card.theme.layout == 'minimal' %}
-            border-radius: 30px 30px 0 0;
-            {% endif %}
-        }
-        
-        .card-header::before {
+        .business-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="white" opacity="0.1"/><circle cx="80" cy="30" r="1.5" fill="white" opacity="0.1"/><circle cx="40" cy="70" r="1" fill="white" opacity="0.1"/><circle cx="90" cy="80" r="2" fill="white" opacity="0.1"/></svg>');
-            {% if card.theme.layout != 'minimal' %}
-            opacity: 1;
-            {% else %}
-            opacity: 0;
-            {% endif %}
+            height: 4px;
+            background: linear-gradient(90deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }}, {{ card.theme.accent_color or card.theme.primary_color }});
+        }
+        
+        .card-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+        }
+        
+        .info-section {
+            flex: 1;
+        }
+        
+        .avatar-section {
+            flex-shrink: 0;
         }
         
         .avatar {
             width: 120px;
             height: 120px;
-            border-radius: {{ '15px' if card.theme.avatar_shape == 'rectangle' else '50%' }};
-            border: 4px solid {{ card.theme.avatar_border_color or '#ffffff' }};
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid {{ card.theme.accent_color or card.theme.secondary_color }};
+            background: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            margin: 0 auto 20px;
-            position: relative;
-            z-index: 2;
-            
-            {% if card.theme.layout == 'modern' %}
-            clip-path: {{ 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' if card.theme.avatar_shape == 'rectangle' else 'circle(50%)' }};
-            {% endif %}
+        }
+        
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            color: white;
+            font-size: 3rem;
         }
         
         .name {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            position: relative;
-            z-index: 2;
-        }
-        
-        .title {
-            color: rgba(255,255,255,0.9);
-            font-size: 1.3rem;
-            font-weight: 400;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .card-body {
-            padding: 40px;
-            flex-grow: 1;
-        }
-        
-        .contact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-        
-        .contact-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: {{ card.theme.primary_color }}08;
-            border-radius: 15px;
-            border-left: 4px solid {{ card.theme.primary_color }};
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: inherit;
-        }
-        
-        .contact-item:hover {
-            background: {{ card.theme.primary_color }}15;
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-decoration: none;
-            color: inherit;
-        }
-        
-        .contact-icon {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-        
-        .contact-icon i {
-            color: white;
-            font-size: 1.4rem;
-        }
-        
-        .contact-info {
-            flex-grow: 1;
-        }
-        
-        .contact-label {
-            font-size: 0.9rem;
             color: {{ card.theme.primary_color }};
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.2;
         }
         
-        .contact-value {
+        .job-title {
+            color: #666;
             font-size: 1.1rem;
-            color: #333;
-            font-weight: 400;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .company-info {
+            color: {{ card.theme.primary_color }};
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .bio {
-            background: linear-gradient(135deg, {{ card.theme.primary_color }}10, {{ card.theme.secondary_color }}10);
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 1px solid {{ card.theme.primary_color }}20;
-        }
-        
-        .bio-text {
             color: #555;
-            line-height: 1.7;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, {{ card.theme.primary_color }}08, {{ card.theme.secondary_color }}08);
+            border-radius: 12px;
+            border-left: 4px solid {{ card.theme.primary_color }};
         }
         
-        .social-links {
+        .social-section {
+            margin-bottom: 25px;
+        }
+        
+        .social-section h4 {
+            color: {{ card.theme.primary_color }};
+            font-size: 1rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .primary-social-links {
             display: flex;
-            justify-content: center;
-            gap: 15px;
+            gap: 12px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
         
-        .social-link {
+        .primary-social-link {
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
-            border-radius: 15px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -244,188 +182,168 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .social-link:hover {
-            transform: translateY(-3px);
+        .primary-social-link:hover {
+            transform: translateY(-3px) scale(1.05);
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
             color: white;
             text-decoration: none;
         }
-
-        /* Action Buttons */
+        
         .action-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin: 30px 0;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
         }
         
         .action-btn {
-            padding: 15px 25px;
+            padding: 12px 20px;
+            font-size: 0.9rem;
             border: none;
-            font-size: 16px;
+            border-radius: 8px;
             font-weight: 600;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-            border-radius: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
             cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
         }
         
         .btn-contact {
-            background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});
+            background: {{ card.theme.primary_color }};
             color: white;
-            box-shadow: 0 5px 15px {{ card.theme.primary_color }}40;
+            box-shadow: 0 4px 15px {{ card.theme.primary_color }}40;
+        }
+        
+        .btn-contact:hover {
+            background: {{ card.theme.primary_color }};
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px {{ card.theme.primary_color }}50;
+            text-decoration: none;
+            color: white;
         }
         
         .btn-services {
-            background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
+            background: {{ card.theme.secondary_color }};
             color: white;
-            box-shadow: 0 5px 15px {{ card.theme.secondary_color }}40;
+            box-shadow: 0 4px 15px {{ card.theme.secondary_color }}40;
+        }
+        
+        .btn-services:hover {
+            background: {{ card.theme.secondary_color }};
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px {{ card.theme.secondary_color }}50;
+            text-decoration: none;
+            color: white;
         }
         
         .btn-products {
-            background: linear-gradient(135deg, {{ card.theme.accent_color }}, {{ card.theme.primary_color }});
+            background: {{ card.theme.accent_color or card.theme.secondary_color }};
             color: white;
-            box-shadow: 0 5px 15px {{ card.theme.accent_color }}40;
+            box-shadow: 0 4px 15px {{ card.theme.accent_color or card.theme.secondary_color }}40;
+        }
+        
+        .btn-products:hover {
+            background: {{ card.theme.accent_color or card.theme.secondary_color }};
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px {{ card.theme.accent_color or card.theme.secondary_color }}50;
+            text-decoration: none;
+            color: white;
         }
         
         .btn-outline {
             background: transparent;
             color: {{ card.theme.primary_color }};
-            border: 2px solid {{ card.theme.primary_color }}50;
-        }
-        
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            text-decoration: none;
-            color: white;
+            border: 2px solid {{ card.theme.primary_color }};
         }
         
         .btn-outline:hover {
             background: {{ card.theme.primary_color }};
             color: white;
-        }
-
-        /* Primary Social Links */
-        .primary-social-links {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 25px 0;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            text-decoration: none;
         }
         
-        /* Secondary Social Links */
-        .secondary-social-links {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
+        .btn-share {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-share:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .secondary-social-networks {
+            border-top: 2px solid #f0f0f0;
             padding-top: 20px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
         
-        .gallery-section {
-            margin-top: 40px;
-        }
-        
-        .gallery-title {
-            font-size: 1.8rem;
-            color: {{ card.theme.primary_color }};
-            margin-bottom: 20px;
-            text-align: center;
+        .secondary-social-networks h4 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
             font-weight: 600;
-        }
-        
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .gallery-item {
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .gallery-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .gallery-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-        
-        .products-section {
-            margin-top: 40px;
-        }
-        
-        .products-title {
-            font-size: 1.8rem;
-            color: {{ card.theme.primary_color }};
-            margin-bottom: 20px;
             text-align: center;
-            font-weight: 600;
         }
         
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border: 1px solid {{ card.theme.primary_color }}20;
+        .social-link {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
             transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
         
-        .product-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        .social-link:hover {
+            transform: translateY(-3px) rotate(5deg);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            color: white;
+            text-decoration: none;
         }
         
-        /* Responsive Design */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
             .business-card {
                 max-width: 100%;
-                margin: 10px;
+                padding: 25px;
             }
             
-            .card-header {
-                padding: 30px 20px;
+            .card-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 20px;
             }
             
-            .name {
-                font-size: 2rem;
+            .info-section {
+                order: 2;
             }
             
-            .title {
-                font-size: 1.1rem;
-            }
-            
-            .card-body {
-                padding: 30px 20px;
-            }
-            
-            .contact-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
+            .avatar-section {
+                order: 1;
             }
             
             .avatar {
@@ -433,261 +351,183 @@
                 height: 100px;
             }
             
+            .name {
+                font-size: 1.8rem;
+            }
+            
+            .job-title {
+                font-size: 1rem;
+            }
+            
             .action-buttons {
-                gap: 12px;
-                margin: 25px 0;
+                flex-direction: column;
+                align-items: center;
             }
             
             .action-btn {
-                padding: 12px 20px;
-                font-size: 14px;
+                width: 100%;
+                max-width: 250px;
+                justify-content: center;
             }
             
-            .primary-social-links,
-            .secondary-social-links {
-                gap: 12px;
+            .primary-social-links {
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .business-card {
+                padding: 20px;
             }
             
-            .social-link {
+            .name {
+                font-size: 1.5rem;
+            }
+            
+            .action-btn {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+            
+            .primary-social-link {
                 width: 45px;
                 height: 45px;
-                font-size: 1.2rem;
-            }
-            
-            .products-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
+                font-size: 1.1rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="business-card">
-        <!-- Header with Avatar and Name -->
-        <div class="card-header">
-            {% if card.has_avatar() %}
-            <img src="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
-                 alt="{{ card.name }}" class="avatar">
-            {% endif %}
-            
-            <h1 class="name">{{ card.name }}</h1>
-            
-            {% if card.job_title %}
-            <p class="title">{{ card.job_title }}</p>
-            {% elif card.title %}
-            <p class="title">{{ card.title }}</p>
-            {% endif %}
-        </div>
-        
-        <!-- Body with Contact Info -->
-        <div class="card-body">
-            <!-- Contact Information -->
-            <div class="contact-grid">
-                {% if card.email_public %}
-                <a href="mailto:{{ card.email_public }}" class="contact-item">
-                    <div class="contact-icon">
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-label">Email</div>
-                        <div class="contact-value">{{ card.email_public }}</div>
-                    </div>
-                </a>
-                {% endif %}
-                
-                {% if card.phone %}
-                <a href="tel:{{ card.phone }}" class="contact-item">
-                    <div class="contact-icon">
-                        <i class="fas fa-phone"></i>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-label">Teléfono</div>
-                        <div class="contact-value">{{ card.phone }}</div>
-                    </div>
-                </a>
+        <div class="card-content">
+            <!-- Info Section -->
+            <div class="info-section">
+                <!-- Header Info -->
+                <h1 class="name">{{ card.title or card.name }}</h1>
+                {% if card.job_title %}
+                <p class="job-title">{{ card.job_title }}</p>
                 {% endif %}
                 
                 {% if card.company %}
-                <div class="contact-item">
-                    <div class="contact-icon">
-                        <i class="fas fa-building"></i>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-label">Empresa</div>
-                        <div class="contact-value">{{ card.company }}</div>
+                <div class="company-info">
+                    <i class="fas fa-building"></i>{{ card.company }}
+                </div>
+                {% endif %}
+                
+                {% if card.bio %}
+                <div class="bio">{{ card.bio }}</div>
+                {% endif %}
+                
+                <!-- Primary Social Networks - Highly Visible -->
+                {% set primary_socials = card.get_primary_social_networks() %}
+                {% if primary_socials %}
+                <div class="social-section">
+                    <h4><i class="fas fa-share-alt"></i> Síguenos</h4>
+                    <div class="primary-social-links">
+                        {% for network in primary_socials %}
+                            {% set url = network.base_url + network.value %}
+                            {% if network.name == 'WhatsApp' %}
+                                {% if card.get_whatsapp_full_number() %}
+                                    {% set url = network.base_url + card.get_whatsapp_full_number() %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            <a href="{{ url }}" 
+                               target="_blank" 
+                               class="primary-social-link"
+                               style="background-color: {{ network.color }};"
+                               title="{{ network.name }}"
+                               rel="noopener noreferrer">
+                                <i class="{{ network.icon }}"></i>
+                            </a>
+                        {% endfor %}
                     </div>
                 </div>
                 {% endif %}
                 
-                {% if card.website %}
-                <a href="{{ card.website }}" target="_blank" class="contact-item">
-                    <div class="contact-icon">
-                        <i class="fas fa-globe"></i>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-label">Sitio Web</div>
-                        <div class="contact-value">{{ card.website }}</div>
-                    </div>
-                </a>
-                {% endif %}
-                
-                {% if card.address %}
-                <div class="contact-item">
-                    <div class="contact-icon">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-                    <div class="contact-info">
-                        <div class="contact-label">Dirección</div>
-                        <div class="contact-value">{{ card.address }}</div>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-            
-            <!-- Bio -->
-            {% if card.bio %}
-            <div class="bio">
-                <p class="bio-text">{{ card.bio }}</p>
-            </div>
-            {% endif %}
-            
-            <!-- Primary Social Networks -->
-            {% set primary_socials = card.get_primary_social_networks() %}
-            {% if primary_socials %}
-            <div class="primary-social-links">
-                {% for network in primary_socials %}
-                    {% set url = network.base_url + network.value %}
-                    {% if network.name == 'WhatsApp' %}
-                        {% if card.get_whatsapp_full_number() %}
-                            {% set url = network.base_url + card.get_whatsapp_full_number() %}
-                        {% endif %}
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    {% if card.phone or card.email_public %}
+                    <button class="action-btn btn-contact" onclick="showContact()">
+                        <i class="fas fa-phone"></i> Contactar
+                    </button>
                     {% endif %}
                     
-                    <a href="{{ url }}" 
-                       target="_blank" 
-                       class="social-link"
-                       style="background-color: {{ network.color }};"
-                       title="{{ network.name }}"
-                       rel="noopener noreferrer">
-                        <i class="{{ network.icon }}"></i>
-                    </a>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                {% if card.phone or card.email_public %}
-                    <a href="#contact" class="action-btn btn-contact" onclick="showContact()">
-                        <i class="fas fa-phone"></i> CONTACTO
-                    </a>
-                {% endif %}
-                
-                {% if services %}
+                    {% if services %}
                     <a href="{{ url_for('public.card_services', slug=card.slug) }}" class="action-btn btn-services">
-                        <i class="fas fa-concierge-bell"></i> SERVICIOS
+                        <i class="fas fa-concierge-bell"></i> Servicios
                     </a>
-                {% endif %}
-                
-                {% if products %}
-                    <a href="{{ url_for('public.card_products', slug=card.slug) }}" class="action-btn btn-products">
-                        <i class="fas fa-box"></i> PRODUCTOS
-                    </a>
-                {% endif %}
-                
-                {% if card.location %}
-                    <a href="#location" class="action-btn btn-outline" onclick="showLocation()">
-                        <i class="fas fa-map-marker-alt"></i> UBICACIÓN
-                    </a>
-                {% endif %}
-                
-                {% if gallery_items %}
-                    <a href="{{ url_for('public.card_gallery', slug=card.slug) }}" class="action-btn btn-outline">
-                        <i class="fas fa-images"></i> GALERÍA
-                    </a>
-                {% endif %}
-
-                <!-- Share Button -->
-                <button class="action-btn btn-share" onclick="shareCard()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
-                    <i class="fas fa-share-alt"></i> COMPARTIR
-                </button>
-            </div>
-
-            <!-- Secondary Social Networks -->
-            {% set secondary_socials = card.get_secondary_social_networks() %}
-            {% if secondary_socials %}
-            <div class="secondary-social-links">
-                {% for network in secondary_socials %}
-                    {% set url = network.base_url + network.value %}
-                    {% if network.name == 'WhatsApp' %}
-                        {% if card.get_whatsapp_full_number() %}
-                            {% set url = network.base_url + card.get_whatsapp_full_number() %}
-                        {% endif %}
                     {% endif %}
                     
-                    <a href="{{ url }}" 
-                       target="_blank" 
-                       class="social-link"
-                       style="background-color: {{ network.color }};"
-                       title="{{ network.name }}"
-                       rel="noopener noreferrer">
-                        <i class="{{ network.icon }}"></i>
+                    {% if products %}
+                    <a href="{{ url_for('public.card_products', slug=card.slug) }}" class="action-btn btn-products">
+                        <i class="fas fa-box"></i> Productos
                     </a>
-                {% endfor %}
-            </div>
-            {% endif %}
-            
-            <!-- Gallery Section -->
-            {% if gallery_items %}
-            <div class="gallery-section">
-                <h3 class="gallery-title">
-                    <i class="fas fa-images me-2"></i>Galería
-                </h3>
-                <div class="gallery-grid">
-                    {% for item in gallery_items %}
-                    <div class="gallery-item">
-                        <img src="{{ url_for('static', filename='uploads/' + item.thumbnail_path) }}" 
-                             alt="{{ item.caption or 'Imagen de galería' }}" 
-                             class="gallery-image">
+                    {% endif %}
+                    
+                    {% if card.location %}
+                    <button class="action-btn btn-outline" onclick="showLocation()">
+                        <i class="fas fa-map-marker-alt"></i> Ubicación
+                    </button>
+                    {% endif %}
+                    
+                    {% if gallery_items %}
+                    <a href="{{ url_for('public.card_gallery', slug=card.slug) }}" class="action-btn btn-outline">
+                        <i class="fas fa-images"></i> Galería
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Share Button -->
+                    <button class="action-btn btn-share" onclick="shareCard()">
+                        <i class="fas fa-share-alt"></i> Compartir
+                    </button>
+                </div>
+                
+                <!-- Secondary Social Networks -->
+                {% set secondary_socials = card.get_secondary_social_networks() %}
+                {% if secondary_socials %}
+                <div class="secondary-social-networks">
+                    <h4>Más redes sociales</h4>
+                    <div class="social-links">
+                        {% for network in secondary_socials %}
+                            {% set url = network.base_url + network.value %}
+                            {% if network.name == 'WhatsApp' %}
+                                {% if card.get_whatsapp_full_number() %}
+                                    {% set url = network.base_url + card.get_whatsapp_full_number() %}
+                                {% endif %}
+                            {% endif %}
+                            
+                            <a href="{{ url }}" 
+                               target="_blank" 
+                               class="social-link"
+                               style="background-color: {{ network.color }};"
+                               title="{{ network.name }}"
+                               rel="noopener noreferrer">
+                                <i class="{{ network.icon }}"></i>
+                            </a>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Avatar Section -->
+            <div class="avatar-section">
+                <div class="avatar">
+                    {% if card.has_avatar() %}
+                    <img src="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                         alt="{{ card.name }}">
+                    {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
-            
-            <!-- Products Section -->
-            {% if products %}
-            <div class="products-section">
-                <h3 class="products-title">
-                    <i class="fas fa-box me-2"></i>Productos y Servicios
-                </h3>
-                <div class="products-grid">
-                    {% for product in products %}
-                    <div class="product-card">
-                        <h4 style="color: {{ card.theme.primary_color }}; margin-bottom: 10px;">{{ product.name }}</h4>
-                        {% if product.description %}
-                        <p style="color: #666; margin-bottom: 15px;">{{ product.description[:100] }}...</p>
-                        {% endif %}
-                        {% if product.price %}
-                        <div style="color: {{ card.theme.secondary_color }}; font-weight: 600; font-size: 1.2rem;">
-                            ${{ "%.2f"|format(product.price) }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 
     <script>
-        // Contact functionality
         function showContact() {
             {% if card.phone %}
                 if (confirm('¿Quieres llamar a {{ card.name }}?')) {
@@ -698,7 +538,16 @@
             {% endif %}
         }
         
-        // Location functionality
+        function showServices() {
+            const section = document.getElementById('services-section');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function showGallery() {
+            const section = document.getElementById('gallery-section');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+        
         function showLocation() {
             {% if card.location %}
                 const query = encodeURIComponent('{{ card.location }}');
@@ -706,12 +555,10 @@
             {% endif %}
         }
         
-        // Gallery functionality
         function openImage(src) {
             window.open(src, '_blank');
         }
         
-        // PWA Share functionality
         function shareCard() {
             const cardData = {
                 title: '{{ card.name }} - Tarjeta Digital',

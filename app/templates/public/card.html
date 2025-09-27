@@ -556,7 +556,7 @@
             {% endif %}
 
             <!-- Share Button -->
-            <button class="action-btn btn-share" onclick="shareCard()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+            <button class="action-btn btn-share" onclick="shareCard()" style="background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }}); color: white;">
                 <i class="fas fa-share-alt"></i> COMPARTIR
             </button>
 

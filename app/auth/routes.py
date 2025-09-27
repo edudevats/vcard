@@ -56,7 +56,18 @@ def login():
             flash('¡Registro exitoso! Tu cuenta ha sido creada y está pendiente de aprobación por parte del administrador. Te notificaremos por email cuando tu cuenta sea activada.', 'info')
             return redirect(url_for('auth.login'))
     
-    return render_template('auth/login.html', login_form=login_form, register_form=register_form)
+    # Use PWA template for mobile-first experience
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('auth/login_pwa.html', login_form=login_form, register_form=register_form)
+    else:
+        return render_template('auth/login.html', login_form=login_form, register_form=register_form)
 
 @bp.route('/logout')
 def logout():

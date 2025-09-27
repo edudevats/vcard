@@ -1,0 +1,912 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Tarjeta - Dashboard{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Google Fonts for preview -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link id="preview-font-link" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="new-card-container">
+    <!-- Modern Sidebar -->
+    <div class="new-card-sidebar">
+        <div class="sidebar-content">
+            <div class="sidebar-header">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="{{ url_for('dashboard.index') }}">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a class="nav-item active" href="#">
+                    <i class="fas fa-plus"></i>
+                    <span>Nueva Tarjeta</span>
+                </a>
+                <a class="nav-item" href="{{ url_for('dashboard.analytics') }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a class="nav-item" href="{{ url_for('dashboard.advanced_features') }}">
+                    <i class="fas fa-rocket"></i>
+                    <span>Funciones Avanzadas</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="new-card-main">
+        <div class="new-card-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-plus"></i>
+                    Nueva Tarjeta Digital
+                </h1>
+                <p class="page-subtitle">Crea tu tarjeta y ve cómo se verá en tiempo real</p>
+            </div>
+        </div>
+
+        <div class="creation-layout">
+            <!-- Form Section -->
+            <div class="form-section">
+                <form method="POST" class="card-creation-form" id="cardForm">
+                    {{ form.hidden_tag() }}
+
+                    <div class="form-steps">
+                        <!-- Step 1: Información Básica -->
+                        <div class="form-step active" data-step="1">
+                            <div class="step-header">
+                                <h3>
+                                    <span class="step-number">1</span>
+                                    Información Personal
+                                </h3>
+                                <p>Los datos básicos que aparecerán en tu tarjeta</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required">{{ form.name.label.text }}</label>
+                                {{ form.name(class="form-control", placeholder="Ej: Juan Pérez", id="preview-name") }}
+                                {% if form.name.errors %}
+                                    <div class="form-error">{{ form.name.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.job_title.label.text }}</label>
+                                {{ form.job_title(class="form-control", placeholder="Ej: Desarrollador Full Stack", id="preview-job") }}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.company.label.text }}</label>
+                                {{ form.company(class="form-control", placeholder="Ej: TechCorp S.A.", id="preview-company") }}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.bio.label.text }}</label>
+                                {{ form.bio(class="form-control", placeholder="Cuéntanos sobre ti o tu negocio...", rows="3", id="preview-bio") }}
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Información de Contacto -->
+                        <div class="form-step" data-step="2">
+                            <div class="step-header">
+                                <h3>
+                                    <span class="step-number">2</span>
+                                    Información de Contacto
+                                </h3>
+                                <p>Cómo pueden contactarte (opcional)</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.phone.label.text }}</label>
+                                {{ form.phone(class="form-control", placeholder="+34 123 456 789", id="preview-phone") }}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.email_public.label.text }}</label>
+                                {{ form.email_public(class="form-control", placeholder="contacto@empresa.com", id="preview-email") }}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.website.label.text }}</label>
+                                {{ form.website(class="form-control", placeholder="miempresa.com", id="preview-website") }}
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.location.label.text }}</label>
+                                {{ form.location(class="form-control", placeholder="Madrid, España", id="preview-location") }}
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Redes Sociales Principales -->
+                        <div class="form-step" data-step="3">
+                            <div class="step-header">
+                                <h3>
+                                    <span class="step-number">3</span>
+                                    Redes Sociales
+                                </h3>
+                                <p>Conecta las más importantes (podrás agregar más después)</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fab fa-instagram" style="color: #E4405F;"></i>
+                                    {{ form.instagram.label.text }}
+                                </label>
+                                {{ form.instagram(class="form-control", placeholder="@tuusuario", id="preview-instagram") }}
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fab fa-whatsapp" style="color: #25D366;"></i>
+                                        País WhatsApp
+                                    </label>
+                                    {{ form.whatsapp_country(class="form-select", id="preview-whatsapp-country") }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Número WhatsApp</label>
+                                    {{ form.whatsapp(class="form-control", placeholder="123 456 789", id="preview-whatsapp") }}
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fab fa-linkedin" style="color: #0A66C2;"></i>
+                                    {{ form.linkedin.label.text }}
+                                </label>
+                                {{ form.linkedin(class="form-control", placeholder="https://linkedin.com/in/tuperfil", id="preview-linkedin") }}
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Configuración Final -->
+                        <div class="form-step" data-step="4">
+                            <div class="step-header">
+                                <h3>
+                                    <span class="step-number">4</span>
+                                    Configuración Final
+                                </h3>
+                                <p>Últimos detalles para tu tarjeta</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">{{ form.title.label.text }}</label>
+                                {{ form.title(class="form-control", placeholder="Ej: Juan Pérez - Desarrollador", id="preview-title") }}
+                                <small class="form-text">Si no especificas uno, usaremos tu nombre</small>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="form-check">
+                                    {{ form.is_public(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.is_public.id }}">
+                                        <strong>Hacer pública mi tarjeta</strong>
+                                        <br><small>La tarjeta será visible públicamente y podrás compartir el enlace</small>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Hidden theme field (default classic) -->
+                            <input type="hidden" name="theme_id" value="{{ default_theme.id }}" />
+                        </div>
+                    </div>
+
+                    <!-- Navigation Buttons -->
+                    <div class="form-navigation">
+                        <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                            <i class="fas fa-arrow-left"></i> Anterior
+                        </button>
+                        <button type="button" class="btn btn-primary" id="nextBtn">
+                            Siguiente <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button type="submit" class="btn btn-success" id="submitBtn" style="display: none;">
+                            <i class="fas fa-check"></i> Crear Tarjeta
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <div class="preview-header">
+                    <h3>
+                        <i class="fas fa-eye"></i>
+                        Vista Previa en Tiempo Real
+                    </h3>
+                    <p>Así se verá tu tarjeta (template Classic)</p>
+                </div>
+
+                <div class="preview-container">
+                    <div class="preview-background">
+                        <div class="live-preview-card" id="livePreview">
+                            <!-- Avatar -->
+                            <div class="live-avatar">
+                                <div class="live-avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+
+                            <!-- Name and Title -->
+                            <h1 class="live-name" id="live-name">Tu Nombre</h1>
+                            <h2 class="live-job" id="live-job">Tu Cargo</h2>
+                            <p class="live-company" id="live-company">Tu Empresa</p>
+
+                            <!-- Bio -->
+                            <div class="live-bio" id="live-bio-container" style="display: none;">
+                                <p id="live-bio">Tu biografía aparecerá aquí...</p>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div class="live-contact" id="live-contact">
+                                <!-- Phone, Email, Website, Location will be added dynamically -->
+                            </div>
+
+                            <!-- Social Networks -->
+                            <div class="live-social" id="live-social">
+                                <!-- Social networks will be added dynamically -->
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="live-footer">
+                                <p>Creado con VCard</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preview-note">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Después de crear la tarjeta podrás cambiar el diseño, colores y agregar más funciones</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Layout Styles */
+.new-card-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.new-card-sidebar {
+    width: 280px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    padding: 2rem 0;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-content {
+    padding: 0;
+}
+
+.sidebar-header {
+    padding: 0 1.5rem 2rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 2rem 0.75rem 0;
+}
+
+.sidebar-nav .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.sidebar-nav .nav-item:hover {
+    background: #e2e8f0;
+    color: #374151;
+    transform: none;
+    border-color: #cbd5e1;
+}
+
+.sidebar-nav .nav-item.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.sidebar-nav .nav-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.new-card-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 2rem;
+}
+
+.new-card-header {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.page-title {
+    color: #1e293b;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    color: #64748b;
+    font-size: 1.1rem;
+}
+
+/* Creation Layout */
+.creation-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* Form Styles */
+.form-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+
+.step-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.step-header h3 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.step-header p {
+    color: #64748b;
+    margin-bottom: 0;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+}
+
+.form-label {
+    display: block;
+    color: #374151;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-label.required::after {
+    content: '*';
+    color: #ef4444;
+    margin-left: 0.25rem;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-text {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.form-check-input {
+    margin-top: 0.25rem;
+}
+
+.form-check-label {
+    color: #374151;
+    font-size: 0.95rem;
+}
+
+.form-error {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* Navigation */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 2rem;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-1px);
+}
+
+/* Preview Styles */
+.preview-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 2rem;
+}
+
+.preview-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.preview-header h3 {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.preview-header p {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.preview-container {
+    padding: 1.5rem;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-background {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.live-preview-card {
+    max-width: 300px;
+    width: 100%;
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    font-family: 'Inter', sans-serif;
+}
+
+.live-avatar {
+    margin-bottom: 1.5rem;
+}
+
+.live-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+}
+
+.live-name {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    min-height: 1.5rem;
+}
+
+.live-job {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    min-height: 1.1rem;
+}
+
+.live-company {
+    color: #64748b;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    min-height: 1rem;
+}
+
+.live-bio {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    color: #374151;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.live-contact {
+    margin-bottom: 1.5rem;
+}
+
+.live-contact-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+    font-size: 0.85rem;
+}
+
+.live-social {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.live-social-item {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: transform 0.2s;
+}
+
+.live-social-item:hover {
+    transform: scale(1.1);
+}
+
+.live-footer {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1rem;
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.preview-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #eff6ff;
+    border-radius: 8px;
+    border-left: 3px solid #3b82f6;
+}
+
+.preview-note i {
+    color: #3b82f6;
+    margin-top: 0.125rem;
+}
+
+.preview-note p {
+    color: #1e40af;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .creation-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .preview-section {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .new-card-container {
+        flex-direction: column;
+    }
+
+    .new-card-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 1rem;
+    }
+
+    .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+        padding: 1rem 0 0;
+    }
+
+    .sidebar-nav .nav-item {
+        text-align: center;
+        flex-direction: column;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .new-card-main {
+        margin-left: 0;
+        padding: 1rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .preview-background {
+        padding: 1rem;
+    }
+
+    .live-preview-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script>
+// Form navigation
+let currentStep = 1;
+const totalSteps = 4;
+
+function showStep(step) {
+    // Hide all steps
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+
+    // Show current step
+    document.querySelector(`[data-step="${step}"]`).classList.add('active');
+
+    // Update navigation buttons
+    document.getElementById('prevBtn').style.display = step === 1 ? 'none' : 'inline-flex';
+    document.getElementById('nextBtn').style.display = step === totalSteps ? 'none' : 'inline-flex';
+    document.getElementById('submitBtn').style.display = step === totalSteps ? 'inline-flex' : 'none';
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentStep < totalSteps) {
+        currentStep++;
+        showStep(currentStep);
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+    }
+});
+
+// Real-time preview updates
+function updatePreview() {
+    const name = document.getElementById('preview-name').value || 'Tu Nombre';
+    const job = document.getElementById('preview-job').value || '';
+    const company = document.getElementById('preview-company').value || '';
+    const bio = document.getElementById('preview-bio').value || '';
+    const phone = document.getElementById('preview-phone').value || '';
+    const email = document.getElementById('preview-email').value || '';
+    const website = document.getElementById('preview-website').value || '';
+    const location = document.getElementById('preview-location').value || '';
+    const instagram = document.getElementById('preview-instagram').value || '';
+    const whatsappCountry = document.getElementById('preview-whatsapp-country').value || '';
+    const whatsapp = document.getElementById('preview-whatsapp').value || '';
+    const linkedin = document.getElementById('preview-linkedin').value || '';
+
+    // Auto-update title if not manually set
+    const titleField = document.getElementById('preview-title');
+    if (titleField && !titleField.value && name !== 'Tu Nombre') {
+        const autoTitle = name + (job ? ' - ' + job : '');
+        titleField.value = autoTitle;
+    }
+
+    // Update name
+    document.getElementById('live-name').textContent = name;
+
+    // Update job title
+    const jobElement = document.getElementById('live-job');
+    jobElement.textContent = job;
+    jobElement.style.display = job ? 'block' : 'none';
+
+    // Update company
+    const companyElement = document.getElementById('live-company');
+    companyElement.textContent = company;
+    companyElement.style.display = company ? 'block' : 'none';
+
+    // Update bio
+    const bioContainer = document.getElementById('live-bio-container');
+    const bioElement = document.getElementById('live-bio');
+    if (bio) {
+        bioElement.textContent = bio;
+        bioContainer.style.display = 'block';
+    } else {
+        bioContainer.style.display = 'none';
+    }
+
+    // Update contact info
+    const contactContainer = document.getElementById('live-contact');
+    contactContainer.innerHTML = '';
+
+    if (phone) {
+        contactContainer.innerHTML += `<div class="live-contact-item"><i class="fas fa-phone"></i>${phone}</div>`;
+    }
+    if (email) {
+        contactContainer.innerHTML += `<div class="live-contact-item"><i class="fas fa-envelope"></i>${email}</div>`;
+    }
+    if (website) {
+        contactContainer.innerHTML += `<div class="live-contact-item"><i class="fas fa-globe"></i>${website}</div>`;
+    }
+    if (location) {
+        contactContainer.innerHTML += `<div class="live-contact-item"><i class="fas fa-map-marker-alt"></i>${location}</div>`;
+    }
+
+    // Update social networks
+    const socialContainer = document.getElementById('live-social');
+    socialContainer.innerHTML = '';
+
+    if (instagram) {
+        socialContainer.innerHTML += `<a href="#" class="live-social-item" style="background: #E4405F;"><i class="fab fa-instagram"></i></a>`;
+    }
+    if (whatsappCountry && whatsapp) {
+        socialContainer.innerHTML += `<a href="#" class="live-social-item" style="background: #25D366;"><i class="fab fa-whatsapp"></i></a>`;
+    }
+    if (linkedin) {
+        socialContainer.innerHTML += `<a href="#" class="live-social-item" style="background: #0A66C2;"><i class="fab fa-linkedin"></i></a>`;
+    }
+}
+
+// Add event listeners for real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    const fields = [
+        'preview-name', 'preview-job', 'preview-company', 'preview-bio', 'preview-title',
+        'preview-phone', 'preview-email', 'preview-website', 'preview-location',
+        'preview-instagram', 'preview-whatsapp-country', 'preview-whatsapp', 'preview-linkedin'
+    ];
+
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', updatePreview);
+            field.addEventListener('change', updatePreview);
+        }
+    });
+
+    // Initial preview update
+    updatePreview();
+});
+</script>
+{% endblock %}

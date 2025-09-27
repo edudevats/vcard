@@ -3,6 +3,64 @@
 {% block title %}Galería - {{ card.name }}{% endblock %}
 
 {% block content %}
+<style>
+.sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar h5 {
+    color: #1f2937;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav.flex-column {
+    gap: 0.25rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.nav-link:hover {
+    background: #e2e8f0;
+    color: #374151;
+    border-color: #cbd5e1;
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.nav-link i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+</style>
 <div class="row">
     <!-- Sidebar -->
     <div class="col-md-3">
@@ -41,220 +99,1030 @@
             </nav>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <div class="col-md-9">
         <div class="main-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2>
-                        <i class="fas fa-images me-2"></i>Galería
-                        <small class="text-muted">- {{ card.name }}</small>
-                    </h2>
-                    <div class="text-muted">
-                        <small>
-                            <i class="fas fa-info-circle me-1"></i>
-                            {{ gallery_items|length }}/20 imágenes utilizadas
-                        </small>
-                    </div>
-                </div>
+                <h2>
+                    <i class="fas fa-images me-2"></i>Galería
+                    <small class="text-muted">- {{ card.name }}</small>
+                </h2>
                 {% if card.is_public %}
                     <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
                         <i class="fas fa-external-link-alt me-1"></i>Ver Pública
                     </a>
                 {% endif %}
             </div>
-            
-            <!-- Upload Form -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-cloud-upload-alt me-2"></i>Subir Nueva Imagen
-                        {% if gallery_items|length >= 20 %}
-                            <span class="badge bg-warning ms-2">Límite alcanzado</span>
-                        {% endif %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if gallery_items|length >= 20 %}
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Límite alcanzado:</strong> Has alcanzado el máximo de 20 imágenes por galería. 
-                            Para subir una nueva imagen, primero debes eliminar una existente.
+            <div class="gallery-main">
+        <div class="gallery-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1 class="gallery-title">
+                        <i class="fas fa-images"></i>
+                        Galería
+                    </h1>
+                    <div class="gallery-stats">
+                        <span class="card-name">{{ card.name }}</span>
+                        <div class="usage-indicator">
+                            <div class="usage-bar">
+                                <div class="usage-fill" style="width: {{ (gallery_items|length / 20 * 100)|round }}%"></div>
+                            </div>
+                            <span class="usage-text">{{ gallery_items|length }}/20 imágenes</span>
                         </div>
-                        <div class="text-center">
-                            <button class="btn btn-secondary" disabled>
-                                <i class="fas fa-upload me-1"></i>Subir Imagen (Límite alcanzado)
+                    </div>
+                </div>
+                {% if card.is_public %}
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="view-public-btn">
+                        <i class="fas fa-external-link-alt"></i>
+                        Ver Pública
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="gallery-content">
+            
+            <!-- Modern Upload Section -->
+            <div class="upload-section">
+                {% if gallery_items|length >= 20 %}
+                    <div class="upload-limit-reached">
+                        <div class="limit-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="limit-content">
+                            <h3>Límite de Imágenes Alcanzado</h3>
+                            <p>Has alcanzado el máximo de 20 imágenes por galería. Para subir una nueva imagen, primero debes eliminar una existente.</p>
+                            <button class="limit-btn" disabled>
+                                <i class="fas fa-upload"></i>
+                                Subir Imagen (Límite alcanzado)
                             </button>
                         </div>
-                    {% else %}
-                        <form method="POST" enctype="multipart/form-data">
+                    </div>
+                {% else %}
+                    <div class="upload-container">
+                        <form method="POST" enctype="multipart/form-data" class="upload-form">
                             {{ form.hidden_tag() }}
                             
-                            <div class="row">
-                                <div class="col-md-8 mb-3">
-                                    {{ form.image.label(class="form-label required") }}
-                                    {{ form.image() }}
-                                    <div class="form-text">
-                                        Formatos soportados: JPG, PNG, WEBP. Máximo 5MB.
-                                        <br><strong>Límite:</strong> {{ 20 - gallery_items|length }} imágenes restantes.
+                            <div class="upload-area" onclick="document.getElementById('image').click();">
+                                {{ form.image(class="file-input", id="image") }}
+                                <div class="upload-content">
+                                    <div class="upload-icon">
+                                        <i class="fas fa-cloud-upload-alt"></i>
                                     </div>
-                                    {% if form.image.errors %}
-                                        <div class="text-danger small">
-                                            {% for error in form.image.errors %}{{ error }}{% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    {{ form.caption.label(class="form-label") }}
-                                    {{ form.caption() }}
+                                    <h3 class="upload-title">Subir Nueva Imagen</h3>
+                                    <p class="upload-description">
+                                        Arrastra tu imagen aquí o haz clic para seleccionar
+                                    </p>
+                                    <div class="upload-specs">
+                                        <span class="spec-item">JPG, PNG, WEBP</span>
+                                        <span class="spec-item">Máximo 5MB</span>
+                                        <span class="spec-item remaining">{{ 20 - gallery_items|length }} restantes</span>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div class="text-end">
-                                {{ form.submit() }}
+                            {% if form.image.errors %}
+                                <div class="upload-error">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {% for error in form.image.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="caption-section">
+                                <div class="caption-group">
+                                    <label for="caption" class="caption-label">
+                                        <i class="fas fa-comment-alt"></i>
+                                        Descripción (Opcional)
+                                    </label>
+                                    {{ form.caption(class="caption-input", placeholder="Describe tu imagen...") }}
+                                </div>
+                                <div class="submit-group">
+                                    {{ form.submit(class="submit-btn") }}
+                                </div>
                             </div>
                         </form>
-                    {% endif %}
-                </div>
+                    </div>
+                {% endif %}
             </div>
             
-            <!-- Gallery Grid -->
+            <!-- Modern Gallery Grid -->
             {% if gallery_items %}
-                <div class="card">
-                    <div class="card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">
-                                <i class="fas fa-th me-2"></i>Imágenes ({{ gallery_items|length }}/20)
-                            </h5>
+                <div class="gallery-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <i class="fas fa-th"></i>
+                            Mis Imágenes
+                            <span class="images-count">{{ gallery_items|length }}</span>
+                        </h3>
+                        <div class="gallery-status">
                             {% if gallery_items|length >= 20 %}
-                                <span class="badge bg-danger">Límite alcanzado</span>
+                                <span class="status-badge status-danger">Límite alcanzado</span>
                             {% elif gallery_items|length >= 16 %}
-                                <span class="badge bg-warning">Cerca del límite</span>
+                                <span class="status-badge status-warning">Cerca del límite</span>
                             {% else %}
-                                <span class="badge bg-success">{{ 20 - gallery_items|length }} disponibles</span>
+                                <span class="status-badge status-success">{{ 20 - gallery_items|length }} disponibles</span>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3" id="gallery-grid">
-                            {% for item in gallery_items %}
-                                <div class="col-lg-2 col-md-3 col-sm-4 col-6" data-id="{{ item.id }}">
-                                    <div class="gallery-item card h-100">
-                                        <div class="position-relative">
-                                            <img src="{{ url_for('static', filename='thumbs/' + item.thumbnail_path) }}" 
-                                                 class="card-img-top gallery-thumbnail" 
-                                                 alt="{{ item.caption or 'Imagen' }}"
-                                                 style="height: 120px; object-fit: cover; cursor: pointer;"
-                                                 onclick="viewImage('{{ url_for('static', filename='uploads/' + item.image_path) }}', '{{ item.caption or '' }}')">
-                                            
-                                            <!-- Overlay controls -->
-                                            <div class="position-absolute top-0 end-0 p-2">
-                                                <div class="btn-group-vertical btn-group-sm" role="group">
-                                                    {% if not item.is_featured %}
-                                                        <button type="button" class="btn btn-primary btn-sm" 
-                                                                onclick="setFeatured({{ item.id }})" 
-                                                                title="Marcar como destacada">
-                                                            <i class="fas fa-star"></i>
-                                                        </button>
-                                                    {% else %}
-                                                        <span class="btn btn-warning btn-sm" title="Imagen destacada">
-                                                            <i class="fas fa-star"></i>
-                                                        </span>
-                                                    {% endif %}
-                                                    
-                                                    <form method="POST" action="{{ url_for('dashboard.delete_gallery_item', card_id=card.id, item_id=item.id) }}" 
-                                                          class="d-inline" onsubmit="return confirm('¿Eliminar esta imagen?')">
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                        <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Visibility toggle -->
-                                            <div class="position-absolute bottom-0 start-0 p-2">
-                                                {% if item.is_visible %}
-                                                    <span class="badge bg-success">Visible</span>
+                    
+                    <div class="gallery-grid" id="gallery-grid">
+                        {% for item in gallery_items %}
+                            <div class="gallery-item" data-id="{{ item.id }}">
+                                <div class="item-container">
+                                    <div class="item-image-container">
+                                        <img src="{{ url_for('static', filename='thumbs/' + item.thumbnail_path) }}" 
+                                             class="item-image" 
+                                             alt="{{ item.caption or 'Imagen' }}"
+                                             onclick="viewImage('{{ url_for('static', filename='uploads/' + item.image_path) }}', '{{ item.caption or '' }}')">
+                                        
+                                        <!-- Image Overlay -->
+                                        <div class="item-overlay">
+                                            <div class="overlay-actions">
+                                                <button class="action-btn view-btn" 
+                                                        onclick="viewImage('{{ url_for('static', filename='uploads/' + item.image_path) }}', '{{ item.caption or '' }}')"
+                                                        title="Ver imagen">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if not item.is_featured %}
+                                                    <button class="action-btn feature-btn" 
+                                                            onclick="setFeatured({{ item.id }})" 
+                                                            title="Marcar como destacada">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">Oculta</span>
+                                                    <button class="action-btn featured-btn" 
+                                                            title="Imagen destacada">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
                                                 {% endif %}
+                                                <form method="POST" action="{{ url_for('dashboard.delete_gallery_item', card_id=card.id, item_id=item.id) }}" 
+                                                      class="delete-form" onsubmit="return confirm('¿Eliminar esta imagen?')">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <button type="submit" class="action-btn delete-btn" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            <div class="drag-handle">
+                                                <i class="fas fa-grip-vertical"></i>
                                             </div>
                                         </div>
                                         
-                                        {% if item.caption %}
-                                            <div class="card-body p-2">
-                                                <p class="card-text small mb-0">{{ item.caption }}</p>
-                                            </div>
-                                        {% endif %}
+                                        <!-- Status Indicators -->
+                                        <div class="status-indicators">
+                                            {% if item.is_visible %}
+                                                <span class="indicator-badge visible-badge">
+                                                    <i class="fas fa-eye"></i>
+                                                </span>
+                                            {% else %}
+                                                <span class="indicator-badge hidden-badge">
+                                                    <i class="fas fa-eye-slash"></i>
+                                                </span>
+                                            {% endif %}
+                                            {% if item.is_featured %}
+                                                <span class="indicator-badge featured-badge">
+                                                    <i class="fas fa-star"></i>
+                                                </span>
+                                            {% endif %}
+                                        </div>
                                     </div>
+                                    
+                                    {% if item.caption %}
+                                        <div class="item-caption">
+                                            <p>{{ item.caption }}</p>
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endfor %}
-                        </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
             {% else %}
-                <!-- Empty State -->
-                <div class="card">
-                    <div class="card-body text-center py-5">
-                        <i class="fas fa-images fa-3x text-muted mb-3"></i>
-                        <h4>No hay imágenes en la galería</h4>
-                        <p class="text-muted">Sube tu primera imagen para mostrar tu trabajo</p>
+                <!-- Modern Empty State -->
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-images"></i>
                     </div>
+                    <h3 class="empty-title">Tu galería está vacía</h3>
+                    <p class="empty-description">Sube tu primera imagen para mostrar tu trabajo y crear una galería impresionante</p>
+                    <button onclick="document.getElementById('image').click()" class="empty-action-btn">
+                        <i class="fas fa-plus"></i>
+                        Subir Primera Imagen
+                    </button>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Image Viewer Modal -->
+<!-- Enhanced Image Viewer Modal -->
 <div class="modal fade" id="imageModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalTitle">Vista de Imagen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content modal-modern">
+            <div class="modal-header modal-header-modern">
+                <h5 class="modal-title" id="imageModalTitle">
+                    <i class="fas fa-image me-2"></i>Vista de Imagen
+                </h5>
+                <button type="button" class="btn-close btn-close-modern" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center p-0">
-                <img id="imageModalImg" class="img-fluid" alt="Imagen">
+            <div class="modal-body modal-body-modern">
+                <div class="image-container">
+                    <img id="imageModalImg" class="modal-image" alt="Imagen">
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
+/* Gallery Container Layout */
+/* Container styles removed - using Bootstrap grid */
+
+/* Sidebar styles now inline */
+
+/* Old sidebar classes removed */
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.nav-item:hover {
+    background: #e2e8f0;
+    color: #374151;
+    transform: none;
+    border-color: #cbd5e1;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.nav-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content */
+.gallery-main {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    overflow-y: auto;
+}
+
+.gallery-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.gallery-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.gallery-title i {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+}
+
+.gallery-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.card-name {
+    color: #718096;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.usage-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.usage-bar {
+    width: 120px;
+    height: 6px;
+    background: rgba(203, 213, 224, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.usage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.usage-text {
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 600;
+}
+
+.view-public-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.view-public-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+}
+
+.gallery-content {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Modern Upload Section */
+.upload-section {
+    margin-bottom: 3rem;
+}
+
+.upload-container {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.upload-form {
+    padding: 2rem;
+}
+
+.file-input {
+    display: none;
+}
+
+.upload-area {
+    border: 3px dashed #cbd5e0;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(247, 250, 252, 0.5);
+    margin-bottom: 1.5rem;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
+}
+
+.upload-area.dragover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.1);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.upload-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.5rem;
+}
+
+.upload-description {
+    color: #718096;
+    font-size: 1rem;
+    margin: 0 0 1rem;
+}
+
+.upload-specs {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.spec-item {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.spec-item.remaining {
+    background: rgba(72, 187, 120, 0.1);
+    color: #48bb78;
+}
+
+.upload-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(229, 62, 62, 0.1);
+    color: #e53e3e;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.caption-section {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.caption-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.caption-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.95rem;
+}
+
+.caption-label i {
+    color: var(--primary-color);
+    width: 16px;
+    text-align: center;
+}
+
+.caption-input {
+    padding: 0.875rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.caption-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: white;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Upload Limit Reached */
+.upload-limit-reached {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    padding: 3rem 2rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.limit-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(237, 137, 54, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2rem;
+    color: #ed8936;
+}
+
+.limit-content h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 1rem;
+}
+
+.limit-content p {
+    color: #718096;
+    margin: 0 0 2rem;
+    line-height: 1.6;
+}
+
+.limit-btn {
+    background: #a0aec0;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: not-allowed;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Gallery Section */
+.gallery-section {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.section-header {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+    padding: 1.5rem 2rem;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.images-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.gallery-status {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-success {
+    background: rgba(72, 187, 120, 0.2);
+    color: rgba(72, 187, 120, 0.9);
+}
+
+.status-warning {
+    background: rgba(237, 137, 54, 0.2);
+    color: rgba(237, 137, 54, 0.9);
+}
+
+.status-danger {
+    background: rgba(229, 62, 62, 0.2);
+    color: rgba(229, 62, 62, 0.9);
+}
+
+/* Gallery Grid */
+.gallery-grid {
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
 .gallery-item {
-    transition: transform 0.2s ease;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    position: relative;
 }
 
 .gallery-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
 }
 
-.gallery-thumbnail {
-    transition: filter 0.2s ease;
+.item-container {
+    position: relative;
 }
 
-.gallery-thumbnail:hover {
-    filter: brightness(1.1);
+.item-image-container {
+    position: relative;
+    overflow: hidden;
 }
 
-#gallery-grid .col-lg-3 {
-    cursor: move;
+.item-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.item-image:hover {
+    transform: scale(1.05);
+}
+
+.item-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.gallery-item:hover .item-overlay {
+    opacity: 1;
+}
+
+.overlay-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    width: 44px;
+    height: 44px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    font-size: 1rem;
+}
+
+.view-btn:hover {
+    background: rgba(102, 126, 234, 0.8);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.feature-btn:hover {
+    background: rgba(246, 173, 85, 0.8);
+    border-color: #f6ad55;
+    transform: scale(1.1);
+}
+
+.featured-btn {
+    background: rgba(246, 173, 85, 0.8);
+    border-color: #f6ad55;
+    color: #f6ad55;
+}
+
+.delete-btn:hover {
+    background: rgba(229, 62, 62, 0.8);
+    border-color: #e53e3e;
+    transform: scale(1.1);
+}
+
+.delete-form {
+    display: inline;
+    margin: 0;
+}
+
+.drag-handle {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: grab;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.status-indicators {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.indicator-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.visible-badge {
+    background: rgba(72, 187, 120, 0.8);
+    color: white;
+}
+
+.hidden-badge {
+    background: rgba(160, 174, 192, 0.8);
+    color: white;
+}
+
+.featured-badge {
+    background: rgba(246, 173, 85, 0.8);
+    color: white;
+}
+
+.item-caption {
+    padding: 1rem;
+    background: rgba(247, 250, 252, 0.8);
+}
+
+.item-caption p {
+    margin: 0;
+    color: #4a5568;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.empty-icon {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    font-size: 3rem;
+    color: var(--primary-color);
+}
+
+.empty-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 1rem;
+}
+
+.empty-description {
+    color: #718096;
+    font-size: 1.1rem;
+    margin: 0 0 2rem;
+    line-height: 1.6;
+}
+
+.empty-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.empty-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Enhanced Modal Styles */
+.modal-modern {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.modal-header-modern {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: none;
+}
+
+.modal-header-modern .modal-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.btn-close-modern {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.btn-close-modern:hover {
+    opacity: 1;
+}
+
+.modal-body-modern {
+    padding: 0;
+    background: #000;
+}
+
+.image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: 1rem;
+}
+
+.modal-image {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .gallery-container {
+        grid-template-columns: 240px 1fr;
+    }
+    
+    .caption-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .submit-btn {
+        width: 100%;
+    }
+    
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .gallery-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .gallery-sidebar {
+        display: none;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .gallery-stats {
+        align-items: center;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        padding: 1rem;
+    }
+    
+    .upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .upload-specs {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Drag and Drop Animations */
+.gallery-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.gallery-grid.dragover {
+    background: rgba(102, 126, 234, 0.05);
 }
 </style>
 
 <script>
+// Image viewer functionality
 function viewImage(src, caption) {
     document.getElementById('imageModalImg').src = src;
-    document.getElementById('imageModalTitle').textContent = caption || 'Vista de Imagen';
+    document.getElementById('imageModalTitle').innerHTML = `
+        <i class="fas fa-image me-2"></i>${caption || 'Vista de Imagen'}
+    `;
     new bootstrap.Modal(document.getElementById('imageModal')).show();
 }
 
+// Set featured image
 function setFeatured(itemId) {
-    // This would require an AJAX endpoint to set featured image
     fetch(`/dashboard/gallery/${itemId}/set-featured`, {
         method: 'POST',
         headers: {
@@ -269,12 +1137,147 @@ function setFeatured(itemId) {
         } else {
             alert('Error al marcar como destacada');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
     });
 }
 
-// Simple drag and drop for reordering (can be enhanced with SortableJS)
+// Enhanced drag and drop functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Add drag and drop functionality here if needed
+    const uploadArea = document.querySelector('.upload-area');
+    const fileInput = document.getElementById('image');
+    const galleryGrid = document.getElementById('gallery-grid');
+    
+    // File upload drag and drop
+    if (uploadArea && fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function highlight() {
+            uploadArea.classList.add('dragover');
+        }
+        
+        function unhighlight() {
+            uploadArea.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                // Trigger form validation if needed
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            }
+        }
+    }
+    
+    // Gallery item drag and drop for reordering
+    if (galleryGrid) {
+        const galleryItems = galleryGrid.querySelectorAll('.gallery-item');
+        
+        galleryItems.forEach(item => {
+            item.draggable = true;
+            
+            item.addEventListener('dragstart', function(e) {
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.outerHTML);
+                e.dataTransfer.setData('text/plain', this.dataset.id);
+            });
+            
+            item.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                galleryGrid.classList.remove('dragover');
+            });
+        });
+        
+        galleryGrid.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        galleryGrid.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        galleryGrid.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            // Here you would implement the reordering logic
+            // This would require a backend endpoint to handle position updates
+        });
+    }
+    
+    // File input change handler for preview
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Update upload area with preview if desired
+                    const uploadContent = document.querySelector('.upload-content');
+                    if (uploadContent) {
+                        uploadContent.innerHTML = `
+                            <div class="upload-preview">
+                                <img src="${e.target.result}" style="max-width: 200px; max-height: 150px; border-radius: 8px; margin-bottom: 1rem;">
+                                <p><strong>Archivo seleccionado:</strong> ${file.name}</p>
+                                <p class="text-muted small">Haz clic en "Subir Imagen" para confirmar</p>
+                            </div>
+                        `;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Auto-hide success/error messages
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-10px)';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // ESC to close modal
+    if (e.key === 'Escape') {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('imageModal'));
+        if (modal) modal.hide();
+    }
+    
+    // Ctrl+U to focus upload
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        const fileInput = document.getElementById('image');
+        if (fileInput) fileInput.click();
+    }
 });
 </script>
 {% endblock %}

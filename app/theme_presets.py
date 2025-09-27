@@ -140,28 +140,61 @@ THEME_PRESETS = {
             'preview_class': 'preset-luxury'
         }
     },
-    'business': {
-        'business': {
-            'name': 'Ejecutivo',
-            'description': 'Estilo profesional para negocios',
-            'primary_color': '#1e40af',  # Blue
-            'secondary_color': '#3b82f6',
-            'accent_color': '#60a5fa',
-            'font_family': 'Inter',
-            'layout': 'modern',
+    'old_school': {
+        'vintage': {
+            'name': 'Vintage',
+            'description': 'Estilo clásico y nostálgico',
+            'primary_color': '#92400e',  # Brown
+            'secondary_color': '#b45309',
+            'accent_color': '#d97706',
+            'font_family': 'Playfair Display',
+            'layout': 'classic',
             'avatar_shape': 'circle',
-            'preview_class': 'preset-business'
+            'preview_class': 'preset-vintage'
         },
-        'creative': {
-            'name': 'Creativo',
-            'description': 'Colores vibrantes para profesionales creativos',
-            'primary_color': '#7c3aed',  # Purple
-            'secondary_color': '#a855f7',
-            'accent_color': '#c084fc',
-            'font_family': 'Poppins',
-            'layout': 'modern',
+        'retro': {
+            'name': 'Retro',
+            'description': 'Diseño retro con colores cálidos',
+            'primary_color': '#7c2d12',  # Dark Red
+            'secondary_color': '#991b1b',
+            'accent_color': '#dc2626',
+            'font_family': 'Georgia',
+            'layout': 'classic',
             'avatar_shape': 'rounded',
-            'preview_class': 'preset-creative'
+            'preview_class': 'preset-retro'
+        },
+        'classic_gold': {
+            'name': 'Oro Clásico',
+            'description': 'Elegancia dorada vintage',
+            'primary_color': '#92400e',  # Dark Gold
+            'secondary_color': '#d97706',
+            'accent_color': '#fbbf24',
+            'font_family': 'Playfair Display',
+            'layout': 'minimal',
+            'avatar_shape': 'circle',
+            'preview_class': 'preset-classic-gold'
+        },
+        'antique': {
+            'name': 'Antiguo',
+            'description': 'Estilo antiguo y sofisticado',
+            'primary_color': '#374151',  # Dark Gray
+            'secondary_color': '#4b5563',
+            'accent_color': '#6b7280',
+            'font_family': 'Times New Roman',
+            'layout': 'classic',
+            'avatar_shape': 'square',
+            'preview_class': 'preset-antique'
+        },
+        'sepia': {
+            'name': 'Sepia',
+            'description': 'Tonos sepia nostálgicos',
+            'primary_color': '#78350f',  # Sepia Brown
+            'secondary_color': '#a16207',
+            'accent_color': '#ca8a04',
+            'font_family': 'Georgia',
+            'layout': 'minimal',
+            'avatar_shape': 'circle',
+            'preview_class': 'preset-sepia'
         }
     },
     'mobile': {

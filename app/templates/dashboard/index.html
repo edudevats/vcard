@@ -4,321 +4,836 @@
 
 {% block content %}
 <div class="row">
-    <!-- Sidebar -->
+    <!-- Unified Sidebar -->
     <div class="col-md-3">
-        <div class="sidebar">
-            <h5 class="mb-3">
-                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-            </h5>
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="{{ url_for('dashboard.index') }}">
-                    <i class="fas fa-home me-2"></i>Inicio
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.new_card') }}">
-                    <i class="fas fa-plus me-2"></i>Nueva Tarjeta
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.analytics') }}">
-                    <i class="fas fa-chart-line me-2"></i>Analytics
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.advanced_features') }}">
-                    <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
-                </a>
-            </nav>
-        </div>
+        {% include 'dashboard/_sidebar.html' %}
     </div>
-    
+
     <!-- Main Content -->
     <div class="col-md-9">
-        <div class="main-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-id-card me-2"></i>Mis Tarjetas
-                    <small class="text-muted">({{ cards|length }}/{{ current_user.max_cards }})</small>
-                </h2>
-                
-                <div>
-                    <a href="{{ url_for('dashboard.advanced_features') }}" class="btn btn-secondary me-2">
-                        <i class="fas fa-rocket me-1"></i>Avanzadas
-                    </a>
-                    <a href="{{ url_for('dashboard.analytics') }}" class="btn btn-info me-2">
-                        <i class="fas fa-chart-line me-1"></i>Analytics
-                    </a>
-                    {% if current_user.can_create_card() %}
-                        <a href="{{ url_for('dashboard.new_card') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>Nueva Tarjeta
-                        </a>
-                    {% else %}
-                        <span class="text-muted">Límite alcanzado</span>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Stats Cards -->
-            {% if cards and stats %}
-            <div class="row mb-4">
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="card border-left-primary">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Total Vistas
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ stats.total_views }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-eye fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="card border-left-success">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Vistas Únicas
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ stats.unique_views }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-users fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="card border-left-info">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Hoy
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ stats.views_today }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-3 col-md-6 mb-3">
-                    <div class="card border-left-warning">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                        Este Mes
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {{ stats.views_this_month }}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-calendar-month fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
+        <!-- Header Section -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-id-card me-2"></i>Mis Tarjetas
+                    </h1>
+                    <div class="dashboard-subtitle">
+                        <span class="card-count">{{ cards|length }}</span> de <span class="card-limit">{{ current_user.max_cards }}</span> tarjetas utilizadas
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: {{ (cards|length / current_user.max_cards * 100) }}%"></div>
                         </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
+        </div>
             
-            {% if cards %}
-                <div class="row">
-                    {% for card in cards %}
-                        <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="card h-100">
-                                <div class="card-body d-flex flex-column">
-                                    <!-- Card Header -->
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="avatar-sm me-3">
-                                            {% if card.avatar_path %}
-                                                <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" 
-                                                     class="rounded-circle" width="50" height="50" style="object-fit: cover;">
-                                            {% else %}
-                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
-                                                     style="width: 50px; height: 50px;">
-                                                    <i class="fas fa-user"></i>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-0">{{ card.title or card.name }}</h6>
-                                            {% if card.company %}
-                                                <small class="text-muted">{{ card.company }}</small>
-                                            {% endif %}
-                                        </div>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary" type="button" 
-                                                    data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
-                                                        <i class="fas fa-edit me-2"></i>Editar
-                                                    </a>
-                                                </li>
-                                                {% if config.ENABLE_VISUAL_EDITOR %}
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ url_for('dashboard.visual_editor', id=card.id) }}">
-                                                        <i class="fas fa-magic me-2" style="color: #6f42c1;"></i>Editor Visual
-                                                    </a>
-                                                </li>
-                                                {% endif %}
-                                                {% if card.is_public %}
-                                                    <li>
-                                                        <a class="dropdown-item" href="{{ card.get_public_url() }}" target="_blank">
-                                                            <i class="fas fa-external-link-alt me-2"></i>Ver Pública
-                                                        </a>
-                                                    </li>
-                                                {% endif %}
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <form method="POST" action="{{ url_for('dashboard.delete_card', id=card.id) }}" 
-                                                          onsubmit="return confirm('¿Estás seguro de eliminar esta tarjeta?')">
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                        <button type="submit" class="dropdown-item text-danger">
-                                                            <i class="fas fa-trash me-2"></i>Eliminar
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Card Status -->
-                                    <div class="mb-3">
-                                        {% if card.is_public %}
-                                            <span class="badge bg-success me-2">
-                                                <i class="fas fa-eye me-1"></i>Pública
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary me-2">
-                                                <i class="fas fa-eye-slash me-1"></i>Privada
-                                            </span>
-                                        {% endif %}
-                                        
-                                        {% if card.services.count() > 0 %}
-                                            <span class="badge bg-info me-2">
-                                                {{ card.services.count() }} servicio{{ 's' if card.services.count() > 1 }}
-                                            </span>
-                                        {% endif %}
-                                        
-                                        {% if card.is_public %}
-                                            <span class="badge bg-warning">
-                                                <i class="fas fa-chart-line me-1"></i>{{ card.get_total_views() }} vistas
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- Card Description -->
-                                    {% if card.bio %}
-                                        <p class="card-text text-muted small flex-grow-1">
-                                            {{ card.bio[:100] }}{% if card.bio|length > 100 %}...{% endif %}
-                                        </p>
+        <!-- Stats Cards -->
+        {% if cards and stats %}
+        <div class="stats-grid">
+            <div class="stat-card stat-primary">
+                <div class="stat-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.total_views }}</div>
+                    <div class="stat-label">Total Vistas</div>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-success">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.unique_views }}</div>
+                    <div class="stat-label">Vistas Únicas</div>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-info">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.views_today }}</div>
+                    <div class="stat-label">Hoy</div>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-warning">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-month"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.views_this_month }}</div>
+                    <div class="stat-label">Este Mes</div>
+                </div>
+                <div class="stat-trend">
+                    <i class="fas fa-trending-up"></i>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+            
+        <!-- Cards Grid -->
+        {% if cards %}
+        <div class="cards-section">
+            <h2 class="section-title">Tus Tarjetas Digitales</h2>
+            <div class="cards-grid">
+                {% for card in cards %}
+                <div class="card-item">
+                    <div class="card-header">
+                        <div class="card-avatar">
+                            {% if card.avatar_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" alt="{{ card.name }}">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-info">
+                            <h3 class="card-name">{{ card.title or card.name }}</h3>
+                            {% if card.company %}
+                                <div class="card-company">{{ card.company }}</div>
+                            {% endif %}
+                            <div class="card-status">
+                                {% if card.is_public %}
+                                    <span class="status-badge status-active">
+                                        <i class="fas fa-globe"></i> Pública
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge status-draft">
+                                        <i class="fas fa-lock"></i> Privada
+                                    </span>
+                                {% endif %}
+                                
+                                {% if card.is_public and card.get_total_views() > 0 %}
+                                    <span class="views-badge">
+                                        <i class="fas fa-eye"></i> {{ card.get_total_views() }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <div class="dropdown">
+                                <button class="action-btn" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% if card.is_public %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ card.get_public_url() }}" target="_blank">
+                                                <i class="fas fa-external-link-alt me-2"></i>Ver Pública
+                                            </a>
+                                        </li>
                                     {% endif %}
-                                    
-                                    <!-- Quick Actions -->
-                                    <div class="mt-auto">
-                                        <div class="btn-group w-100" role="group">
-                                            <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" 
-                                               class="btn btn-outline-primary btn-sm" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{{ url_for('dashboard.card_services', id=card.id) }}" 
-                                               class="btn btn-outline-info btn-sm" title="Servicios">
-                                                <i class="fas fa-concierge-bell"></i>
-                                            </a>
-                                            <a href="{{ url_for('dashboard.card_gallery', id=card.id) }}" 
-                                               class="btn btn-outline-warning btn-sm" title="Galería">
-                                                <i class="fas fa-images"></i>
-                                            </a>
-                                            <a href="{{ url_for('dashboard.card_theme', id=card.id) }}" 
-                                               class="btn btn-outline-success btn-sm" title="Personalizar">
-                                                <i class="fas fa-palette"></i>
-                                            </a>
-                                            {% if config.ENABLE_VISUAL_EDITOR %}
-                                            <a href="{{ url_for('dashboard.visual_editor', id=card.id) }}" 
-                                               class="btn btn-outline-purple btn-sm" title="Editor Visual" style="color: #6f42c1; border-color: #6f42c1;">
-                                                <i class="fas fa-magic"></i>
-                                            </a>
-                                            {% endif %}
-                                            <a href="{{ url_for('dashboard.card_qr', id=card.id) }}" 
-                                               class="btn btn-outline-secondary btn-sm" title="Código QR">
-                                                <i class="fas fa-qrcode"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+                                            <i class="fas fa-edit me-2"></i>Editar Información
+                                        </a>
+                                    </li>
+                                    {% if config.ENABLE_VISUAL_EDITOR %}
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('dashboard.visual_editor', id=card.id) }}">
+                                            <i class="fas fa-magic me-2 text-purple"></i>Editor Visual
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="POST" action="{{ url_for('dashboard.delete_card', id=card.id) }}" 
+                                              onsubmit="return confirm('¿Estás seguro de eliminar esta tarjeta?')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-trash me-2"></i>Eliminar
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <!-- Empty State -->
-                <div class="text-center py-5">
-                    <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
-                    <h4>No tienes tarjetas aún</h4>
-                    <p class="text-muted">Crea tu primera tarjeta digital para comenzar</p>
-                    {% if current_user.can_create_card() %}
-                        <a href="{{ url_for('dashboard.new_card') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>Crear Primera Tarjeta
-                        </a>
+                    </div>
+                    
+                    {% if card.bio %}
+                    <div class="card-description">
+                        {{ card.bio[:120] }}{% if card.bio|length > 120 %}...{% endif %}
+                    </div>
                     {% endif %}
+                    
+                    <div class="card-stats">
+                        {% if card.services.count() > 0 %}
+                            <div class="stat-item">
+                                <i class="fas fa-concierge-bell"></i>
+                                {{ card.services.count() }} servicio{{ 's' if card.services.count() > 1 }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if card.products.count() > 0 %}
+                            <div class="stat-item">
+                                <i class="fas fa-box"></i>
+                                {{ card.products.count() }} producto{{ 's' if card.products.count() > 1 }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if card.gallery_items.count() > 0 %}
+                            <div class="stat-item">
+                                <i class="fas fa-images"></i>
+                                {{ card.gallery_items.count() }} imagen{{ 'es' if card.gallery_items.count() > 1 else '' }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-quick-actions">
+                        <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="quick-btn quick-edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('dashboard.card_services', id=card.id) }}" class="quick-btn quick-services">
+                            <i class="fas fa-concierge-bell"></i>
+                        </a>
+                        <a href="{{ url_for('dashboard.card_products', id=card.id) }}" class="quick-btn quick-products">
+                            <i class="fas fa-box"></i>
+                        </a>
+                        <a href="{{ url_for('dashboard.card_gallery', id=card.id) }}" class="quick-btn quick-gallery">
+                            <i class="fas fa-images"></i>
+                        </a>
+                        <a href="{{ url_for('dashboard.card_theme', id=card.id) }}" class="quick-btn quick-theme">
+                            <i class="fas fa-palette"></i>
+                        </a>
+                        <a href="{{ url_for('dashboard.card_social_networks', id=card.id) }}" class="quick-btn quick-social">
+                            <i class="fas fa-share-alt"></i>
+                        </a>
+                        <a href="{{ url_for('dashboard.card_qr', id=card.id) }}" class="quick-btn quick-qr">
+                            <i class="fas fa-qrcode"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Modern Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-id-card"></i>
+            </div>
+            <h2 class="empty-title">¡Comienza tu presencia digital!</h2>
+            <p class="empty-description">
+                Crea tu primera tarjeta de presentación digital y compártela con el mundo. 
+                Es rápido, fácil y completamente personalizable.
+            </p>
+            {% if current_user.can_create_card() %}
+                <a href="{{ url_for('dashboard.new_card') }}" class="btn-action btn-primary btn-large">
+                    <i class="fas fa-plus"></i>
+                    <span>Crear Mi Primera Tarjeta</span>
+                </a>
+            {% else %}
+                <div class="limit-message">
+                    <i class="fas fa-info-circle"></i>
+                    Has alcanzado el límite de tarjetas para tu cuenta
                 </div>
             {% endif %}
+        </div>
+        {% endif %}
         </div>
     </div>
 </div>
 
 <style>
-.card {
-    border-radius: 15px;
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+/* Dashboard Index Specific Styles */
+
+/* Header Styles */
+.dashboard-header {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
-.border-left-primary {
-    border-left: 0.25rem solid #4e73df!important;
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.border-left-success {
-    border-left: 0.25rem solid #1cc88a!important;
+.dashboard-title {
+    color: #1e293b;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
 }
 
-.border-left-info {
-    border-left: 0.25rem solid #36b9cc!important;
+.dashboard-subtitle {
+    color: #64748b;
+    font-size: 0.95rem;
 }
 
-.border-left-warning {
-    border-left: 0.25rem solid #f6c23e!important;
+.card-count, .card-limit {
+    font-weight: 600;
+    color: #3b82f6;
 }
 
-.text-xs {
-    font-size: 0.7rem;
+.progress-bar-container {
+    width: 200px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
 }
 
-.text-gray-800 {
-    color: #5a5c69 !important;
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 2px;
+    transition: width 0.5s ease;
 }
 
-.text-gray-300 {
-    color: #dddfeb !important;
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Button Styles */
+.btn-action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(44, 62, 134, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 12px -1px rgba(44, 62, 134, 0.4);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    color: #334155;
+    text-decoration: none;
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.btn-disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+}
+
+.stat-primary::before { background: #3b82f6; }
+.stat-success::before { background: #10b981; }
+.stat-info::before { background: #06b6d4; }
+.stat-warning::before { background: #f59e0b; }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.stat-primary .stat-icon { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); }
+.stat-success .stat-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-info .stat-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.stat-warning .stat-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.stat-trend {
+    color: #10b981;
+    font-size: 0.875rem;
+}
+
+/* Cards Section */
+.cards-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.5rem;
+}
+
+.card-item {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.card-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.card-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-name {
+    color: #1e293b;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-company {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-status {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.views-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.card-actions {
+    flex-shrink: 0;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    color: #3b82f6;
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.card-description {
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.card-stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.stat-item i {
+    color: #3b82f6;
+}
+
+.card-quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.quick-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    border: 1px solid #e2e8f0;
+    background: white;
+}
+
+.quick-edit { color: var(--primary-color); }
+.quick-edit:hover { background: rgba(44, 62, 134, 0.1); border-color: var(--primary-color); color: var(--primary-color); text-decoration: none; }
+
+.quick-services { color: var(--secondary-color); }
+.quick-services:hover { background: rgba(23, 162, 184, 0.1); border-color: var(--secondary-color); color: var(--secondary-color); text-decoration: none; }
+
+.quick-products { color: var(--accent-color); }
+.quick-products:hover { background: rgba(32, 201, 151, 0.1); border-color: var(--accent-color); color: var(--accent-color); text-decoration: none; }
+
+.quick-gallery { color: var(--gradient-end); }
+.quick-gallery:hover { background: rgba(107, 207, 127, 0.1); border-color: var(--gradient-end); color: var(--gradient-end); text-decoration: none; }
+
+.quick-theme { color: var(--secondary-color); }
+.quick-theme:hover { background: rgba(23, 162, 184, 0.1); border-color: var(--secondary-color); color: var(--secondary-color); text-decoration: none; }
+
+.quick-social { color: var(--accent-color); }
+.quick-social:hover { background: rgba(32, 201, 151, 0.1); border-color: var(--accent-color); color: var(--accent-color); text-decoration: none; }
+
+.quick-qr { color: var(--primary-color); }
+.quick-qr:hover { background: rgba(44, 62, 134, 0.1); border-color: var(--primary-color); color: var(--primary-color); text-decoration: none; }
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 2rem;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+}
+
+.empty-title {
+    color: #1e293b;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.empty-description {
+    color: #64748b;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.limit-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #f59e0b;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Content-specific responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-title {
+        color: white;
+        font-size: 1.75rem;
+    }
+
+    .dashboard-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .btn-primary {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        backdrop-filter: blur(10px);
+        font-size: 0.875rem;
+        padding: 0.625rem 1.25rem;
+    }
+
+    .btn-primary:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .card-item {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-title {
+        font-size: 1.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .stat-card {
+        padding: 0.875rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .stat-content {
+        text-align: left;
+    }
+
+    .stat-number {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+    }
+
+    .stat-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+
+    .card-item {
+        padding: 1rem;
+    }
+
+    .empty-state {
+        padding: 1.5rem 0.75rem;
+        margin: 0.75rem 0;
+    }
+
+    .empty-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-description {
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
 }
 </style>
 {% endblock %}

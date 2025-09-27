@@ -1,0 +1,166 @@
+{% extends "base_pwa.html" %}
+
+{% set active_tab = 'cards' %}
+{% set show_header = true %}
+{% set show_bottom_nav = true %}
+
+{% block title %}Mis Tarjetas - VCard Digital{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <!-- Header with search and filters -->
+    <div class="mb-4">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Mis Tarjetas</h1>
+
+        <!-- Search and Filter Bar -->
+        <div class="flex gap-2 mb-4">
+            <div class="flex-1">
+                <input type="text"
+                       id="search-input"
+                       placeholder="Buscar tarjetas..."
+                       value="{{ search_query }}"
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+            <select id="status-filter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Todas</option>
+                <option value="public" {% if status_filter == 'public' %}selected{% endif %}>Públicas</option>
+                <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borradores</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    {% if cards %}
+    <div class="grid grid-cols-1 gap-4">
+        {% for card in cards %}
+        <div class="group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <!-- Card Preview -->
+            <div class="aspect-[3/2] bg-gray-100 dark:bg-gray-700 relative overflow-hidden">
+                {% if card.get_avatar_path() %}
+                <img src="{{ url_for('static', filename='uploads/' + card.get_avatar_path()) }}"
+                     alt="{{ card.name }}"
+                     class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                    <span class="material-symbols-outlined text-4xl">person</span>
+                </div>
+                {% endif %}
+
+                <!-- Status Badge -->
+                <div class="absolute top-2 right-2">
+                    {% if card.is_public %}
+                    <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">Pública</span>
+                    {% else %}
+                    <span class="px-2 py-1 bg-gray-500 text-white text-xs rounded-full font-medium">Borrador</span>
+                    {% endif %}
+                </div>
+
+                <!-- Hover Overlay -->
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <a href="{{ url_for('dashboard.edit_card', id=card.id) }}"
+                       class="flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-gray-800 backdrop-blur-sm hover:bg-white">
+                        <span class="material-symbols-outlined text-sm">edit</span>
+                        Editar
+                    </a>
+                    <a href="{{ url_for('public.card_view', slug=card.slug) }}"
+                       target="_blank"
+                       class="flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-gray-800 backdrop-blur-sm hover:bg-white">
+                        <span class="material-symbols-outlined text-sm">visibility</span>
+                        Ver
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card Info -->
+            <div class="p-4">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-1">{{ card.name }}</h3>
+                {% if card.job_title %}
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{{ card.job_title }}</p>
+                {% endif %}
+
+                <!-- Stats -->
+                <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <div class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">visibility</span>
+                        <span>{{ card.get_total_views() }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">schedule</span>
+                        <span>{{ card.created_at.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl text-gray-400 dark:text-gray-500">credit_card</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No tienes tarjetas aún</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Crea tu primera tarjeta digital para comenzar</p>
+        <a href="{{ url_for('dashboard.new_card') }}"
+           class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined">add</span>
+            Crear Tarjeta
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block slide_menu_content %}
+<!-- Slide menu content for cards -->
+<div class="py-4">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Acciones Rápidas</h3>
+    <div class="space-y-2">
+        <a href="{{ url_for('dashboard.new_card') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">add_box</span>
+            <span class="font-medium">Nueva Tarjeta</span>
+        </a>
+        <a href="{{ url_for('dashboard.analytics') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">bar_chart</span>
+            <span class="font-medium">Ver Analytics</span>
+        </a>
+        <a href="{{ url_for('dashboard.advanced_features') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">settings</span>
+            <span class="font-medium">Configuración</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Search and filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('status-filter');
+
+    function updateFilters() {
+        const search = searchInput.value.trim();
+        const status = statusFilter.value;
+
+        const params = new URLSearchParams(window.location.search);
+        params.set('search', search);
+        params.set('status', status);
+
+        window.location.href = window.location.pathname + '?' + params.toString();
+    }
+
+    // Debounced search
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(updateFilters, 300);
+    });
+
+    statusFilter.addEventListener('change', updateFilters);
+});
+</script>
+{% endblock %}

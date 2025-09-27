@@ -55,431 +55,403 @@
             </nav>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <div class="col-md-9">
         <div class="main-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-palette me-2"></i>Personalizar Tema
-                    <small class="text-muted">- {{ card.name }}</small>
-                </h2>
+        <div class="theme-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1 class="theme-title">
+                        <i class="fas fa-palette"></i>
+                        Personalizar Tema
+                    </h1>
+                    <p class="theme-subtitle">{{ card.name }}</p>
+                </div>
                 {% if card.is_public %}
-                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
-                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="view-public-btn">
+                        <i class="fas fa-external-link-alt"></i>
+                        Ver Pública
                     </a>
                 {% endif %}
             </div>
+        </div>
+        
+        <div class="theme-content">
             
-            <!-- Template Selection -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-layer-group me-2"></i>Seleccionar Plantilla
-                    </h5>
+            <!-- Modern Template Selection -->
+            <div class="template-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-layer-group"></i>
+                        Plantillas Disponibles
+                    </h3>
+                    <p class="section-description">Elige el diseño base para tu tarjeta. Cada plantilla ofrece un estilo completamente diferente.</p>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted mb-3">Elige el diseño base para tu tarjeta. Cada plantilla ofrece un estilo completamente diferente.</p>
-                    
-                    
-                    <div class="row g-3">
-                        {% for template_name in available_templates %}
-                        <div class="col-md-6">
-                            <div class="card template-option {% if current_template == template_name %}border-primary bg-primary bg-opacity-10{% endif %}" 
-                                 data-template="{{ template_name }}">
-                                <div class="card-body text-center">
-                                    <div class="template-preview mb-3" style="height: 120px;">
-                                        {% if template_name == 'classic' %}
-                                        <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 20px; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                            <div style="background: white; border-radius: 15px; padding: 15px; text-align: center; width: 80%;">
-                                                <div style="width: 30px; height: 30px; background: #ddd; border-radius: 50%; margin: 0 auto 8px;"></div>
-                                                <div style="height: 8px; background: #6366f1; border-radius: 4px; margin-bottom: 5px;"></div>
-                                                <div style="height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 3px;"></div>
-                                                <div style="height: 6px; background: #ddd; border-radius: 3px; width: 70%;"></div>
-                                            </div>
-                                        </div>
-                                        {% elif template_name == 'business' %}
-                                        <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); border-radius: 15px; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                            <div style="background: white; border-radius: 10px; padding: 12px; width: 90%; height: 80%; display: flex;">
-                                                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                                                    <div style="height: 8px; background: #1e40af; border-radius: 4px; margin-bottom: 6px; width: 80%;"></div>
-                                                    <div style="height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 4px; width: 90%;"></div>
-                                                    <div style="height: 6px; background: #ddd; border-radius: 3px; width: 60%;"></div>
-                                                </div>
-                                                <div style="width: 35px; height: 35px; background: #ddd; border-radius: 50%; margin-left: 10px;"></div>
-                                            </div>
-                                        </div>
-                                        {% elif template_name == 'mobile' %}
-                                        <div style="background: linear-gradient(135deg, #ec4899, #f472b6); border-radius: 25px; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                            <div style="background: white; border-radius: 20px; padding: 12px; text-align: center; width: 70%; height: 85%;">
-                                                <div style="width: 25px; height: 25px; background: #ddd; border-radius: 50%; margin: 0 auto 6px;"></div>
-                                                <div style="height: 6px; background: #ec4899; border-radius: 3px; margin-bottom: 4px;"></div>
-                                                <div style="height: 4px; background: #ddd; border-radius: 2px; margin-bottom: 3px;"></div>
-                                                <div style="height: 4px; background: #ddd; border-radius: 2px; width: 80%; margin: 0 auto 8px;"></div>
-                                                <div style="display: flex; gap: 2px; justify-content: center;">
-                                                    <div style="width: 8px; height: 8px; background: #f472b6; border-radius: 2px;"></div>
-                                                    <div style="width: 8px; height: 8px; background: #f472b6; border-radius: 2px;"></div>
-                                                    <div style="width: 8px; height: 8px; background: #f472b6; border-radius: 2px;"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
+                
+                <div class="templates-grid">
+                    {% for template_name in available_templates %}
+                    <div class="template-card {% if current_template == template_name %}template-active{% endif %}" 
+                         data-template="{{ template_name }}">
+                        <div class="template-preview">
+                            {% if template_name == 'classic' %}
+                            <div class="preview-classic">
+                                <div class="preview-content">
+                                    <div class="preview-avatar"></div>
+                                    <div class="preview-title"></div>
+                                    <div class="preview-subtitle"></div>
+                                    <div class="preview-buttons">
+                                        <div class="preview-btn"></div>
+                                        <div class="preview-btn"></div>
                                     </div>
-                                    
-                                    <h6 class="card-title">
-                                        {{ template_name.title() }}
-                                        {% if current_template == template_name %}
-                                        <span class="badge bg-primary ms-2">Actual</span>
-                                        {% endif %}
-                                    </h6>
-                                    
-                                    <p class="small text-muted mb-3">
-                                        {% if template_name == 'classic' %}
-                                        Diseño vertical tradicional, perfecto para la mayoría de profesionales
-                                        {% elif template_name == 'business' %}
-                                        Diseño horizontal estilo tarjeta de negocio, ideal para empresarios
-                                        {% elif template_name == 'mobile' %}
-                                        Diseño optimizado para móviles con botones grandes y navegación táctil
-                                        {% else %}
-                                        Plantilla personalizada con diseño único
-                                        {% endif %}
-                                    </p>
-                                    
-                                    {% if current_template != template_name %}
-                                    <button class="btn btn-sm btn-outline-primary select-template" data-template="{{ template_name }}">
-                                        <i class="fas fa-exchange-alt me-1"></i>Cambiar a {{ template_name.title() }}
-                                    </button>
-                                    {% endif %}
                                 </div>
                             </div>
+                            {% elif template_name == 'business' %}
+                            <div class="preview-business">
+                                <div class="preview-info">
+                                    <div class="preview-title"></div>
+                                    <div class="preview-subtitle"></div>
+                                    <div class="preview-buttons-horizontal">
+                                        <div class="preview-btn-small"></div>
+                                        <div class="preview-btn-small"></div>
+                                    </div>
+                                </div>
+                                <div class="preview-avatar preview-avatar-business"></div>
+                            </div>
+                            {% elif template_name == 'old_school' %}
+                            <div class="preview-old-school">
+                                <div class="preview-border"></div>
+                                <div class="preview-content">
+                                    <div class="preview-avatar preview-avatar-vintage"></div>
+                                    <div class="preview-title preview-title-vintage"></div>
+                                    <div class="preview-subtitle preview-subtitle-vintage"></div>
+                                    <div class="preview-buttons">
+                                        <div class="preview-btn preview-btn-vintage"></div>
+                                        <div class="preview-btn preview-btn-vintage-outline"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% elif template_name == 'mobile' %}
+                            <div class="preview-mobile">
+                                <div class="preview-content">
+                                    <div class="preview-avatar preview-avatar-mobile"></div>
+                                    <div class="preview-title"></div>
+                                    <div class="preview-subtitle"></div>
+                                    <div class="preview-icons">
+                                        <div class="preview-icon"></div>
+                                        <div class="preview-icon"></div>
+                                        <div class="preview-icon"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endfor %}
+                        
+                        <div class="template-info">
+                            <h4 class="template-title">
+                                {{ template_name.title() }}
+                                {% if current_template == template_name %}
+                                    <span class="active-badge">Actual</span>
+                                {% endif %}
+                            </h4>
+                            
+                            <p class="template-description">
+                                {% if template_name == 'classic' %}
+                                Diseño vertical tradicional, perfecto para la mayoría de profesionales
+                                {% elif template_name == 'business' %}
+                                Diseño horizontal estilo tarjeta de negocio, ideal para empresarios
+                                {% elif template_name == 'old_school' %}
+                                Diseño vintage con estilo retro y colores clásicos
+                                {% elif template_name == 'mobile' %}
+                                Diseño optimizado para móviles con botones grandes
+                                {% else %}
+                                Plantilla personalizada con diseño único
+                                {% endif %}
+                            </p>
+                            
+                            {% if current_template != template_name %}
+                                <button class="select-template-btn" data-template="{{ template_name }}">
+                                    <i class="fas fa-exchange-alt"></i>
+                                    Cambiar a {{ template_name.title() }}
+                                </button>
+                            {% else %}
+                                <button class="current-template-btn" disabled>
+                                    <i class="fas fa-check"></i>
+                                    Plantilla Actual
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
             
-            
-            <div class="row">
-                <!-- Theme Controls -->
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-sliders-h me-2"></i>Configuración del Tema
-                            </h5>
+            <!-- Modern Customization Panel -->
+            <div class="customization-layout">
+                
+                <!-- Controls Panel -->
+                <div class="controls-panel">
+                    <form method="POST" id="theme-form" class="theme-form">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Color Palettes Section -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-palette"></i>
+                                    Paletas de Colores
+                                </h3>
+                                <p class="section-description">Selecciona una paleta predefinida o personaliza tus colores</p>
+                            </div>
+                            
+                            <!-- Professional Palettes -->
+                            <div class="palette-category">
+                                <h4 class="category-title">Profesionales</h4>
+                                <div class="palette-grid">
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#1e40af', '#3b82f6', '#60a5fa', '#ffffff')" 
+                                            title="Ejecutivo - Azules profesionales">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #1e40af;"></div>
+                                            <div class="color-dot" style="background: #3b82f6;"></div>
+                                            <div class="color-dot" style="background: #60a5fa;"></div>
+                                        </div>
+                                        <span class="palette-name">Ejecutivo</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#7c3aed', '#a855f7', '#c084fc', '#ffffff')" 
+                                            title="Creativo - Púrpuras vibrantes">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #7c3aed;"></div>
+                                            <div class="color-dot" style="background: #a855f7;"></div>
+                                            <div class="color-dot" style="background: #c084fc;"></div>
+                                        </div>
+                                        <span class="palette-name">Creativo</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#374151', '#6b7280', '#9ca3af', '#ffffff')" 
+                                            title="Elegante - Grises sofisticados">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #374151;"></div>
+                                            <div class="color-dot" style="background: #6b7280;"></div>
+                                            <div class="color-dot" style="background: #9ca3af;"></div>
+                                        </div>
+                                        <span class="palette-name">Elegante</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#059669', '#10b981', '#34d399', '#ffffff')" 
+                                            title="Médico - Verdes confiables">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #059669;"></div>
+                                            <div class="color-dot" style="background: #10b981;"></div>
+                                            <div class="color-dot" style="background: #34d399;"></div>
+                                        </div>
+                                        <span class="palette-name">Médico</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#ec4899', '#f472b6', '#f9a8d4', '#ffffff')" 
+                                            title="Belleza - Rosas suaves">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #ec4899;"></div>
+                                            <div class="color-dot" style="background: #f472b6;"></div>
+                                            <div class="color-dot" style="background: #f9a8d4;"></div>
+                                        </div>
+                                        <span class="palette-name">Belleza</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#0f172a', '#475569', '#06b6d4', '#ffffff')" 
+                                            title="Tecnología - Oscuros modernos">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #0f172a;"></div>
+                                            <div class="color-dot" style="background: #475569;"></div>
+                                            <div class="color-dot" style="background: #06b6d4;"></div>
+                                        </div>
+                                        <span class="palette-name">Tech</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Business Palettes -->
+                            <div class="palette-category">
+                                <h4 class="category-title">Negocios</h4>
+                                <div class="palette-grid">
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#1f2937', '#374151', '#6b7280', '#ffffff')" 
+                                            title="Corporativo - Formal para empresas">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #1f2937;"></div>
+                                            <div class="color-dot" style="background: #374151;"></div>
+                                            <div class="color-dot" style="background: #6b7280;"></div>
+                                        </div>
+                                        <span class="palette-name">Corporativo</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#166534', '#15803d', '#16a34a', '#ffffff')" 
+                                            title="Financiero - Verdes confiables">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #166534;"></div>
+                                            <div class="color-dot" style="background: #15803d;"></div>
+                                            <div class="color-dot" style="background: #16a34a;"></div>
+                                        </div>
+                                        <span class="palette-name">Financiero</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#b45309', '#d97706', '#f59e0b', '#ffffff')" 
+                                            title="Inmobiliario - Naranjas cálidos">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #b45309;"></div>
+                                            <div class="color-dot" style="background: #d97706;"></div>
+                                            <div class="color-dot" style="background: #f59e0b;"></div>
+                                        </div>
+                                        <span class="palette-name">Inmobiliario</span>
+                                    </button>
+                                    
+                                    <button type="button" class="palette-btn" 
+                                            onclick="applyPreset('#7c2d12', '#991b1b', '#dc2626', '#ffffff')" 
+                                            title="Lujo - Rojos elegantes">
+                                        <div class="palette-colors">
+                                            <div class="color-dot" style="background: #7c2d12;"></div>
+                                            <div class="color-dot" style="background: #991b1b;"></div>
+                                            <div class="color-dot" style="background: #dc2626;"></div>
+                                        </div>
+                                        <span class="palette-name">Lujo</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Custom Colors -->
+                            <div class="custom-colors-section">
+                                <h4 class="category-title">Personalización Manual</h4>
+                                <div class="color-inputs-grid">
+                                    <div class="color-input-group">
+                                        <label class="color-label">
+                                            <i class="fas fa-circle" style="color: var(--primary-color, #667eea);"></i>
+                                            Color Principal
+                                        </label>
+                                        {{ form.primary_color(class="color-input", onchange="updatePreview()") }}
+                                    </div>
+                                    
+                                    <div class="color-input-group">
+                                        <label class="color-label">
+                                            <i class="fas fa-circle" style="color: var(--secondary-color, #764ba2);"></i>
+                                            Color Secundario
+                                        </label>
+                                        {{ form.secondary_color(class="color-input", onchange="updatePreview()") }}
+                                    </div>
+                                    
+                                    <div class="color-input-group">
+                                        <label class="color-label">
+                                            <i class="fas fa-circle" style="color: var(--accent-color, #a855f7);"></i>
+                                            Color de Acento
+                                        </label>
+                                        {{ form.accent_color(class="color-input", onchange="updatePreview()") }}
+                                    </div>
+                                    
+                                    <div class="color-input-group">
+                                        <label class="color-label">
+                                            <i class="fas fa-circle" style="color: var(--border-color, #ffffff);"></i>
+                                            Borde del Avatar
+                                        </label>
+                                        {{ form.avatar_border_color(class="color-input", onchange="updatePreview()") }}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <form method="POST" id="theme-form">
-                                {{ form.hidden_tag() }}
-                                
-                                <!-- Colors -->
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-paint-brush me-2"></i>Colores
-                                </h6>
-                                
-                                <!-- Predefined Color Palettes -->
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-palette me-2"></i>Paletas Predefinidas
-                                </h6>
-                                
-                                <!-- Professional Palettes -->
-                                <div class="mb-3">
-                                    <label class="form-label small fw-semibold text-muted">PROFESIONALES</label>
-                                    <div class="row g-2">
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#1e40af', '#3b82f6', '#60a5fa', '#ffffff')" title="Ejecutivo - Azules profesionales para negocios">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #1e40af; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #60a5fa; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Ejecutivo</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#7c3aed', '#a855f7', '#c084fc', '#ffffff')" title="Creativo - Púrpuras vibrantes para creativos">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #7c3aed; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #a855f7; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #c084fc; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Creativo</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#374151', '#6b7280', '#9ca3af', '#ffffff')" title="Elegante - Grises sofisticados y minimalistas">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #374151; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #6b7280; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #9ca3af; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Elegante</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#059669', '#10b981', '#34d399', '#ffffff')" title="Médico - Verdes confiables para salud">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #059669; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #10b981; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #34d399; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Médico</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#0f172a', '#475569', '#06b6d4', '#ffffff')" title="Tecnología - Oscuros modernos para tech">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #0f172a; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #475569; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #06b6d4; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Tecnología</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#ec4899', '#f472b6', '#f9a8d4', '#ffffff')" title="Belleza - Rosas suaves para belleza y spa">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #ec4899; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #f472b6; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #f9a8d4; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Belleza</small>
-                                            </button>
-                                        </div>
-                                    </div>
+                        
+                        <!-- Typography Section -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-font"></i>
+                                    Tipografía
+                                </h3>
+                                <p class="section-description">Selecciona la fuente que mejor represente tu estilo</p>
+                            </div>
+                            
+                            <div class="font-selector">
+                                <label class="font-label">Familia de Fuente</label>
+                                {{ form.font_family(class="font-select", onchange="updatePreview()") }}
+                                <div class="font-preview" id="font-preview">
+                                    <span class="font-sample">Aa Bb Cc 123</span>
+                                    <span class="font-name">{{ card.theme.font_family }}</span>
                                 </div>
-                                
-                                <!-- Business Palettes -->
-                                <div class="mb-4">
-                                    <label class="form-label small fw-semibold text-muted">NEGOCIOS</label>
-                                    <div class="row g-2">
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#1f2937', '#374151', '#6b7280', '#ffffff')" title="Corporativo - Formal para empresas grandes">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #1f2937; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #374151; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #6b7280; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Corporativo</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#0369a1', '#0284c7', '#0ea5e9', '#ffffff')" title="Consultor - Profesional para consultores">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #0369a1; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #0284c7; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #0ea5e9; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Consultor</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#166534', '#15803d', '#16a34a', '#ffffff')" title="Financiero - Verdes confiables para finanzas">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #166534; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #15803d; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #16a34a; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Financiero</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#b45309', '#d97706', '#f59e0b', '#ffffff')" title="Inmobiliario - Naranjas para bienes raíces">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #b45309; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #d97706; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #f59e0b; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Inmobiliario</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#7c2d12', '#991b1b', '#dc2626', '#ffffff')" title="Lujo - Rojos elegantes para marcas premium">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #7c2d12; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #991b1b; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #dc2626; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Lujo</small>
-                                            </button>
-                                        </div>
-                                        <div class="col-6 col-lg-4">
-                                            <button type="button" class="btn btn-outline-secondary w-100 p-2 palette-btn" 
-                                                    onclick="applyPreset('#1d4ed8', '#3b82f6', '#60a5fa', '#ffffff')" title="Educación - Azules académicos">
-                                                <div class="d-flex justify-content-center mb-1">
-                                                    <div style="width: 18px; height: 18px; background: #1d4ed8; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                    <div style="width: 18px; height: 18px; background: #60a5fa; border-radius: 50%; margin: 1px; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-                                                </div>
-                                                <small class="d-block">Educación</small>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Manual Color Selection -->
-                                <div class="mb-3">
-                                    <label class="form-label">Personalización Manual</label>
-                                    <div class="row">
-                                        <div class="col-4">
-                                            {{ form.primary_color.label(class="form-label small") }}
-                                            {{ form.primary_color(onchange="updatePreview()") }}
-                                            <small class="form-text">Principal</small>
-                                        </div>
-                                        <div class="col-4">
-                                            {{ form.secondary_color.label(class="form-label small") }}
-                                            {{ form.secondary_color(onchange="updatePreview()") }}
-                                            <small class="form-text">Secundario</small>
-                                        </div>
-                                        <div class="col-4">
-                                            {{ form.accent_color.label(class="form-label small") }}
-                                            {{ form.accent_color(onchange="updatePreview()") }}
-                                            <small class="form-text">Acento</small>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-4">
-                                            {{ form.avatar_border_color.label(class="form-label small") }}
-                                            {{ form.avatar_border_color(onchange="updatePreview()") }}
-                                            <small class="form-text">Borde del Avatar</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Typography -->
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-font me-2"></i>Tipografía
-                                </h6>
-                                
-                                <div class="mb-3">
-                                    {{ form.font_family.label(class="form-label") }}
-                                    {{ form.font_family(onchange="updatePreview()") }}
-                                </div>
-                                
-                                <!-- Layout -->
-                                <h6 class="border-bottom pb-2 mb-3">
-                                    <i class="fas fa-layout me-2"></i>Diseño
-                                </h6>
-                                
-                                <div class="row mb-3">
-                                    <div class="col-6">
-                                        {{ form.layout.label(class="form-label") }}
-                                        {{ form.layout(onchange="updatePreview()") }}
-                                    </div>
-                                    <div class="col-6">
-                                        {{ form.avatar_shape.label(class="form-label") }}
-                                        {{ form.avatar_shape(onchange="updatePreview()") }}
-                                        <div class="form-text">
-                                            <small>
-                                                <i class="fas fa-info-circle me-1"></i>
-                                                <strong>Rectangular:</strong> Ideal para logos y marcas
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Submit -->
-                                <div class="d-grid">
-                                    {{ form.submit() }}
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
+                        
+                        <!-- Layout Section -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fas fa-layout"></i>
+                                    Diseño y Forma
+                                </h3>
+                                <p class="section-description">Personaliza el diseño y forma de los elementos</p>
+                            </div>
+                            
+                            <div class="layout-options">
+                                <div class="option-group">
+                                    <label class="option-label">Estilo de Diseño</label>
+                                    {{ form.layout(class="option-select", onchange="updatePreview()") }}
+                                </div>
+                                
+                                <div class="option-group">
+                                    <label class="option-label">Forma del Avatar</label>
+                                    {{ form.avatar_shape(class="option-select", onchange="updatePreview()") }}
+                                    <div class="option-hint">
+                                        <i class="fas fa-info-circle"></i>
+                                        Rectangular es ideal para logos y marcas
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Button -->
+                        <div class="form-actions">
+                            {{ form.submit(class="save-theme-btn") }}
+                        </div>
+                    </form>
                 </div>
                 
-                <!-- Live Preview -->
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-eye me-2"></i>Vista Previa
-                            </h5>
-                        </div>
-                        <div class="card-body p-0">
-                            <div id="preview-container" style="
-                                background: linear-gradient(135deg, var(--preview-primary, {{ card.theme.primary_color }}), var(--preview-secondary, {{ card.theme.secondary_color }}));
-                                min-height: 500px;
-                                padding: 20px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                            ">
-                                <div id="preview-card" class="preview-card" style="
-                                    max-width: 300px;
-                                    width: 100%;
-                                    text-align: center;
-                                    font-family: var(--preview-font, '{{ card.theme.font_family }}'), sans-serif;
-                                    transition: all 0.3s ease;
-                                ">
-                                    <!-- Avatar Preview -->
-                                    <div id="preview-avatar" style="
-                                        width: 80px;
-                                        height: 80px;
-                                        margin: 0 auto 15px;
-                                        overflow: hidden;
-                                        border: 3px solid {{ card.theme.avatar_border_color or '#ffffff' }};
-                                        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                                        background: #f8f9fa;
-                                    ">
-                                        {% if card.has_avatar() %}
-                                            <img id="preview-avatar-img" src="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
-                                                 style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">
-                                        {% else %}
-                                            <div class="w-100 h-100 d-flex align-items-center justify-content-center" 
-                                                 style="background: linear-gradient(135deg, var(--preview-primary, {{ card.theme.primary_color }}), var(--preview-secondary, {{ card.theme.secondary_color }})); color: white; font-size: 30px;">
-                                                <i class="fas fa-user"></i>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <h3 id="preview-title" style="
-                                        color: var(--preview-primary, {{ card.theme.primary_color }});
-                                        font-size: 18px;
-                                        font-weight: 700;
-                                        margin-bottom: 5px;
-                                    ">{{ card.title or card.name }}</h3>
-                                    
-                                    {% if card.job_title %}
-                                        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">{{ card.job_title }}</p>
+                <!-- Live Preview Panel -->
+                <div class="preview-panel">
+                    <div class="preview-header">
+                        <h3 class="preview-title">
+                            <i class="fas fa-eye"></i>
+                            Vista Previa en Tiempo Real
+                        </h3>
+                    </div>
+                    
+                    <div class="preview-container" id="preview-container">
+                        <div class="preview-background">
+                            <div id="preview-card" class="live-preview-card">
+                                <!-- Preview content will be dynamically generated -->
+                                <div id="preview-avatar" class="live-avatar">
+                                    {% if card.has_avatar() %}
+                                        <img id="preview-avatar-img" src="{{ card.get_avatar_url_with_cache_busting() or url_for('static', filename='uploads/' + card.get_avatar_path()) }}" 
+                                             alt="Avatar">
+                                    {% else %}
+                                        <div class="live-avatar-placeholder">
+                                            <i class="fas fa-user"></i>
+                                        </div>
                                     {% endif %}
-                                    
-                                    <div id="preview-buttons" class="preview-buttons" style="display: flex; flex-direction: column; gap: 8px;">
-                                        <div id="btn-contact" class="preview-btn" style="
-                                            color: white;
-                                            padding: 8px 15px;
-                                            font-size: 12px;
-                                            font-weight: 600;
-                                            transition: all 0.3s ease;
-                                        ">CONTACTO</div>
-                                        
-                                        <div id="btn-services" class="preview-btn" style="
-                                            color: white;
-                                            padding: 8px 15px;
-                                            font-size: 12px;
-                                            font-weight: 600;
-                                            transition: all 0.3s ease;
-                                        ">SERVICIOS</div>
-                                        
-                                        <div id="btn-outline" class="preview-btn" style="
-                                            background: transparent;
-                                            color: var(--preview-primary, {{ card.theme.primary_color }});
-                                            padding: 8px 15px;
-                                            font-size: 12px;
-                                            font-weight: 600;
-                                            transition: all 0.3s ease;
-                                        ">UBICACIÓN</div>
-                                    </div>
+                                </div>
+                                
+                                <h3 id="preview-title" class="live-title">{{ card.title or card.name }}</h3>
+                                {% if card.job_title %}
+                                    <p class="live-subtitle">{{ card.job_title }}</p>
+                                {% endif %}
+                                
+                                <div id="preview-buttons" class="live-buttons">
+                                    <button id="btn-contact" class="live-btn live-btn-primary">Contacto</button>
+                                    <button id="btn-services" class="live-btn live-btn-secondary">Servicios</button>
+                                    <button id="btn-outline" class="live-btn live-btn-outline">Ubicación</button>
                                 </div>
                             </div>
                         </div>
@@ -490,7 +462,943 @@
     </div>
 </div>
 
+<style>
+/* Theme Container Layout */
+.theme-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+    gap: 0;
+}
+
+/* Modern Sidebar */
+.theme-sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-content {
+    padding: 0 1.5rem;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 2rem;
+    padding: 0 0.5rem;
+}
+
+.sidebar-header i {
+    color: #667eea;
+    font-size: 1.3rem;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.nav-item:hover {
+    background: #e2e8f0;
+    color: #374151;
+    transform: none;
+    border-color: #cbd5e1;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.nav-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content */
+.theme-main {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    overflow-y: auto;
+}
+
+.theme-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.theme-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.theme-title i {
+    color: #667eea;
+    font-size: 2.2rem;
+}
+
+.theme-subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.view-public-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.view-public-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+}
+
+.theme-content {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Template Section */
+.template-section {
+    margin-bottom: 3rem;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.section-title i {
+    color: #667eea;
+}
+
+.section-description {
+    color: #718096;
+    font-size: 1.1rem;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.template-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.template-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.template-card.template-active {
+    border-color: #667eea;
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+    transform: translateY(-4px);
+}
+
+.template-preview {
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+/* Template Preview Styles */
+.preview-classic {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.preview-classic .preview-content {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    width: 80%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.preview-business {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+}
+
+.preview-business .preview-info {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.preview-old-school {
+    background: linear-gradient(135deg, #8b4513, #daa520);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+}
+
+.preview-old-school .preview-border {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border: 2px solid #cd853f;
+    border-radius: 12px;
+}
+
+.preview-old-school .preview-content {
+    background: #faf0e6;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    width: 85%;
+    border: 1px solid #d4af37;
+    position: relative;
+    z-index: 1;
+}
+
+.preview-mobile {
+    background: linear-gradient(135deg, #ec4899, #f472b6);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.preview-mobile .preview-content {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    width: 70%;
+}
+
+/* Preview Elements */
+.preview-avatar {
+    width: 30px;
+    height: 30px;
+    background: #ddd;
+    border-radius: 50%;
+    margin: 0 auto 8px;
+}
+
+.preview-avatar-business {
+    width: 35px;
+    height: 35px;
+}
+
+.preview-avatar-vintage {
+    border: 2px solid #cd853f;
+}
+
+.preview-avatar-mobile {
+    width: 25px;
+    height: 25px;
+}
+
+.preview-title {
+    height: 8px;
+    background: #6366f1;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.preview-title-vintage {
+    background: #8b4513;
+    height: 9px;
+}
+
+.preview-subtitle {
+    height: 6px;
+    background: #ddd;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.preview-subtitle-vintage {
+    background: #d4af37;
+    width: 75%;
+}
+
+.preview-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.preview-buttons-horizontal {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.preview-btn {
+    height: 6px;
+    background: #6366f1;
+    border-radius: 3px;
+}
+
+.preview-btn-small {
+    height: 4px;
+    background: #1e40af;
+    border-radius: 2px;
+    width: 40px;
+}
+
+.preview-btn-vintage {
+    background: #8b4513;
+    height: 7px;
+}
+
+.preview-btn-vintage-outline {
+    background: transparent;
+    border: 1px solid #cd853f;
+    height: 7px;
+}
+
+.preview-icons {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.preview-icon {
+    width: 8px;
+    height: 8px;
+    background: #f472b6;
+    border-radius: 2px;
+}
+
+.template-info {
+    text-align: center;
+}
+
+.template-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.active-badge {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.template-description {
+    color: #718096;
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem 0;
+    line-height: 1.5;
+}
+
+.select-template-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 auto;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.select-template-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.current-template-btn {
+    background: #48bb78;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 auto;
+    opacity: 0.8;
+}
+
+/* Customization Layout */
+.customization-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+}
+
+/* Controls Panel */
+.controls-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.theme-form {
+    padding: 2rem;
+}
+
+.form-section {
+    margin-bottom: 3rem;
+}
+
+.form-section .section-header {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.form-section .section-title {
+    justify-content: flex-start;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-section .section-description {
+    text-align: left;
+    margin: 0;
+    max-width: none;
+}
+
+/* Palette Styles */
+.palette-category {
+    margin-bottom: 2rem;
+}
+
+.category-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.palette-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 80px;
+}
+
+.palette-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.palette-btn.active {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.palette-colors {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.color-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.palette-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+/* Custom Colors */
+.custom-colors-section {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2rem;
+}
+
+.color-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.color-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.color-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.95rem;
+}
+
+.color-input {
+    width: 100%;
+    height: 60px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.color-input:hover {
+    border-color: #667eea;
+}
+
+/* Typography Section */
+.font-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.font-label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1rem;
+}
+
+.font-select {
+    padding: 0.875rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.font-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.font-preview {
+    background: rgba(247, 250, 252, 0.8);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.font-sample {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.font-name {
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+/* Layout Options */
+.layout-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.option-label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.95rem;
+}
+
+.option-select {
+    padding: 0.875rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.option-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.option-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #718096;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* Form Actions */
+.form-actions {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2rem;
+}
+
+.save-theme-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.save-theme-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Preview Panel */
+.preview-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+    max-height: calc(100vh - 4rem);
+    overflow: hidden;
+}
+
+.preview-header {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+    padding: 1.5rem 2rem;
+    color: white;
+}
+
+.preview-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.preview-container {
+    padding: 2rem;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-background {
+    background: linear-gradient(135deg, var(--preview-primary, #667eea), var(--preview-secondary, #764ba2));
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    transition: all 0.3s ease;
+}
+
+.live-preview-card {
+    max-width: 280px;
+    width: 100%;
+    text-align: center;
+    font-family: var(--preview-font, 'Inter'), sans-serif;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.live-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1rem;
+    overflow: hidden;
+    border: 3px solid var(--preview-border, #ffffff);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    background: #f8f9fa;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.live-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.live-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--preview-primary, #667eea), var(--preview-secondary, #764ba2));
+    color: white;
+    font-size: 2rem;
+}
+
+.live-title {
+    color: var(--preview-primary, #667eea);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.live-subtitle {
+    color: #718096;
+    font-size: 1rem;
+    margin: 0 0 1.5rem 0;
+}
+
+.live-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.live-btn {
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.live-btn-primary {
+    background: var(--preview-primary, #667eea);
+    color: white;
+}
+
+.live-btn-secondary {
+    background: var(--preview-secondary, #764ba2);
+    color: white;
+}
+
+.live-btn-outline {
+    background: transparent;
+    color: var(--preview-primary, #667eea);
+    border: 2px solid var(--preview-primary, #667eea);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .theme-container {
+        grid-template-columns: 240px 1fr;
+    }
+    
+    .customization-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .preview-panel {
+        position: relative;
+        top: auto;
+        height: auto;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .theme-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .theme-sidebar {
+        display: none;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .templates-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .palette-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .color-inputs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .layout-options {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
 <script>
+// Initialize theme variables
+let currentTemplate = '{{ current_template }}';
+
+// Update preview function
 function updatePreview() {
     const primary = document.getElementById('primary_color').value;
     const secondary = document.getElementById('secondary_color').value;
@@ -504,269 +1412,117 @@ function updatePreview() {
     document.documentElement.style.setProperty('--preview-primary', primary);
     document.documentElement.style.setProperty('--preview-secondary', secondary);
     document.documentElement.style.setProperty('--preview-accent', accent);
-    document.documentElement.style.setProperty('--preview-font', font);
+    document.documentElement.style.setProperty('--preview-border', avatarBorderColor);
+    document.documentElement.style.setProperty('--preview-font', `'${font}'`);
+    
+    // Update font preview
+    const fontPreview = document.getElementById('font-preview');
+    if (fontPreview) {
+        const fontSample = fontPreview.querySelector('.font-sample');
+        const fontName = fontPreview.querySelector('.font-name');
+        if (fontSample) fontSample.style.fontFamily = `'${font}', sans-serif`;
+        if (fontName) fontName.textContent = font;
+    }
     
     // Update Google Fonts dynamically
+    updateGoogleFont(font);
+    
+    // Update avatar shape
+    const avatar = document.getElementById('preview-avatar');
+    if (avatar) {
+        if (avatarShape === 'circle') {
+            avatar.style.borderRadius = '50%';
+            avatar.style.width = '80px';
+            avatar.style.height = '80px';
+        } else if (avatarShape === 'rounded') {
+            avatar.style.borderRadius = '20px';
+            avatar.style.width = '80px';
+            avatar.style.height = '80px';
+        } else if (avatarShape === 'rectangle') {
+            avatar.style.borderRadius = '12px';
+            avatar.style.width = '200px';
+            avatar.style.height = '100px';
+        } else {
+            avatar.style.borderRadius = '8px';
+            avatar.style.width = '80px';
+            avatar.style.height = '80px';
+        }
+    }
+    
+    // Update layout styles
+    const previewCard = document.querySelector('.live-preview-card');
+    if (previewCard) {
+        if (layout === 'minimal') {
+            previewCard.style.borderRadius = '8px';
+            previewCard.style.background = 'white';
+            previewCard.style.backdropFilter = 'none';
+        } else if (layout === 'modern') {
+            previewCard.style.borderRadius = '25px';
+            previewCard.style.background = 'rgba(255, 255, 255, 0.95)';
+            previewCard.style.backdropFilter = 'blur(10px)';
+        } else {
+            previewCard.style.borderRadius = '15px';
+            previewCard.style.background = 'white';
+            previewCard.style.backdropFilter = 'none';
+        }
+    }
+}
+
+function updateGoogleFont(font) {
     const encodedFont = font.replace(/\s+/g, '+');
     const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap`;
     
     // Remove existing dynamic font link
-    const existingDynamicLink = document.getElementById('dynamic-font-link');
-    if (existingDynamicLink) {
-        existingDynamicLink.remove();
-    }
+    const existingLink = document.getElementById('dynamic-font-link');
+    if (existingLink) existingLink.remove();
     
-    // Create new font link with unique ID
-    const newFontLink = document.createElement('link');
-    newFontLink.id = 'dynamic-font-link';
-    newFontLink.rel = 'stylesheet';
-    newFontLink.href = fontUrl;
-    document.head.appendChild(newFontLink);
+    // Create new font link
+    const newLink = document.createElement('link');
+    newLink.id = 'dynamic-font-link';
+    newLink.rel = 'stylesheet';
+    newLink.href = fontUrl;
+    document.head.appendChild(newLink);
     
-    console.log('Loading font:', font, '-> URL:', fontUrl);
-    
-    // Apply font with a small delay to ensure loading
+    // Apply font after a delay
     setTimeout(() => {
-        document.documentElement.style.setProperty('--preview-font', `'${font}'`);
-        const previewCard = document.getElementById('preview-card');
+        const previewCard = document.querySelector('.live-preview-card');
         if (previewCard) {
-            previewCard.style.fontFamily = `'${font}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+            previewCard.style.fontFamily = `'${font}', sans-serif`;
         }
-        console.log('Applied font:', font);
-    }, 100);
-    
-    // Update card layout styles
-    const previewCard = document.getElementById('preview-card');
-    const avatar = document.getElementById('preview-avatar');
-    const btnContact = document.getElementById('btn-contact');
-    const btnServices = document.getElementById('btn-services');
-    const btnOutline = document.getElementById('btn-outline');
-    
-    // Ensure elements exist (they might not exist immediately after template change)
-    if (!previewCard || !avatar || !btnContact || !btnServices || !btnOutline) {
-        console.warn('Preview elements not found, skipping style updates');
-        return;
-    }
-    
-    // Font is applied above with setTimeout
-    
-    // Apply layout-specific styles
-    if (layout === 'classic') {
-        // Classic layout
-        previewCard.style.background = 'white';
-        previewCard.style.borderRadius = '15px';
-        previewCard.style.padding = '25px 20px';
-        previewCard.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
-        previewCard.style.border = `2px solid ${primary}20`;
-        previewCard.style.backdropFilter = 'none';
-        
-        // Button styles for classic
-        [btnContact, btnServices, btnOutline].forEach(btn => {
-            btn.style.borderRadius = '8px';
-            btn.style.textTransform = 'none';
-            btn.style.letterSpacing = '0';
-        });
-        
-        btnContact.style.background = primary;
-        btnServices.style.background = secondary;
-        btnOutline.style.border = `2px solid ${primary}`;
-        
-    } else if (layout === 'minimal') {
-        // Minimal layout
-        previewCard.style.background = 'white';
-        previewCard.style.borderRadius = '0';
-        previewCard.style.padding = '30px 25px';
-        previewCard.style.boxShadow = 'none';
-        previewCard.style.border = '1px solid #e0e0e0';
-        previewCard.style.backdropFilter = 'none';
-        
-        // Button styles for minimal
-        [btnContact, btnServices, btnOutline].forEach(btn => {
-            btn.style.borderRadius = '0';
-            btn.style.textTransform = 'none';
-            btn.style.letterSpacing = '0';
-            btn.style.fontWeight = '500';
-        });
-        
-        btnContact.style.background = primary;
-        btnServices.style.background = secondary;
-        btnOutline.style.border = `1px solid ${primary}`;
-        
-    } else {
-        // Modern layout (default)
-        previewCard.style.background = 'rgba(255, 255, 255, 0.95)';
-        previewCard.style.borderRadius = '30px';
-        previewCard.style.padding = '30px 25px';
-        previewCard.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.2)';
-        previewCard.style.border = 'none';
-        previewCard.style.backdropFilter = 'blur(10px)';
-        
-        // Button styles for modern
-        [btnContact, btnServices, btnOutline].forEach(btn => {
-            btn.style.borderRadius = '20px';
-            btn.style.textTransform = 'uppercase';
-            btn.style.letterSpacing = '1px';
-            btn.style.fontWeight = '600';
-        });
-        
-        btnContact.style.background = `linear-gradient(135deg, ${primary}, ${secondary})`;
-        btnServices.style.background = `linear-gradient(135deg, ${secondary}, ${accent})`;
-        btnOutline.style.border = `2px solid ${primary}50`;
-    }
-    
-    // Update avatar shape and border color
-    const avatarImg = document.getElementById('preview-avatar-img');
-    
-    // Apply border color to avatar
-    if (avatar) {
-        avatar.style.borderColor = avatarBorderColor;
-        avatar.style.borderWidth = '3px';
-        avatar.style.borderStyle = 'solid';
-        console.log('Avatar border color updated to:', avatarBorderColor);
-    } else {
-        console.error('Avatar element not found');
-    }
-    
-    if (avatarShape === 'circle') {
-        avatar.style.borderRadius = '50%';
-        avatar.style.width = '80px';
-        avatar.style.height = '80px';
-        avatar.style.padding = '0';
-        avatar.style.background = '#f8f9fa';
-        if (avatarImg) avatarImg.style.objectFit = 'cover';
-    } else if (avatarShape === 'rounded') {
-        avatar.style.borderRadius = '20px';
-        avatar.style.width = '80px';
-        avatar.style.height = '80px';
-        avatar.style.padding = '0';
-        avatar.style.background = '#f8f9fa';
-        if (avatarImg) avatarImg.style.objectFit = 'cover';
-    } else if (avatarShape === 'rectangle') {
-        avatar.style.borderRadius = '12px';
-        avatar.style.width = '220px';
-        avatar.style.height = '120px';
-        avatar.style.background = 'white';
-        avatar.style.padding = '10px';
-        if (avatarImg) avatarImg.style.objectFit = 'contain';
-    } else {
-        avatar.style.borderRadius = '8px';
-        avatar.style.width = '80px';
-        avatar.style.height = '80px';
-        avatar.style.padding = '0';
-        avatar.style.background = '#f8f9fa';
-        if (avatarImg) avatarImg.style.objectFit = 'cover';
-    }
-    
-    // Convert hex to RGB for border colors
-    const hexToRgb = (hex) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : null;
-    };
-    
-    const primaryRgb = hexToRgb(primary);
-    if (primaryRgb) {
-        document.documentElement.style.setProperty('--preview-primary-rgb', `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`);
-    }
+    }, 300);
 }
 
-// Initialize preview on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize preview with current template
-    const currentTemplate = '{{ current_template }}';
-    updatePreviewTemplate(currentTemplate);
-    updatePreview();
+// Apply color preset
+function applyPreset(primaryColor, secondaryColor, accentColor, avatarBorderColor = '#ffffff') {
+    document.getElementById('primary_color').value = primaryColor;
+    document.getElementById('secondary_color').value = secondaryColor;
+    document.getElementById('accent_color').value = accentColor;
+    document.getElementById('avatar_border_color').value = avatarBorderColor;
     
-    // Handle template selection
-    document.querySelectorAll('.select-template').forEach(button => {
-        button.addEventListener('click', function() {
-            const template = this.dataset.template;
-            changeTemplate(template);
-        });
+    // Remove active class from all palette buttons
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
     
-});
-
-// Function to update preview based on current template
-function updatePreviewTemplate(templateName) {
-    const previewContainer = document.getElementById('preview-card');
-    if (!previewContainer) return;
-    
-    const cardData = {
-        name: '{{ card.title or card.name }}',
-        job_title: '{{ card.job_title }}',
-        avatar: '{{ card.get_avatar_url_with_cache_busting() or "" }}'
-    };
-    
-    let previewHTML = '';
-    
-    if (templateName === 'business') {
-        // Business template: Horizontal layout
-        previewHTML = `
-            <div style="display: flex; align-items: center; gap: 20px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                <div style="flex: 1;">
-                    <h3 style="color: var(--preview-primary, {{ card.theme.primary_color }}); font-size: 16px; font-weight: 700; margin-bottom: 8px;">${cardData.name}</h3>
-                    ${cardData.job_title ? `<p style="color: #666; font-size: 12px; margin-bottom: 15px;">${cardData.job_title}</p>` : ''}
-                    <div style="display: flex; gap: 6px;">
-                        <button id="btn-contact" style="padding: 6px 12px; font-size: 10px; border: none; border-radius: 8px; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white;">Contactar</button>
-                        <button id="btn-services" style="padding: 6px 12px; font-size: 10px; border: none; border-radius: 8px; background: var(--preview-secondary, {{ card.theme.secondary_color }}); color: white;">Servicios</button>
-                    </div>
-                </div>
-                <div id="preview-avatar" style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 3px solid var(--preview-accent, {{ card.theme.accent_color }}); background: #f8f9fa;">
-                    ${cardData.avatar ? `<img src="${cardData.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">` : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-size: 20px;"><i class="fas fa-user"></i></div>'}
-                </div>
-            </div>
-        `;
-    } else if (templateName === 'mobile') {
-        // Mobile template: Vertical optimized for mobile
-        previewHTML = `
-            <div style="text-align: center; padding: 25px; background: white; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); max-width: 280px;">
-                <div id="preview-avatar" style="width: 70px; height: 70px; margin: 0 auto 15px; border-radius: 50%; overflow: hidden; border: 3px solid var(--preview-accent, {{ card.theme.accent_color }}); background: #f8f9fa;">
-                    ${cardData.avatar ? `<img src="${cardData.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">` : '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-size: 24px;"><i class="fas fa-user"></i></div>'}
-                </div>
-                <h3 style="color: var(--preview-primary, {{ card.theme.primary_color }}); font-size: 18px; font-weight: 700; margin-bottom: 8px;">${cardData.name}</h3>
-                ${cardData.job_title ? `<p style="color: #666; font-size: 14px; margin-bottom: 20px;">${cardData.job_title}</p>` : ''}
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button id="btn-contact" style="padding: 12px 20px; font-size: 14px; border: none; border-radius: 25px; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-weight: 600;">📞 Contactar</button>
-                    <button id="btn-services" style="padding: 12px 20px; font-size: 14px; border: none; border-radius: 25px; background: var(--preview-secondary, {{ card.theme.secondary_color }}); color: white; font-weight: 600;">🛍️ Servicios</button>
-                    <button id="btn-outline" style="padding: 12px 20px; font-size: 14px; border: 2px solid var(--preview-primary, {{ card.theme.primary_color }}); border-radius: 25px; background: transparent; color: var(--preview-primary, {{ card.theme.primary_color }}); font-weight: 600;">📍 Ubicación</button>
-                </div>
-            </div>
-        `;
-    } else {
-        // Classic template: Default vertical layout
-        previewHTML = `
-            <div id="preview-avatar" style="width: 80px; height: 80px; margin: 0 auto 15px; overflow: hidden; border: 3px solid var(--preview-accent, {{ card.theme.accent_color }}); box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #f8f9fa; border-radius: 50%;">
-                ${cardData.avatar ? `<img id="preview-avatar-img" src="${cardData.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar">` : '<div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, var(--preview-primary, {{ card.theme.primary_color }}), var(--preview-secondary, {{ card.theme.secondary_color }})); color: white; font-size: 30px;"><i class="fas fa-user"></i></div>'}
-            </div>
-            <h3 id="preview-title" style="color: var(--preview-primary, {{ card.theme.primary_color }}); font-size: 18px; font-weight: 700; margin-bottom: 5px;">${cardData.name}</h3>
-            ${cardData.job_title ? `<p style="color: #666; font-size: 14px; margin-bottom: 15px;">${cardData.job_title}</p>` : ''}
-            <div id="preview-buttons" style="display: flex; flex-direction: column; gap: 8px;">
-                <button id="btn-contact" style="padding: 10px 20px; border: none; border-radius: 8px; background: var(--preview-primary, {{ card.theme.primary_color }}); color: white; font-weight: 500;">Contactar</button>
-                <button id="btn-services" style="padding: 10px 20px; border: none; border-radius: 8px; background: var(--preview-secondary, {{ card.theme.secondary_color }}); color: white; font-weight: 500;">Servicios</button>
-                <button id="btn-outline" style="padding: 10px 20px; border: 2px solid var(--preview-primary, {{ card.theme.primary_color }}); border-radius: 8px; background: transparent; color: var(--preview-primary, {{ card.theme.primary_color }}); font-weight: 500;">Ubicación</button>
-            </div>
-        `;
+    // Add active class to clicked button
+    if (event) {
+        const clickedBtn = event.target.closest('.palette-btn');
+        if (clickedBtn) clickedBtn.classList.add('active');
     }
     
-    previewContainer.innerHTML = previewHTML;
+    updatePreview();
 }
 
-// Function to change template
+// Change template
 function changeTemplate(templateName) {
     const csrfToken = document.querySelector('[name=csrf_token]').value;
+    const button = document.querySelector(`[data-template="${templateName}"] .select-template-btn`);
     
-    // Show loading state
-    const button = document.querySelector(`[data-template="${templateName}"]`);
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cambiando...';
-    button.disabled = true;
-    
-    // Update preview immediately for better UX
-    updatePreviewTemplate(templateName);
+    if (button) {
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cambiando...';
+        button.disabled = true;
+    }
     
     fetch(`/dashboard/cards/{{ card.id }}/change-template`, {
         method: 'POST',
@@ -779,111 +1535,60 @@ function changeTemplate(templateName) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message
             showMessage(data.message, 'success');
-            // Reload to update presets for new template
             setTimeout(() => location.reload(), 1000);
         } else {
             showMessage('Error al cambiar plantilla: ' + data.message, 'error');
-            button.innerHTML = originalText;
-            button.disabled = false;
-            // Revert preview on error
-            updatePreviewTemplate('{{ current_template }}');
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
         showMessage('Error al cambiar plantilla', 'error');
-        button.innerHTML = originalText;
-        button.disabled = false;
+        if (button) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
     });
 }
 
-
-// Function to show messages
+// Show message
 function showMessage(message, type) {
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-    const alertHtml = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+    const alertHtml = `<div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 400px;">
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>`;
     
-    // Insert at the top of the content area
-    const contentArea = document.querySelector('.main-content');
-    contentArea.insertAdjacentHTML('afterbegin', alertHtml);
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
     
-    // Auto-dismiss after 3 seconds
     setTimeout(() => {
-        const alert = contentArea.querySelector('.alert');
-        if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }
+        const alert = document.querySelector('.alert');
+        if (alert) alert.remove();
     }, 3000);
 }
 
-// Function to apply color preset
-function applyPreset(primaryColor, secondaryColor, accentColor, avatarBorderColor = '#ffffff') {
-    // Update form color inputs
-    const primaryInput = document.getElementById('primary_color');
-    const secondaryInput = document.getElementById('secondary_color');
-    const accentInput = document.getElementById('accent_color');
-    const avatarBorderInput = document.getElementById('avatar_border_color');
-    
-    if (primaryInput) primaryInput.value = primaryColor;
-    if (secondaryInput) secondaryInput.value = secondaryColor;
-    if (accentInput) accentInput.value = accentColor;
-    if (avatarBorderInput) avatarBorderInput.value = avatarBorderColor;
-    
-    // Update preview
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
     
-    // Highlight selected palette
-    document.querySelectorAll('.palette-btn').forEach(btn => {
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-outline-secondary');
+    // Handle template selection
+    document.querySelectorAll('.select-template-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const template = this.dataset.template;
+            changeTemplate(template);
+        });
     });
     
-    // Find and highlight the clicked button
-    event.target.closest('.palette-btn').classList.remove('btn-outline-secondary');
-    event.target.closest('.palette-btn').classList.add('btn-primary');
-}
-
+    // Handle palette button clicks
+    document.querySelectorAll('.palette-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            // The applyPreset function is called via onclick attribute
+        });
+    });
+});
 </script>
-
-<style>
-.palette-btn {
-    transition: all 0.3s ease;
-    min-height: 70px;
-    position: relative;
-    overflow: hidden;
-}
-
-.palette-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.palette-btn:active {
-    transform: translateY(0);
-}
-
-.palette-btn.btn-primary {
-    border-width: 2px;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
-}
-
-.form-control[type="color"] {
-    height: 40px;
-    padding: 2px;
-}
-
-.preview-card {
-    transition: all 0.3s ease;
-}
-
-#preview-container {
-    transition: background 0.3s ease;
-}
-</style>
 {% endblock %}

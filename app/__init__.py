@@ -75,6 +75,15 @@ def create_app(config_name=None):
         if current_user.is_authenticated:
             return redirect(url_for('dashboard.index'))
         return redirect(url_for('auth.login'))
+
+    # Dashboard favicon route
+    @app.route('/favicon.ico')
+    def favicon():
+        from flask import send_from_directory, make_response
+        response = make_response(send_from_directory(app.static_folder, 'favicon.ico'))
+        response.headers['Cache-Control'] = 'public, max-age=86400'  # Cache for 1 day
+        response.headers['Content-Type'] = 'image/x-icon'
+        return response
     
     # Error handlers
     @app.errorhandler(404)

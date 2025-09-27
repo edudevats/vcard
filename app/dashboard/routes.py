@@ -68,13 +68,13 @@ def parse_duration_to_minutes(duration_str):
 @login_required
 def index():
     cards = current_user.cards.all()
-    
+
     # Calculate total views for user's cards
     total_views = sum(card.get_total_views() for card in cards)
     total_unique_views = sum(card.get_unique_views() for card in cards)
     total_views_today = sum(card.get_views_today() for card in cards)
     total_views_this_month = sum(card.get_views_this_month() for card in cards)
-    
+
     stats = {
         'total_views': total_views,
         'unique_views': total_unique_views,
@@ -83,8 +83,18 @@ def index():
         'total_cards': len(cards),
         'public_cards': len([c for c in cards if c.is_public])
     }
-    
-    return render_template('dashboard/index.html', cards=cards, stats=stats)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/index_pwa.html', cards=cards, stats=stats)
+    else:
+        return render_template('dashboard/index.html', cards=cards, stats=stats)
 
 @bp.route('/cards/new', methods=['GET', 'POST'])
 @login_required
@@ -92,8 +102,32 @@ def new_card():
     if not current_user.can_create_card():
         flash(f'Has alcanzado el límite de {current_user.max_cards} tarjetas. Contacta al administrador para incrementar tu límite.', 'error')
         return redirect(url_for('dashboard.index'))
-    
+
+    # Get or create default classic theme
+    default_theme = Theme.query.filter_by(template_name='classic', is_global=True).first()
+    if not default_theme:
+        # Create a default classic theme if none exists
+        default_theme = Theme(
+            name='Classic Default',
+            template_name='classic',
+            primary_color='#667eea',
+            secondary_color='#764ba2',
+            accent_color='#667eea',
+            avatar_border_color='#667eea',
+            font_family='Inter',
+            layout='classic',
+            avatar_shape='circle',
+            is_global=True,
+            is_active=True
+        )
+        db.session.add(default_theme)
+        db.session.commit()
+
     form = CardForm()
+    # Set default theme
+    if not form.theme_id.data:
+        form.theme_id.data = default_theme.id
+
     if form.validate_on_submit():
         card = Card(
             owner_id=current_user.id,
@@ -106,7 +140,7 @@ def new_card():
             website=form.website.data,
             location=form.location.data,
             bio=form.bio.data,
-            theme_id=form.theme_id.data,
+            theme_id=form.theme_id.data or default_theme.id,
             instagram=form.instagram.data,
             whatsapp_country=form.whatsapp_country.data,
             whatsapp=form.whatsapp.data,
@@ -124,20 +158,24 @@ def new_card():
             is_public=form.is_public.data
         )
         card.generate_slug()
-        
+
         if card.is_public:
             card.publish()
-        
+
         db.session.add(card)
         db.session.commit()
-        
+
         # Clear cache for user
         CacheManager.invalidate_user(current_user.id)
-        
-        flash('¡Tarjeta creada exitosamente!', 'success')
-        return redirect(url_for('dashboard.edit_card', id=card.id))
-    
-    return render_template('dashboard/card_form.html', form=form, title='Nueva Tarjeta')
+
+        flash('¡Tarjeta creada exitosamente! Ahora puedes personalizar el diseño y agregar más funciones.', 'success')
+        # Redirect to theme customization instead of edit
+        return redirect(url_for('dashboard.card_theme', id=card.id))
+
+    return render_template('dashboard/new_card_with_preview.html',
+                         form=form,
+                         title='Nueva Tarjeta',
+                         default_theme=default_theme)
 
 @bp.route('/cards/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -1314,50 +1352,84 @@ def admin_export_full_backup():
 def profile():
     """User profile and password change"""
     form = ChangePasswordForm()
-    
+
     if form.validate_on_submit():
         # Verify current password
         if not current_user.check_password(form.current_password.data):
             flash('La contraseña actual es incorrecta.', 'error')
             return redirect(url_for('dashboard.profile'))
-        
+
         # Update password
         current_user.set_password(form.new_password.data)
         db.session.commit()
-        
+
         flash('¡Contraseña cambiada exitosamente!', 'success')
         return redirect(url_for('dashboard.profile'))
-    
-    return render_template('dashboard/profile.html', form=form)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/profile_pwa.html', form=form)
+    else:
+        return render_template('dashboard/profile.html', form=form)
 
 @bp.route('/cards/<int:id>/social-networks', methods=['GET', 'POST'])
 @login_required
 def card_social_networks(id):
     """Configure social network display preferences for a card"""
     card = get_user_card_or_404(id)
-    
+
     if request.method == 'POST':
         # Validate CSRF token
         validate_csrf(request.form.get('csrf_token'))
-        
+
         # Get selected primary networks from form
         primary_networks = request.form.getlist('primary_networks')
-        
+
         # Save preferences
         card.set_primary_social_networks(primary_networks)
         db.session.commit()
-        
+
         # Clear cache for the parent card
         CacheManager.invalidate_card(card.id)
-        
+
         flash('Configuración de redes sociales actualizada correctamente', 'success')
         return redirect(url_for('dashboard.card_social_networks', id=card.id))
-    
+
     # Get available networks and current preferences
     available_networks = card.get_available_social_networks()
     primary_fields = card.get_primary_social_network_fields()
-    
-    return render_template('dashboard/social_networks.html', 
-                         card=card, 
-                         available_networks=available_networks,
-                         primary_fields=primary_fields)
+
+    return render_template('dashboard/social_networks.html',
+                          card=card,
+                          available_networks=available_networks,
+                          primary_fields=primary_fields)
+
+@bp.route('/cards')
+@login_required
+def cards_list():
+    """Unified cards list view for mobile navigation"""
+    cards = current_user.cards.order_by(Card.created_at.desc()).all()
+
+    # Get filter parameters
+    status_filter = request.args.get('status', 'all')  # all, public, draft
+    search_query = request.args.get('search', '').strip()
+
+    # Apply filters
+    if status_filter == 'public':
+        cards = [card for card in cards if card.is_public]
+    elif status_filter == 'draft':
+        cards = [card for card in cards if not card.is_public]
+
+    if search_query:
+        cards = [card for card in cards if search_query.lower() in card.name.lower() or search_query.lower() in card.title.lower()]
+
+    return render_template('dashboard/cards_list.html',
+                          cards=cards,
+                          status_filter=status_filter,
+                          search_query=search_query)

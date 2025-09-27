@@ -95,7 +95,7 @@
             {% endif %}
             {% endif %}
         }
-        
+               
         .avatar {
             width: 120px;
             height: 120px;
@@ -110,13 +110,12 @@
             border-radius: 12px;
             width: 220px;
             height: 120px;
-            padding: 10px;
             {% else %}
             border-radius: 10px;
             {% endif %}
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            background: {% if card.theme.avatar_shape == 'rectangle' %}{{ card.theme.avatar_border_color or '#ffffff' }}{% else %}#f8f9fa{% endif %};
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            background: {% if card.theme.avatar_shape == 'rectangle' %}transparent{% else %}#f8f9fa{% endif %};
             border: 4px solid {{ card.theme.avatar_border_color or '#ffffff' }};
         }
         

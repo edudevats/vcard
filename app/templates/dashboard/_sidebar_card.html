@@ -1,0 +1,36 @@
+<!-- Card-specific Dashboard Sidebar Component -->
+<div class="sidebar">
+    <h5 class="mb-3">
+        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+    </h5>
+
+    <nav class="nav flex-column">
+        <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+            <i class="fas fa-home me-2"></i>Inicio
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.edit_card' }}" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+            <i class="fas fa-edit me-2"></i>Editar Tarjeta
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_services' }}" href="{{ url_for('dashboard.card_services', id=card.id) }}">
+            <i class="fas fa-concierge-bell me-2"></i>Servicios
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_products' }}" href="{{ url_for('dashboard.card_products', id=card.id) }}">
+            <i class="fas fa-box me-2"></i>Productos
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_gallery' }}" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
+            <i class="fas fa-images me-2"></i>Galería
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_avatar' }}" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
+            <i class="fas fa-user-circle me-2"></i>Avatar
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_theme' }}" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
+            <i class="fas fa-palette me-2"></i>Personalizar
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_social_networks' }}" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
+            <i class="fas fa-share-alt me-2"></i>Redes Sociales
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.card_qr' }}" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
+            <i class="fas fa-qrcode me-2"></i>Código QR
+        </a>
+    </nav>
+</div>

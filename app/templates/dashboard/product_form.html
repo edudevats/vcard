@@ -6,37 +6,37 @@
 <div class="row">
     <!-- Sidebar -->
     <div class="col-md-3">
-        <div class="sidebar">
-            <h5 class="mb-3">
-                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        <div class="sidebar" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; padding: 2rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); margin-bottom: 2rem; min-height: calc(100vh - 4rem); position: sticky; top: 2rem;">
+            <h5 class="mb-3" style="color: #2d3748; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fas fa-tachometer-alt" style="color: var(--primary-color);"></i>Dashboard
             </h5>
             <nav class="nav flex-column">
-                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
-                    <i class="fas fa-home me-2"></i>Inicio
+                <a class="nav-link" href="{{ url_for('dashboard.index') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-home"></i>Inicio
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
-                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
+                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-edit"></i>Editar Tarjeta
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
-                    <i class="fas fa-concierge-bell me-2"></i>Servicios
+                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-concierge-bell"></i>Servicios
                 </a>
-                <a class="nav-link active" href="{{ url_for('dashboard.card_products', id=card.id) }}">
-                    <i class="fas fa-box me-2"></i>Productos
+                <a class="nav-link active" href="{{ url_for('dashboard.card_products', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; box-shadow: 0 4px 15px rgba(var(--primary-color), 0.3);">
+                    <i class="fas fa-box"></i>Productos
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
-                    <i class="fas fa-images me-2"></i>Galería
+                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-images"></i>Galería
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
-                    <i class="fas fa-user-circle me-2"></i>Avatar
+                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-user-circle"></i>Avatar
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
-                    <i class="fas fa-palette me-2"></i>Personalizar
+                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-palette"></i>Personalizar
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
-                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
+                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-share-alt"></i>Redes Sociales
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
-                    <i class="fas fa-qrcode me-2"></i>Código QR
+                <a class="nav-link" href="{{ url_for('dashboard.card_qr', id=card.id) }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1rem; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease; margin-bottom: 0.25rem; background: rgba(108, 114, 128, 0.08); border: 1px solid rgba(108, 114, 128, 0.15);">
+                    <i class="fas fa-qrcode"></i>Código QR
                 </a>
             </nav>
         </div>

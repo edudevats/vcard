@@ -4,222 +4,246 @@
 
 {% block content %}
 <div class="row">
-    <!-- Sidebar -->
     <div class="col-md-3">
-        <div class="sidebar">
-            <h5 class="mb-3">
-                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-            </h5>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="{{ url_for('dashboard.index') }}">
-                    <i class="fas fa-home me-2"></i>Inicio
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
-                    <i class="fas fa-edit me-2"></i>Editar Tarjeta
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_services', id=card.id) }}">
-                    <i class="fas fa-concierge-bell me-2"></i>Servicios
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_products', id=card.id) }}">
-                    <i class="fas fa-box me-2"></i>Productos
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_gallery', id=card.id) }}">
-                    <i class="fas fa-images me-2"></i>Galería
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_avatar', id=card.id) }}">
-                    <i class="fas fa-user-circle me-2"></i>Avatar
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_theme', id=card.id) }}">
-                    <i class="fas fa-palette me-2"></i>Personalizar
-                </a>
-                <a class="nav-link" href="{{ url_for('dashboard.card_social_networks', id=card.id) }}">
-                    <i class="fas fa-share-alt me-2"></i>Redes Sociales
-                </a>
-                <a class="nav-link active" href="{{ url_for('dashboard.card_qr', id=card.id) }}">
-                    <i class="fas fa-qrcode me-2"></i>Código QR
-                </a>
-            </nav>
-        </div>
+        {% include 'dashboard/_sidebar_card.html' %}
     </div>
-    
-    <!-- Main Content -->
     <div class="col-md-9">
-        <div class="main-content">
+        <div class="main-content" style="padding: 2rem;">
+        <div class="qr-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-qrcode"></i>
+                    Código QR
+                </h1>
+                <p class="page-subtitle">{{ card.name }}</p>
+            </div>
+            {% if card.is_public %}
+                <a href="{{ card.get_public_url() }}" target="_blank" class="view-public-btn">
+                    <i class="fas fa-external-link-alt"></i>
+                    Ver Pública
+                </a>
+            {% endif %}
+        </div>
+
             <!-- Hidden CSRF token for AJAX requests -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-qrcode me-2"></i>Código QR
-                    <small class="text-muted">- {{ card.name }}</small>
-                </h2>
-                {% if card.is_public %}
-                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
-                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
-                    </a>
-                {% endif %}
-            </div>
-            
-            <div class="row">
-                <!-- QR Code Display -->
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-qrcode me-2"></i>Tu Código QR Personalizado
-                            </h5>
-                        </div>
-                        <div class="card-body text-center">
-                            {% if not card.is_public %}
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>Tarjeta Privada:</strong> Tu tarjeta debe estar pública para que el código QR funcione correctamente.
-                                    <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="alert-link">Hacerla pública</a>
-                                </div>
-                            {% endif %}
-                            
-                            <!-- QR Code Container -->
-                            <div class="qr-container mb-4" style="
-                                background: linear-gradient(135deg, {{ card.theme.primary_color }}10, {{ card.theme.secondary_color }}10);
-                                border-radius: 20px;
-                                padding: 30px;
-                                display: inline-block;
-                            ">
-                                <img id="qr-image" src="{{ qr_base64 }}" alt="Código QR de {{ card.name }}" 
-                                     class="img-fluid" style="max-width: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-                            </div>
-                            
-                            <!-- QR Info -->
-                            <div class="qr-info mb-4">
-                                <h6 style="color: {{ card.theme.primary_color }};">
-                                    <i class="fas fa-link me-2"></i>URL de la tarjeta:
-                                </h6>
-                                <div class="input-group">
-                                    <input type="text" id="card-url" class="form-control text-center" 
-                                           value="{{ card_url }}" readonly>
-                                    <button type="button" class="btn btn-outline-secondary" 
-                                            onclick="copyToClipboard('card-url')">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Action Buttons -->
-                            <div class="d-flex flex-wrap gap-2 justify-content-center">
-                                <a id="download-qr-btn" href="{{ url_for('dashboard.download_qr', id=card.id) }}" 
-                                   class="btn btn-primary">
-                                    <i class="fas fa-download me-1"></i>Descargar PNG
-                                </a>
-                                
-                                <button type="button" class="btn btn-success" onclick="saveQR()">
-                                    <i class="fas fa-save me-1"></i>Guardar en Servidor
-                                </button>
-                                
-                                <button type="button" class="btn btn-info" onclick="printQR()">
-                                    <i class="fas fa-print me-1"></i>Imprimir
-                                </button>
-                                
-                                <button type="button" class="btn btn-outline-secondary" 
-                                        data-bs-toggle="modal" data-bs-target="#shareModal">
-                                    <i class="fas fa-share-alt me-1"></i>Compartir
-                                </button>
-                            </div>
-                        </div>
+            {% if not card.is_public %}
+                <div class="status-alert warning">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Tarjeta Privada</h4>
+                        <p>Tu tarjeta debe estar pública para que el código QR funcione correctamente.</p>
+                        <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="action-link">
+                            <i class="fas fa-globe"></i>
+                            Hacerla Pública
+                        </a>
                     </div>
                 </div>
-                
-                <!-- QR Options -->
-                <div class="col-lg-4">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="fas fa-cog me-2"></i>Personalizar QR
-                            </h6>
+            {% endif %}
+            
+            <div class="qr-display-section">
+                <div class="qr-display-container">
+                    <div class="qr-code-wrapper" style="background: linear-gradient(135deg, {{ card.theme.primary_color }}15, {{ card.theme.secondary_color }}15);">
+                        <img id="qr-image" src="{{ qr_base64 }}" alt="Código QR de {{ card.name }}" class="qr-image">
+                    </div>
+                    
+                    <div class="url-display">
+                        <h3 class="url-title" style="color: {{ card.theme.primary_color }};">
+                            <i class="fas fa-link"></i>
+                            URL de tu tarjeta
+                        </h3>
+                        <div class="url-input-group">
+                            <input type="text" id="card-url" class="url-input" value="{{ card_url }}" readonly>
+                            <button type="button" class="copy-btn" onclick="copyToClipboard('card-url')">
+                                <i class="fas fa-copy"></i>
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Estilo del QR:</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="qr-style" 
-                                           id="style-themed" value="themed" checked>
-                                    <label class="form-check-label" for="style-themed">
-                                        Con colores del tema
+                    </div>
+                    
+                    <div class="qr-actions">
+                        <a id="download-qr-btn" href="{{ url_for('dashboard.download_qr', id=card.id) }}" class="action-btn primary">
+                            <i class="fas fa-download"></i>
+                            <span>Descargar PNG</span>
+                        </a>
+                        
+                        <button type="button" class="action-btn success" onclick="saveQR()">
+                            <i class="fas fa-save"></i>
+                            <span>Guardar</span>
+                        </button>
+                        
+                        <button type="button" class="action-btn info" onclick="printQR()">
+                            <i class="fas fa-print"></i>
+                            <span>Imprimir</span>
+                        </button>
+                        
+                        <button type="button" class="action-btn outline" data-bs-toggle="modal" data-bs-target="#shareModal">
+                            <i class="fas fa-share-alt"></i>
+                            <span>Compartir</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="qr-customization">
+                <div class="customization-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-palette"></i>
+                            Personalizar QR
+                        </h3>
+                        <p>Ajusta el estilo y tamaño de tu código QR</p>
+                    </div>
+                    
+                    <div class="customization-content">
+                        <div class="style-section">
+                            <h4 class="section-title">Estilo del QR</h4>
+                            <div class="style-options">
+                                <div class="style-option">
+                                    <input type="radio" name="qr-style" id="style-themed" value="themed" checked>
+                                    <label for="style-themed" class="style-label themed">
+                                        <div class="style-preview">
+                                            <div class="qr-preview themed" style="background: linear-gradient(45deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});"></div>
+                                        </div>
+                                        <div class="style-info">
+                                            <span class="style-name">Con colores del tema</span>
+                                            <small>Usa los colores de tu tarjeta</small>
+                                        </div>
                                     </label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="qr-style" 
-                                           id="style-classic" value="classic">
-                                    <label class="form-check-label" for="style-classic">
-                                        Clásico (blanco y negro)
+                                
+                                <div class="style-option">
+                                    <input type="radio" name="qr-style" id="style-classic" value="classic">
+                                    <label for="style-classic" class="style-label classic">
+                                        <div class="style-preview">
+                                            <div class="qr-preview classic"></div>
+                                        </div>
+                                        <div class="style-info">
+                                            <span class="style-name">Clásico</span>
+                                            <small>Blanco y negro tradicional</small>
+                                        </div>
                                     </label>
                                 </div>
+                                
                                 {% if card.avatar_path %}
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="qr-style" 
-                                           id="style-logo" value="logo">
-                                    <label class="form-check-label" for="style-logo">
-                                        Con tu avatar al centro (clásico)
+                                <div class="style-option">
+                                    <input type="radio" name="qr-style" id="style-logo" value="logo">
+                                    <label for="style-logo" class="style-label logo">
+                                        <div class="style-preview">
+                                            <div class="qr-preview logo">
+                                                <i class="fas fa-user-circle"></i>
+                                            </div>
+                                        </div>
+                                        <div class="style-info">
+                                            <span class="style-name">Con tu avatar</span>
+                                            <small>Avatar al centro, clásico</small>
+                                        </div>
                                     </label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="qr-style" 
-                                           id="style-logo-themed" value="logo-themed">
-                                    <label class="form-check-label" for="style-logo-themed">
-                                        Con tu avatar + colores del tema
+                                
+                                <div class="style-option">
+                                    <input type="radio" name="qr-style" id="style-logo-themed" value="logo-themed">
+                                    <label for="style-logo-themed" class="style-label logo-themed">
+                                        <div class="style-preview">
+                                            <div class="qr-preview logo-themed" style="background: linear-gradient(45deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});">
+                                                <i class="fas fa-user-circle"></i>
+                                            </div>
+                                        </div>
+                                        <div class="style-info">
+                                            <span class="style-name">Avatar + Colores</span>
+                                            <small>Avatar con colores del tema</small>
+                                        </div>
                                     </label>
                                 </div>
                                 {% endif %}
                             </div>
-                            
-                            <div class="mb-3">
-                                <label for="qr-size" class="form-label">Tamaño:</label>
-                                <select id="qr-size" class="form-select">
+                        </div>
+                        
+                        <div class="size-section">
+                            <h4 class="section-title">Tamaño</h4>
+                            <div class="size-selector">
+                                <select id="qr-size" class="custom-select">
                                     <option value="300">Pequeño (300px)</option>
                                     <option value="400" selected>Mediano (400px)</option>
                                     <option value="600">Grande (600px)</option>
                                     <option value="800">Extra Grande (800px)</option>
                                 </select>
+                                <div class="size-indicator">
+                                    <div class="size-preview" id="size-preview"></div>
+                                </div>
                             </div>
-                            
-                            <button type="button" class="btn btn-outline-primary w-100" onclick="regenerateQR()">
-                                <i class="fas fa-sync-alt me-1"></i>Regenerar QR
-                            </button>
                         </div>
+                        
+                        <button type="button" class="regenerate-btn" onclick="regenerateQR()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Regenerar QR</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="usage-guide">
+                    <div class="guide-header">
+                        <h3>
+                            <i class="fas fa-lightbulb"></i>
+                            ¿Cómo usar tu QR?
+                        </h3>
                     </div>
                     
-                    <!-- Usage Instructions -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="fas fa-info-circle me-2"></i>¿Cómo usar tu QR?
-                            </h6>
+                    <div class="guide-content">
+                        <div class="usage-category">
+                            <div class="category-header">
+                                <i class="fas fa-mobile-alt"></i>
+                                <h4>En tu teléfono</h4>
+                            </div>
+                            <ul class="usage-list">
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Guarda la imagen en tu galería</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Úsala como fondo de pantalla</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Compártela por WhatsApp o email</span>
+                                </li>
+                            </ul>
                         </div>
-                        <div class="card-body">
-                            <div class="small">
-                                <div class="mb-3">
-                                    <h6><i class="fas fa-mobile-alt me-2 text-primary"></i>En tu teléfono:</h6>
-                                    <ul class="mb-0">
-                                        <li>Guarda la imagen en tu galería</li>
-                                        <li>Úsala como fondo de pantalla de bloqueo</li>
-                                        <li>Compártela por WhatsApp o email</li>
-                                    </ul>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <h6><i class="fas fa-print me-2 text-success"></i>Impreso:</h6>
-                                    <ul class="mb-0">
-                                        <li>Tarjetas de presentación</li>
-                                        <li>Flyers y folletos</li>
-                                        <li>Carteles y banners</li>
-                                        <li>Pegatinas y stickers</li>
-                                    </ul>
-                                </div>
-                                
-                                <div class="alert alert-info small">
-                                    <i class="fas fa-lightbulb me-1"></i>
-                                    <strong>Consejo:</strong> Asegúrate de que tu tarjeta esté pública 
-                                    antes de compartir el QR.
-                                </div>
+                        
+                        <div class="usage-category">
+                            <div class="category-header">
+                                <i class="fas fa-print"></i>
+                                <h4>Material impreso</h4>
+                            </div>
+                            <ul class="usage-list">
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Tarjetas de presentación</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Flyers y folletos publicitarios</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Carteles y banners</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Pegatinas y stickers</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="pro-tip">
+                            <div class="tip-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="tip-content">
+                                <strong>Tip Profesional:</strong> Asegúrate de que tu tarjeta esté configurada como pública antes de compartir el código QR para garantizar que funcione correctamente.
                             </div>
                         </div>
                     </div>
@@ -231,34 +255,72 @@
 
 <!-- Share Modal -->
 <div class="modal fade" id="shareModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content share-modal">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-share-alt me-2"></i>Compartir Código QR
-                </h5>
+                <div class="modal-title-wrapper">
+                    <h3 class="modal-title">
+                        <i class="fas fa-share-alt"></i>
+                        Compartir Código QR
+                    </h3>
+                    <p class="modal-subtitle">Comparte tu tarjeta digital con el mundo</p>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="text-center mb-3">
-                    <img src="{{ qr_base64 }}" alt="QR Code" style="max-width: 200px;" class="img-fluid">
+                <div class="share-preview">
+                    <div class="qr-preview-container">
+                        <img src="{{ qr_base64 }}" alt="QR Code" class="modal-qr-image">
+                    </div>
+                    <div class="share-info">
+                        <h4>{{ card.name }}</h4>
+                        <p class="share-url">{{ card_url }}</p>
+                    </div>
                 </div>
                 
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-success" onclick="shareWhatsApp()">
-                        <i class="fab fa-whatsapp me-2"></i>Compartir por WhatsApp
+                <div class="share-options">
+                    <button type="button" class="share-btn whatsapp" onclick="shareWhatsApp()">
+                        <div class="share-btn-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="share-btn-content">
+                            <span class="share-btn-title">WhatsApp</span>
+                            <small>Comparte por mensaje</small>
+                        </div>
+                        <i class="fas fa-chevron-right share-btn-arrow"></i>
                     </button>
                     
-                    <button type="button" class="btn btn-primary" onclick="shareEmail()">
-                        <i class="fas fa-envelope me-2"></i>Enviar por Email
+                    <button type="button" class="share-btn email" onclick="shareEmail()">
+                        <div class="share-btn-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="share-btn-content">
+                            <span class="share-btn-title">Email</span>
+                            <small>Envía por correo electrónico</small>
+                        </div>
+                        <i class="fas fa-chevron-right share-btn-arrow"></i>
                     </button>
                     
-                    <button type="button" class="btn btn-info" onclick="shareTelegram()">
-                        <i class="fab fa-telegram-plane me-2"></i>Compartir en Telegram
+                    <button type="button" class="share-btn telegram" onclick="shareTelegram()">
+                        <div class="share-btn-icon">
+                            <i class="fab fa-telegram-plane"></i>
+                        </div>
+                        <div class="share-btn-content">
+                            <span class="share-btn-title">Telegram</span>
+                            <small>Comparte en Telegram</small>
+                        </div>
+                        <i class="fas fa-chevron-right share-btn-arrow"></i>
                     </button>
                     
-                    <button type="button" class="btn btn-secondary" onclick="copyQRLink()">
-                        <i class="fas fa-link me-2"></i>Copiar Enlace
+                    <button type="button" class="share-btn copy" onclick="copyQRLink()">
+                        <div class="share-btn-icon">
+                            <i class="fas fa-link"></i>
+                        </div>
+                        <div class="share-btn-content">
+                            <span class="share-btn-title">Copiar Enlace</span>
+                            <small>Copia la URL al portapapeles</small>
+                        </div>
+                        <i class="fas fa-chevron-right share-btn-arrow"></i>
                     </button>
                 </div>
             </div>
@@ -278,10 +340,10 @@ function regenerateQR() {
     
     // Show loading
     const qrImage = document.getElementById('qr-image');
-    const regenerateBtn = document.querySelector('button[onclick="regenerateQR()"]');
+    const regenerateBtn = document.querySelector('.regenerate-btn');
     
     qrImage.style.opacity = '0.5';
-    regenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generando...';
+    regenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Generando...</span>';
     regenerateBtn.disabled = true;
     
     fetch(`{{ url_for('dashboard.generate_qr', id=card.id) }}`, {
@@ -305,21 +367,21 @@ function regenerateQR() {
         if (data.success) {
             qrImage.src = data.qr_code;
             qrImage.style.opacity = '1';
-            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
+            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Regenerar QR</span>';
             regenerateBtn.disabled = false;
             console.log('QR regenerated successfully');
         } else {
-            alert('Error al generar el código QR: ' + (data.error || 'Error desconocido'));
+            showNotification('Error al generar el código QR: ' + (data.error || 'Error desconocido'), 'error');
             qrImage.style.opacity = '1';
-            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
+            regenerateBtn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Regenerar QR</span>';
             regenerateBtn.disabled = false;
         }
     })
     .catch(error => {
         console.error('Error regenerating QR:', error);
-        alert('Error al generar el código QR: ' + error.message);
+        showNotification('Error al generar el código QR: ' + error.message, 'error');
         qrImage.style.opacity = '1';
-        regenerateBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Regenerar QR';
+        regenerateBtn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Regenerar QR</span>';
         regenerateBtn.disabled = false;
     });
 }
@@ -337,9 +399,9 @@ function updateDownloadLink(style, size) {
 
 function saveQR() {
     // Show loading state
-    const saveBtn = document.querySelector('button[onclick="saveQR()"]');
-    const originalText = saveBtn.innerHTML;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+    const saveBtn = document.querySelector('.action-btn.success');
+    const originalHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Guardando...</span>';
     saveBtn.disabled = true;
     
     fetch(`{{ url_for('dashboard.save_card_qr', id=card.id) }}`, {
@@ -352,26 +414,25 @@ function saveQR() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            saveBtn.innerHTML = '<i class="fas fa-check me-1"></i>¡Guardado!';
-            saveBtn.classList.remove('btn-success');
-            saveBtn.classList.add('btn-outline-success');
+            saveBtn.innerHTML = '<i class="fas fa-check"></i><span>¡Guardado!</span>';
+            saveBtn.classList.add('saved');
+            showNotification('¡Código QR guardado exitosamente!', 'success');
             
             setTimeout(() => {
-                saveBtn.innerHTML = originalText;
-                saveBtn.classList.add('btn-success');
-                saveBtn.classList.remove('btn-outline-success');
+                saveBtn.innerHTML = originalHTML;
+                saveBtn.classList.remove('saved');
                 saveBtn.disabled = false;
             }, 2000);
         } else {
-            alert('Error al guardar: ' + (data.error || 'Error desconocido'));
-            saveBtn.innerHTML = originalText;
+            showNotification('Error al guardar: ' + (data.error || 'Error desconocido'), 'error');
+            saveBtn.innerHTML = originalHTML;
             saveBtn.disabled = false;
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al guardar el código QR: ' + error.message);
-        saveBtn.innerHTML = originalText;
+        showNotification('Error al guardar el código QR: ' + error.message, 'error');
+        saveBtn.innerHTML = originalHTML;
         saveBtn.disabled = false;
     });
 }
@@ -386,30 +447,66 @@ function printQR() {
                 <style>
                     body { 
                         margin: 0; 
-                        padding: 20px; 
+                        padding: 40px; 
                         text-align: center; 
-                        font-family: Arial, sans-serif;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background: white;
+                    }
+                    .header { 
+                        margin-bottom: 30px;
                     }
                     h1 { 
                         color: {{ card.theme.primary_color }}; 
-                        margin-bottom: 20px;
+                        margin: 0 0 10px 0;
+                        font-size: 32px;
+                        font-weight: 600;
+                    }
+                    .subtitle {
+                        color: #666;
+                        font-size: 18px;
+                        margin: 0 0 30px 0;
+                    }
+                    .qr-wrapper {
+                        margin: 30px 0;
+                        padding: 30px;
+                        border: 2px solid #f0f0f0;
+                        border-radius: 15px;
+                        display: inline-block;
                     }
                     img { 
                         max-width: 400px; 
-                        margin: 20px 0;
+                        border-radius: 10px;
                     }
                     .url {
-                        font-size: 12px;
+                        font-size: 14px;
                         color: #666;
                         word-break: break-all;
-                        margin-top: 10px;
+                        margin-top: 30px;
+                        padding: 15px;
+                        background: #f8f9fa;
+                        border-radius: 8px;
+                        font-family: monospace;
+                    }
+                    .instructions {
+                        margin-top: 30px;
+                        font-size: 12px;
+                        color: #888;
+                        line-height: 1.5;
                     }
                 </style>
             </head>
             <body>
-                <h1>{{ card.title or card.name }}</h1>
-                <img src="${qrImage.src}" alt="Código QR">
+                <div class="header">
+                    <h1>{{ card.title or card.name }}</h1>
+                    <div class="subtitle">Tarjeta Digital</div>
+                </div>
+                <div class="qr-wrapper">
+                    <img src="${qrImage.src}" alt="Código QR">
+                </div>
                 <div class="url">{{ card_url }}</div>
+                <div class="instructions">
+                    Escanea este código QR con tu teléfono para ver la tarjeta digital
+                </div>
             </body>
         </html>
     `);
@@ -427,18 +524,18 @@ function copyToClipboard(elementId) {
     const button = element.nextElementSibling;
     const originalHTML = button.innerHTML;
     button.innerHTML = '<i class="fas fa-check"></i>';
-    button.classList.add('btn-success');
-    button.classList.remove('btn-outline-secondary');
+    button.classList.add('copied');
+    
+    showNotification('¡URL copiada al portapapeles!', 'success');
     
     setTimeout(() => {
         button.innerHTML = originalHTML;
-        button.classList.remove('btn-success');
-        button.classList.add('btn-outline-secondary');
+        button.classList.remove('copied');
     }, 2000);
 }
 
 function shareWhatsApp() {
-    const text = `¡Mira mi tarjeta digital! {{ card.name }} - {{ card_url }}`;
+    const text = `¡Mira mi tarjeta digital! ${decodeURIComponent('{{ card.name }}')} - {{ card_url }}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
@@ -455,7 +552,40 @@ function shareTelegram() {
 
 function copyQRLink() {
     navigator.clipboard.writeText('{{ card_url }}');
-    alert('Enlace copiado al portapapeles');
+    showNotification('¡Enlace copiado al portapapeles!', 'success');
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => notification.classList.add('show'), 100);
+    
+    // Hide notification
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function updateSizePreview() {
+    const size = parseInt(document.getElementById('qr-size').value);
+    const preview = document.getElementById('size-preview');
+    const scale = Math.min(size / 400, 1); // Scale relative to 400px base
+    preview.style.transform = `scale(${scale})`;
 }
 
 // Add event listeners when page loads
@@ -466,6 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const defaultStyle = document.querySelector('input[name="qr-style"]:checked').value;
     const defaultSize = document.getElementById('qr-size').value;
     updateDownloadLink(defaultStyle, defaultSize);
+    updateSizePreview();
     
     // Add event listeners to QR style radio buttons
     const styleRadios = document.querySelectorAll('input[name="qr-style"]');
@@ -476,7 +607,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listener to size select
     const sizeSelect = document.getElementById('qr-size');
     if (sizeSelect) {
-        sizeSelect.addEventListener('change', regenerateQR);
+        sizeSelect.addEventListener('change', function() {
+            updateSizePreview();
+            regenerateQR();
+        });
     }
     
     console.log('Event listeners added to QR customization controls');
@@ -484,25 +618,1452 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Modern QR Code Dashboard Styles */
 .qr-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+    position: relative;
+}
+
+.qr-sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 0 2rem 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.sidebar-header h3 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sidebar-header h3 i {
+    color: var(--primary-color);
+}
+
+.sidebar-subtitle {
+    color: #718096;
+    font-size: 0.875rem;
+    margin: 0.5rem 0 0;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.nav-item:hover {
+    background: #e2e8f0;
+    color: #374151;
+    transform: none;
+    border-color: #cbd5e1;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.nav-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.qr-main {
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.qr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-content h1 {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-content h1 i {
+    color: #ffd700;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.125rem;
+    margin: 0.5rem 0 0;
+}
+
+.view-public-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+}
+
+.view-public-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.status-alert {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    border-left: 4px solid #f59e0b;
+}
+
+.status-alert.warning {
+    border-left-color: #f59e0b;
+}
+
+.alert-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.alert-content h4 {
+    color: #1a202c;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.alert-content p {
+    color: #4a5568;
+    margin: 0 0 1rem;
+    line-height: 1.5;
+}
+
+.action-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    transition: all 0.2s ease;
+}
+
+.action-link:hover {
+    background: rgba(102, 126, 234, 0.2);
+    color: var(--primary-color);
+}
+
+.qr-display-section {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 3rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.qr-display-container {
+    text-align: center;
+}
+
+.qr-code-wrapper {
+    display: inline-block;
+    padding: 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
     transition: all 0.3s ease;
 }
 
-.qr-container:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+.qr-code-wrapper:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
-#qr-image {
-    transition: opacity 0.3s ease;
+.qr-image {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
-.form-check {
-    margin-bottom: 0.5rem;
+.url-display {
+    margin-bottom: 2rem;
 }
 
-.alert-info {
-    border-left: 4px solid #17a2b8;
+.url-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.url-input-group {
+    display: flex;
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.url-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: none;
+    background: #f7fafc;
+    font-size: 0.875rem;
+    font-family: monospace;
+    color: #2d3748;
+    text-align: center;
+}
+
+.url-input:focus {
+    outline: none;
+    background: #edf2f7;
+}
+
+.copy-btn {
+    background: #667eea;
+    border: none;
+    color: white;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.copy-btn:hover {
+    background: #5a67d8;
+}
+
+.copy-btn.copied {
+    background: #48bb78;
+}
+
+.qr-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.action-btn.success {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+}
+
+.action-btn.success.saved {
+    background: linear-gradient(135deg, #68d391, #48bb78);
+}
+
+.action-btn.info {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    color: white;
+}
+
+.action-btn.outline {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    color: var(--primary-color);
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.qr-customization {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.customization-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.card-header h3 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-header h3 i {
+    color: var(--primary-color);
+}
+
+.card-header p {
+    color: #718096;
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+}
+
+.customization-content {
+    padding: 2rem;
+}
+
+.style-section, .size-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    color: #2d3748;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.style-options {
+    display: grid;
+    gap: 1rem;
+}
+
+.style-option {
+    position: relative;
+}
+
+.style-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.style-label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.style-label:hover {
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.style-option input[type="radio"]:checked + .style-label {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.style-preview {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.qr-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr-preview.themed {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+}
+
+.qr-preview.classic {
+    background: #000;
+}
+
+.qr-preview.logo, .qr-preview.logo-themed {
+    color: white;
+    font-size: 1.125rem;
+}
+
+.qr-preview.logo {
+    background: #000;
+}
+
+.style-info {
+    flex: 1;
+}
+
+.style-name {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.style-info small {
+    color: #718096;
+    font-size: 0.75rem;
+}
+
+.size-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.custom-select {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #2d3748;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.custom-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.size-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: #f7fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.size-preview {
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 2px;
+    transition: transform 0.2s ease;
+}
+
+.regenerate-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.regenerate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.regenerate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.usage-guide {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.guide-header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.guide-header h3 {
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.guide-header h3 i {
+    color: #f59e0b;
+}
+
+.guide-content {
+    padding: 2rem;
+}
+
+.usage-category {
+    margin-bottom: 2rem;
+}
+
+.usage-category:last-child {
+    margin-bottom: 0;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.category-header i {
+    color: var(--primary-color);
+    font-size: 1.125rem;
+}
+
+.category-header h4 {
+    color: #2d3748;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.usage-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.usage-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: #4a5568;
+    font-size: 0.875rem;
+}
+
+.usage-list li i {
+    color: #48bb78;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.pro-tip {
+    background: linear-gradient(135deg, #fef5e7, #fed7aa);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.tip-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+}
+
+.tip-content {
+    color: #744210;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.tip-content strong {
+    color: #92400e;
+}
+
+/* Share Modal Styles */
+.share-modal .modal-header {
+    border: none;
+    padding: 2rem 2rem 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-title-wrapper h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-subtitle {
+    margin: 0.5rem 0 0;
+    opacity: 0.9;
+    font-size: 0.875rem;
+}
+
+.share-modal .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+.share-modal .modal-body {
+    padding: 2rem;
+}
+
+.share-preview {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.qr-preview-container {
+    margin-bottom: 1.5rem;
+}
+
+.modal-qr-image {
+    max-width: 150px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.share-info h4 {
+    color: #2d3748;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.share-url {
+    color: #718096;
+    font-size: 0.75rem;
+    font-family: monospace;
+    margin: 0;
+    word-break: break-all;
+}
+
+.share-options {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.share-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.share-btn:hover {
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.share-btn-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.share-btn.whatsapp .share-btn-icon {
+    background: linear-gradient(135deg, #25d366, #1ebe57);
+}
+
+.share-btn.email .share-btn-icon {
+    background: linear-gradient(135deg, #4285f4, #3367d6);
+}
+
+.share-btn.telegram .share-btn-icon {
+    background: linear-gradient(135deg, #0088cc, #006da8);
+}
+
+.share-btn.copy .share-btn-icon {
+    background: linear-gradient(135deg, #718096, #4a5568);
+}
+
+.share-btn-content {
+    flex: 1;
+}
+
+.share-btn-title {
+    color: #2d3748;
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.share-btn-content small {
+    color: #718096;
+    font-size: 0.75rem;
+}
+
+.share-btn-arrow {
+    color: #cbd5e0;
+    font-size: 0.875rem;
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    z-index: 10000;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    border-left: 4px solid #48bb78;
+    max-width: 400px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.error {
+    border-left-color: #f56565;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification-content i {
+    font-size: 1.25rem;
+}
+
+.notification.success .notification-content i {
+    color: #48bb78;
+}
+
+.notification.error .notification-content i {
+    color: #f56565;
+}
+
+.notification-content span {
+    color: #2d3748;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Mobile-First Responsive Design */
+@media (max-width: 1200px) {
+    .qr-customization {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .usage-guide {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .qr-container {
+        grid-template-columns: 1fr;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .qr-sidebar {
+        position: relative;
+        height: auto;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.98);
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar-header {
+        padding: 0 1rem 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .sidebar-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+        padding: 0 0.5rem;
+    }
+    
+    .nav-item {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.75rem;
+        gap: 0.5rem;
+        text-align: center;
+        flex-direction: column;
+        border-radius: 8px;
+        min-height: auto;
+    }
+    
+    .nav-item i {
+        font-size: 1.25rem;
+        width: auto;
+    }
+    
+    .nav-item span {
+        font-size: 0.65rem;
+        line-height: 1.2;
+    }
+    
+    .qr-main {
+        padding: 1rem;
+    }
+    
+    .qr-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .header-content h1 {
+        font-size: 1.75rem;
+    }
+    
+    .view-public-btn {
+        font-size: 0.875rem;
+        padding: 0.625rem 1.25rem;
+    }
+    
+    .status-alert {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .alert-icon {
+        width: 40px;
+        height: 40px;
+        align-self: center;
+    }
+    
+    .qr-display-section {
+        padding: 1.5rem 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .qr-code-wrapper {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .qr-image {
+        max-width: 280px;
+    }
+    
+    .url-title {
+        font-size: 1.125rem;
+    }
+    
+    .url-input-group {
+        max-width: 100%;
+        flex-direction: column;
+        border-radius: 12px;
+    }
+    
+    .url-input {
+        border-radius: 12px 12px 0 0;
+        text-align: left;
+        padding: 1rem;
+        font-size: 0.75rem;
+    }
+    
+    .copy-btn {
+        border-radius: 0 0 12px 12px;
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .qr-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    
+    .action-btn {
+        padding: 0.875rem 1rem;
+        font-size: 0.8rem;
+        min-width: auto;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+    
+    .action-btn i {
+        font-size: 1.125rem;
+    }
+    
+    .action-btn span {
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+    
+    .qr-customization {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .customization-card, .usage-guide {
+        margin-bottom: 1rem;
+    }
+    
+    .card-header, .guide-header {
+        padding: 1.5rem 1.5rem 0.75rem;
+    }
+    
+    .card-header h3, .guide-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .customization-content, .guide-content {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+    
+    .style-options {
+        gap: 0.75rem;
+    }
+    
+    .style-label {
+        padding: 0.875rem;
+        gap: 0.75rem;
+    }
+    
+    .style-preview {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .qr-preview {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .style-name {
+        font-size: 0.8rem;
+    }
+    
+    .style-info small {
+        font-size: 0.7rem;
+    }
+    
+    .size-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .size-indicator {
+        width: 50px;
+        height: 50px;
+        align-self: center;
+    }
+    
+    .regenerate-btn {
+        padding: 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .usage-category {
+        margin-bottom: 1.5rem;
+    }
+    
+    .category-header h4 {
+        font-size: 0.95rem;
+    }
+    
+    .usage-list li {
+        font-size: 0.8rem;
+        padding: 0.375rem 0;
+    }
+    
+    .pro-tip {
+        padding: 1rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .tip-icon {
+        width: 36px;
+        height: 36px;
+        align-self: center;
+    }
+    
+    .tip-content {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .qr-main {
+        padding: 0.75rem;
+    }
+    
+    .qr-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    .header-content h1 {
+        font-size: 1.5rem;
+        gap: 0.5rem;
+    }
+    
+    .sidebar-nav {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.25rem;
+        padding: 0;
+    }
+    
+    .nav-item {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.7rem;
+    }
+    
+    .nav-item i {
+        font-size: 1rem;
+    }
+    
+    .nav-item span {
+        font-size: 0.6rem;
+    }
+    
+    .status-alert {
+        padding: 0.875rem;
+        gap: 0.5rem;
+    }
+    
+    .alert-content h4 {
+        font-size: 1rem;
+    }
+    
+    .alert-content p {
+        font-size: 0.875rem;
+    }
+    
+    .qr-display-section {
+        padding: 1rem 0.75rem;
+    }
+    
+    .qr-code-wrapper {
+        padding: 1rem;
+    }
+    
+    .qr-image {
+        max-width: 240px;
+    }
+    
+    .url-title {
+        font-size: 1rem;
+    }
+    
+    .url-input {
+        padding: 0.875rem;
+        font-size: 0.7rem;
+    }
+    
+    .copy-btn {
+        padding: 0.75rem;
+    }
+    
+    .qr-actions {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        padding: 0.75rem;
+        font-size: 0.75rem;
+        flex-direction: row;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    
+    .action-btn i {
+        font-size: 1rem;
+    }
+    
+    .action-btn span {
+        font-size: 0.75rem;
+    }
+    
+    .card-header, .guide-header {
+        padding: 1rem 1rem 0.5rem;
+    }
+    
+    .card-header h3, .guide-header h3 {
+        font-size: 1.125rem;
+    }
+    
+    .customization-content, .guide-content {
+        padding: 0.75rem 1rem 1rem;
+    }
+    
+    .section-title {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .style-label {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+    
+    .style-preview {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .qr-preview {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .style-name {
+        font-size: 0.75rem;
+    }
+    
+    .style-info small {
+        font-size: 0.65rem;
+    }
+    
+    .custom-select {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .regenerate-btn {
+        padding: 0.875rem;
+        font-size: 0.8rem;
+        gap: 0.5rem;
+    }
+    
+    .category-header {
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .category-header i {
+        font-size: 1rem;
+    }
+    
+    .category-header h4 {
+        font-size: 0.9rem;
+    }
+    
+    .usage-list li {
+        font-size: 0.75rem;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+    }
+    
+    .usage-list li i {
+        font-size: 0.7rem;
+    }
+    
+    .pro-tip {
+        padding: 0.875rem;
+        gap: 0.5rem;
+    }
+    
+    .tip-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+    }
+    
+    .tip-content {
+        font-size: 0.75rem;
+    }
+    
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        border-radius: 8px;
+        padding: 0.875rem 1rem;
+    }
+    
+    .notification-content {
+        gap: 0.5rem;
+    }
+    
+    .notification-content i {
+        font-size: 1.125rem;
+    }
+    
+    .notification-content span {
+        font-size: 0.8rem;
+    }
+}
+
+/* Share Modal Mobile Optimization */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .share-modal .modal-header {
+        padding: 1.5rem 1.5rem 0.75rem;
+    }
+    
+    .modal-title-wrapper h3 {
+        font-size: 1.25rem;
+    }
+    
+    .modal-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .share-modal .modal-body {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+    
+    .share-preview {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .modal-qr-image {
+        max-width: 120px;
+    }
+    
+    .share-info h4 {
+        font-size: 1rem;
+        margin-bottom: 0.375rem;
+    }
+    
+    .share-url {
+        font-size: 0.7rem;
+    }
+    
+    .share-options {
+        gap: 0.5rem;
+    }
+    
+    .share-btn {
+        padding: 0.875rem 1rem;
+        gap: 0.75rem;
+    }
+    
+    .share-btn-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.125rem;
+    }
+    
+    .share-btn-title {
+        font-size: 0.8rem;
+    }
+    
+    .share-btn-content small {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-dialog {
+        margin: 0.25rem;
+        max-width: calc(100% - 0.5rem);
+    }
+    
+    .share-modal .modal-header {
+        padding: 1rem;
+    }
+    
+    .modal-title-wrapper h3 {
+        font-size: 1.125rem;
+        gap: 0.5rem;
+    }
+    
+    .share-modal .modal-body {
+        padding: 0.75rem 1rem 1rem;
+    }
+    
+    .modal-qr-image {
+        max-width: 100px;
+    }
+    
+    .share-btn {
+        padding: 0.75rem 0.875rem;
+        gap: 0.5rem;
+    }
+    
+    .share-btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    
+    .share-btn-title {
+        font-size: 0.75rem;
+    }
+    
+    .share-btn-content small {
+        font-size: 0.65rem;
+    }
 }
 </style>
 {% endblock %}

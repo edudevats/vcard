@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="row">
-    <!-- Sidebar -->
     <div class="col-md-3">
         <div class="sidebar">
             <h5 class="mb-3">
@@ -41,113 +40,184 @@
             </nav>
         </div>
     </div>
-    
-    <!-- Main Content -->
+
     <div class="col-md-9">
-        <div class="main-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-share-alt me-2"></i>Configurar Redes Sociales
-                    <small class="text-muted">- {{ card.name }}</small>
-                </h2>
+    
+    <!-- Modern Main Content -->
+    <div class="social-main">
+        <div class="social-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1 class="social-title">
+                        <i class="fas fa-share-alt"></i>
+                        Redes Sociales
+                    </h1>
+                    <p class="social-subtitle">{{ card.name }}</p>
+                </div>
                 {% if card.is_public %}
-                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
-                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                    <a href="{{ card.get_public_url() }}" target="_blank" class="view-public-btn">
+                        <i class="fas fa-external-link-alt"></i>
+                        Ver Pública
                     </a>
                 {% endif %}
             </div>
-
-            <!-- Explanation -->
-            <div class="alert alert-info">
-                <h5><i class="fas fa-info-circle me-2"></i>¿Cómo funciona?</h5>
-                <p class="mb-2">Puedes personalizar qué redes sociales aparecen en la <strong>parte superior</strong> (principales) y cuáles en la <strong>parte inferior</strong> (adicionales) de tu tarjeta.</p>
-                <ul class="mb-0">
-                    <li><strong>Redes Principales:</strong> Se muestran como íconos grandes en la parte superior, más visibles</li>
-                    <li><strong>Redes Adicionales:</strong> Se muestran como íconos más pequeños en la parte inferior</li>
-                    <li><strong>Solo aparecerán:</strong> Las redes sociales que hayas configurado con valores</li>
-                </ul>
-            </div>
-
-            <form method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-cog me-2"></i>Configuración de Display
-                        </h5>
+        </div>
+        
+        <div class="social-content">
+            
+            <!-- Modern How It Works Section -->
+            <div class="info-section">
+                <div class="info-card">
+                    <div class="info-header">
+                        <div class="info-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <h3 class="info-title">¿Cómo funciona?</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Primary Networks Selection -->
-                            <div class="col-lg-6 col-md-12">
-                                <h6 class="text-primary mb-3">
-                                    <i class="fas fa-star me-2"></i>Redes Principales (Parte Superior)
-                                </h6>
-                                <p class="text-muted small mb-3">Selecciona las redes sociales que quieres mostrar de forma prominente en la parte superior de tu tarjeta.</p>
-                                
-                                <div class="social-networks-list">
-                                    {% for network in available_networks %}
-                                    <div class="social-network-item {% if not network.has_value %}disabled{% endif %}">
-                                        <div class="d-flex align-items-center">
-                                            <input class="form-check-input me-3" type="checkbox" 
-                                                   name="primary_networks" 
-                                                   value="{{ network.field }}"
-                                                   id="primary_{{ network.field }}"
-                                                   {{ 'checked' if network.field in primary_fields else '' }}
-                                                   {{ 'disabled' if not network.has_value else '' }}>
-                                            <label class="form-check-label d-flex align-items-center justify-content-between w-100" for="primary_{{ network.field }}">
-                                                <div class="d-flex align-items-center flex-grow-1">
-                                                    <i class="{{ network.icon }} me-2" style="color: {{ network.color }}; width: 20px;"></i>
-                                                    <span>{{ network.name }}</span>
-                                                </div>
-                                                {% if network.has_value %}
-                                                    <small class="text-success ms-2">
-                                                        <i class="fas fa-check-circle me-1"></i>Configurado
-                                                    </small>
-                                                {% else %}
-                                                    <small class="text-muted ms-2">
-                                                        <i class="fas fa-times-circle me-1"></i>Sin configurar
-                                                    </small>
-                                                {% endif %}
-                                            </label>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
+                    <div class="info-content">
+                        <p class="info-description">Personaliza cómo aparecen tus redes sociales en tu tarjeta digital. Tienes control total sobre su presentación.</p>
+                        <div class="info-features">
+                            <div class="feature-item">
+                                <div class="feature-icon primary">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="feature-text">
+                                    <strong>Redes Principales:</strong> Íconos grandes y prominentes en la parte superior
                                 </div>
                             </div>
-
-                            <!-- Preview -->
-                            <div class="col-lg-6 col-md-12 mt-lg-0 mt-4">
-                                <h6 class="text-secondary mb-3">
-                                    <i class="fas fa-eye me-2"></i>Vista Previa
-                                </h6>
+                            <div class="feature-item">
+                                <div class="feature-icon secondary">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <div class="feature-text">
+                                    <strong>Redes Adicionales:</strong> Íconos más pequeños en la parte inferior
+                                </div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon accent">
+                                    <i class="fas fa-filter"></i>
+                                </div>
+                                <div class="feature-text">
+                                    <strong>Auto-filtrado:</strong> Solo se muestran las redes que hayas configurado
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modern Configuration Form -->
+            <form method="POST" class="social-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="configuration-layout">
+                    <!-- Networks Selection Panel -->
+                    <div class="networks-panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">
+                                <i class="fas fa-cog"></i>
+                                Configuración de Redes
+                            </h3>
+                            <p class="panel-description">Selecciona las redes que quieres destacar como principales</p>
+                        </div>
+                        
+                        <div class="networks-grid">
+                            {% for network in available_networks %}
+                            <div class="network-card {% if not network.has_value %}network-disabled{% endif %}" data-network="{{ network.field }}">
+                                <div class="network-checkbox">
+                                    <input class="checkbox-input" type="checkbox" 
+                                           name="primary_networks" 
+                                           value="{{ network.field }}"
+                                           id="primary_{{ network.field }}"
+                                           {{ 'checked' if network.field in primary_fields else '' }}
+                                           {{ 'disabled' if not network.has_value else '' }}>
+                                    <label class="checkbox-label" for="primary_{{ network.field }}"></label>
+                                </div>
+                                
+                                <div class="network-content">
+                                    <div class="network-icon">
+                                        <i class="{{ network.icon }}" style="color: {{ network.color }};"></i>
+                                    </div>
+                                    <div class="network-info">
+                                        <h4 class="network-name">{{ network.name }}</h4>
+                                        <div class="network-status">
+                                            {% if network.has_value %}
+                                                <span class="status-badge status-configured">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Configurada
+                                                </span>
+                                            {% else %}
+                                                <span class="status-badge status-unconfigured">
+                                                    <i class="fas fa-exclamation-circle"></i>
+                                                    Sin configurar
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="network-badge">
+                                    <span class="badge-text">Principal</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="form-actions">
+                            <button type="submit" class="save-btn">
+                                <i class="fas fa-save"></i>
+                                Guardar Configuración
+                            </button>
+                            <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="back-btn">
+                                <i class="fas fa-arrow-left"></i>
+                                Volver
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Live Preview Panel -->
+                    <div class="preview-panel">
+                        <div class="preview-header">
+                            <h3 class="preview-title">
+                                <i class="fas fa-eye"></i>
+                                Vista Previa en Tiempo Real
+                            </h3>
+                        </div>
+                        
+                        <div class="preview-container">
+                            <div class="preview-card">
+                                <div class="card-preview-header">
+                                    <div class="preview-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <h3 class="preview-name">{{ card.title or card.name }}</h3>
+                                    {% if card.job_title %}
+                                        <p class="preview-job">{{ card.job_title }}</p>
+                                    {% endif %}
+                                </div>
                                 
                                 <!-- Primary Networks Preview -->
-                                <div class="preview-section mb-4">
-                                    <div class="preview-label">Redes Principales (Parte Superior)</div>
-                                    <div class="preview-primary-networks" id="preview-primary">
-                                        <!-- Will be populated by JavaScript -->
+                                <div class="preview-section">
+                                    <div class="section-label">Redes Principales</div>
+                                    <div class="primary-networks-preview" id="preview-primary">
+                                        <!-- Populated by JavaScript -->
                                     </div>
                                 </div>
                                 
                                 <!-- Secondary Networks Preview -->
                                 <div class="preview-section">
-                                    <div class="preview-label">Redes Adicionales (Parte Inferior)</div>
-                                    <div class="preview-secondary-networks" id="preview-secondary">
-                                        <!-- Will be populated by JavaScript -->
+                                    <div class="section-label">Redes Adicionales</div>
+                                    <div class="secondary-networks-preview" id="preview-secondary">
+                                        <!-- Populated by JavaScript -->
                                     </div>
                                 </div>
+                                
+                                <div class="preview-buttons">
+                                    <div class="preview-btn primary-btn">Contactar</div>
+                                    <div class="preview-btn secondary-btn">Servicios</div>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="mt-4 pt-3 border-top">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>Guardar Configuración
-                            </button>
-                            <a href="{{ url_for('dashboard.edit_card', id=card.id) }}" class="btn btn-outline-secondary ms-2">
-                                <i class="fas fa-arrow-left me-1"></i>Volver
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -155,6 +225,788 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Social Container Layout */
+/* Modern Sidebar */
+.sidebar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar h5 {
+    color: #2d3748;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.sidebar h5 i {
+    color: var(--primary-color);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.nav-link:hover {
+    background: #e2e8f0;
+    color: #374151;
+    border-color: #cbd5e1;
+    text-decoration: none;
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.sidebar-content {
+    padding: 0 1.5rem;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 2rem;
+    padding: 0 0.5rem;
+}
+
+.sidebar-header i {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 2px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.nav-item:hover {
+    background: #e2e8f0;
+    color: #374151;
+    transform: none;
+    border-color: #cbd5e1;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 2px 8px rgba(44, 62, 134, 0.25);
+    border-color: transparent;
+}
+
+.nav-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content */
+.social-main {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    overflow-y: auto;
+}
+
+.social-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.social-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.social-title i {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+}
+
+.social-subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.view-public-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.view-public-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+}
+
+.social-content {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Info Section */
+.info-section {
+    margin-bottom: 3rem;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.info-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+}
+
+.info-description {
+    color: #718096;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0 0 2rem 0;
+}
+
+.info-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(247, 250, 252, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.feature-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.feature-icon.primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.feature-icon.secondary {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.feature-icon.accent {
+    background: linear-gradient(135deg, #ed8936, #dd6b20);
+}
+
+.feature-text {
+    color: #4a5568;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.feature-text strong {
+    color: #2d3748;
+}
+
+/* Configuration Layout */
+.configuration-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+}
+
+/* Networks Panel */
+.networks-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.panel-header {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+    padding: 1.5rem 2rem;
+    color: white;
+    border-radius: 20px 20px 0 0;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.panel-description {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.networks-grid {
+    padding: 2rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.network-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.network-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.network-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.network-card:hover::before {
+    transform: scaleY(1);
+}
+
+.network-card.network-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(247, 250, 252, 0.8);
+}
+
+.network-card.network-disabled:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #e2e8f0;
+}
+
+.network-card.network-selected {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.network-card.network-selected::before {
+    transform: scaleY(1);
+}
+
+/* Custom Checkbox */
+.network-checkbox {
+    position: relative;
+}
+
+.checkbox-input {
+    opacity: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+.checkbox-label {
+    display: block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #cbd5e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    background: white;
+}
+
+.checkbox-label::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform 0.2s ease;
+}
+
+.checkbox-input:checked + .checkbox-label {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-color: var(--primary-color);
+}
+
+.checkbox-input:checked + .checkbox-label::after {
+    transform: rotate(45deg) scale(1);
+}
+
+.checkbox-input:disabled + .checkbox-label {
+    background: #f7fafc;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+}
+
+/* Network Content */
+.network-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.network-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(247, 250, 252, 0.8);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.network-info {
+    flex: 1;
+}
+
+.network-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.25rem 0;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+.status-configured {
+    background: rgba(72, 187, 120, 0.1);
+    color: #48bb78;
+}
+
+.status-unconfigured {
+    background: rgba(237, 137, 54, 0.1);
+    color: #ed8936;
+}
+
+/* Network Badge */
+.network-badge {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.network-card.network-selected .network-badge {
+    opacity: 1;
+}
+
+.badge-text {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Form Actions */
+.form-actions {
+    padding: 2rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 1rem;
+}
+
+.save-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.back-btn {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.back-btn:hover {
+    background: rgba(107, 114, 128, 0.2);
+    color: #4b5563;
+    transform: translateY(-2px);
+}
+
+/* Preview Panel */
+.preview-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+    max-height: calc(100vh - 4rem);
+    overflow: hidden;
+}
+
+.preview-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    padding: 1.5rem 2rem;
+    color: white;
+}
+
+.preview-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.preview-container {
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    max-width: 280px;
+    width: 100%;
+    text-align: center;
+}
+
+.card-preview-header {
+    margin-bottom: 2rem;
+}
+
+.preview-avatar {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.preview-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.25rem 0;
+}
+
+.preview-job {
+    color: #718096;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.preview-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+    text-align: left;
+}
+
+.primary-networks-preview {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    min-height: 50px;
+    align-items: center;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.secondary-networks-preview {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    min-height: 40px;
+    align-items: center;
+    background: rgba(107, 114, 128, 0.05);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+.primary-network-icon {
+    font-size: 1.8rem;
+    transition: transform 0.3s ease;
+}
+
+.primary-network-icon:hover {
+    transform: scale(1.2);
+}
+
+.secondary-network-icon {
+    font-size: 1.2rem;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.secondary-network-icon:hover {
+    opacity: 1;
+}
+
+.preview-empty {
+    color: #a0aec0;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.preview-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2rem;
+}
+
+.preview-btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.primary-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.secondary-btn {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .social-container {
+        grid-template-columns: 240px 1fr;
+    }
+    
+    .configuration-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .preview-panel {
+        position: relative;
+        top: auto;
+        height: auto;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .social-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .social-sidebar {
+        display: none;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .info-features {
+        grid-template-columns: 1fr;
+    }
+    
+    .network-card {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+    }
+    
+    .network-badge {
+        grid-column: 1 / -1;
+        text-align: center;
+        margin-top: 0.5rem;
+        opacity: 1;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .save-btn, .back-btn {
+        justify-content: center;
+    }
+}
+</style>
 
 <script>
 // Network data for JavaScript
@@ -188,14 +1040,13 @@ function updatePreviews() {
         checkedPrimary.forEach(field => {
             const network = networks[field];
             const icon = document.createElement('i');
-            icon.className = `${network.icon} me-2`;
+            icon.className = `${network.icon} primary-network-icon`;
             icon.style.color = network.color;
-            icon.style.fontSize = '24px';
             icon.title = network.name;
             primaryContainer.appendChild(icon);
         });
     } else {
-        primaryContainer.innerHTML = '<small class="text-muted">Ninguna red seleccionada</small>';
+        primaryContainer.innerHTML = '<div class="preview-empty">Ninguna red principal seleccionada</div>';
     }
     
     // Update secondary preview
@@ -204,244 +1055,68 @@ function updatePreviews() {
         secondaryNetworks.forEach(field => {
             const network = networks[field];
             const icon = document.createElement('i');
-            icon.className = `${network.icon} me-2`;
+            icon.className = `${network.icon} secondary-network-icon`;
             icon.style.color = network.color;
-            icon.style.fontSize = '18px';
             icon.title = network.name;
             secondaryContainer.appendChild(icon);
         });
     } else {
-        secondaryContainer.innerHTML = '<small class="text-muted">Ninguna red adicional</small>';
+        secondaryContainer.innerHTML = '<div class="preview-empty">Ninguna red adicional disponible</div>';
     }
 }
 
-// Update previews when checkboxes change
+function updateNetworkCardStates() {
+    // Update visual state of network cards
+    document.querySelectorAll('.network-card').forEach(card => {
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.checked && !checkbox.disabled) {
+            card.classList.add('network-selected');
+        } else {
+            card.classList.remove('network-selected');
+        }
+    });
+}
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     updatePreviews();
+    updateNetworkCardStates();
     
+    // Handle checkbox changes
     document.querySelectorAll('input[name="primary_networks"]').forEach(checkbox => {
-        checkbox.addEventListener('change', updatePreviews);
+        checkbox.addEventListener('change', function() {
+            updatePreviews();
+            updateNetworkCardStates();
+        });
     });
+    
+    // Handle network card clicks
+    document.querySelectorAll('.network-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking on checkbox directly
+            if (e.target.type === 'checkbox' || e.target.tagName === 'LABEL') return;
+            
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            if (checkbox && !checkbox.disabled) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    
+    // Add smooth animations to preview icons
+    const style = document.createElement('style');
+    style.textContent = `
+        .primary-network-icon, .secondary-network-icon {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
 });
 </script>
-
-<style>
-.social-network-item {
-    padding: 12px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    transition: all 0.2s ease;
-    background: white;
-}
-
-.social-network-item:hover {
-    border-color: #007bff;
-    box-shadow: 0 2px 4px rgba(0,123,255,0.1);
-}
-
-.social-network-item.disabled {
-    background: #f8f9fa;
-    opacity: 0.6;
-}
-
-.social-network-item .form-check-input {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-}
-
-.social-network-item .form-check-label {
-    margin-bottom: 0;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-    .social-network-item {
-        padding: 10px;
-        margin-bottom: 6px;
-    }
-    
-    .social-network-item .form-check-input {
-        width: 16px;
-        height: 16px;
-    }
-    
-    .social-network-item .form-check-label {
-        font-size: 13px;
-        line-height: 1.3;
-    }
-    
-    /* Status text smaller on mobile */
-    .social-network-item small {
-        font-size: 11px !important;
-    }
-    
-    /* Icon size adjustment for mobile */
-    .social-network-item i[class*="fa-"] {
-        font-size: 14px;
-        width: 16px !important;
-    }
-    
-    /* Preview sections responsive */
-    .preview-primary-networks,
-    .preview-secondary-networks {
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    
-    .preview-primary-networks i {
-        font-size: 20px !important;
-    }
-    
-    .preview-secondary-networks i {
-        font-size: 16px !important;
-    }
-}
-
-@media (max-width: 576px) {
-    /* Extra small devices */
-    .social-network-item {
-        padding: 8px;
-    }
-    
-    .social-network-item .form-check-input {
-        width: 14px;
-        height: 14px;
-    }
-    
-    .social-network-item .form-check-label {
-        font-size: 12px;
-    }
-    
-    .social-network-item small {
-        font-size: 10px !important;
-    }
-    
-    /* Make status text stack on very small screens */
-    .social-network-item .form-check-label {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-    }
-    
-    .social-network-item .form-check-label > div {
-        width: 100%;
-    }
-}
-
-.preview-section {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-}
-
-.preview-label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.preview-primary-networks {
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.preview-secondary-networks {
-    min-height: 30px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.social-networks-list {
-    max-height: 500px;
-    overflow-y: auto;
-}
-
-.alert-info {
-    border-left: 4px solid #17a2b8;
-}
-
-/* Mobile layout improvements */
-@media (max-width: 768px) {
-    .main-content {
-        padding: 15px !important;
-    }
-    
-    .card-body {
-        padding: 15px !important;
-    }
-    
-    .d-flex.justify-content-between.align-items-center {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 10px;
-    }
-    
-    .d-flex.justify-content-between.align-items-center h2 {
-        font-size: 1.3rem;
-    }
-    
-    .d-flex.justify-content-between.align-items-center h2 small {
-        display: block;
-        margin-top: 5px;
-    }
-    
-    .alert {
-        font-size: 13px;
-        padding: 12px;
-    }
-    
-    .alert h5 {
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
-    
-    .alert p, .alert ul {
-        margin-bottom: 8px;
-        font-size: 12px;
-    }
-    
-    .btn {
-        font-size: 13px;
-        padding: 8px 16px;
-    }
-}
-
-@media (max-width: 576px) {
-    /* Sidebar becomes full width on very small screens */
-    .col-md-3 {
-        margin-bottom: 20px;
-    }
-    
-    .sidebar {
-        display: none; /* Hide sidebar on very small screens, or make it collapsible */
-    }
-    
-    .col-md-9 {
-        padding: 0 10px;
-    }
-    
-    .main-content {
-        padding: 10px !important;
-    }
-    
-    .card {
-        margin-bottom: 15px;
-    }
-    
-    .social-networks-list {
-        max-height: 400px; /* Reduce height on mobile */
-    }
-}
-</style>
 {% endblock %}

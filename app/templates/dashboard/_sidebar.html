@@ -1,0 +1,36 @@
+<!-- Unified Dashboard Sidebar Component -->
+<div class="sidebar">
+    <h5 class="mb-3">
+        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+    </h5>
+
+    <nav class="nav flex-column">
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.index' }}" href="{{ url_for('dashboard.index') }}">
+            <i class="fas fa-home me-2"></i>Inicio
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.new_card' }}" href="{{ url_for('dashboard.new_card') }}">
+            <i class="fas fa-plus me-2"></i>Nueva Tarjeta
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.analytics' }}" href="{{ url_for('dashboard.analytics') }}">
+            <i class="fas fa-chart-line me-2"></i>Analytics
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.advanced_features' }}" href="{{ url_for('dashboard.advanced_features') }}">
+            <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
+        </a>
+        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.profile' }}" href="{{ url_for('dashboard.profile') }}">
+            <i class="fas fa-user me-2"></i>Mi Perfil
+        </a>
+
+        <!-- Admin Section (if admin) -->
+        {% if current_user.is_admin() %}
+        <a class="nav-link {{ 'active' if request.endpoint == 'admin.index' }}" href="{{ url_for('admin.index') }}">
+            <i class="fas fa-cog me-2"></i>Administración
+        </a>
+        {% endif %}
+
+        <!-- Logout Section -->
+        <a class="nav-link text-danger" href="{{ url_for('auth.logout') }}" style="color: #dc3545 !important;">
+            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+        </a>
+    </nav>
+</div>
