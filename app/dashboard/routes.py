@@ -172,16 +172,28 @@ def new_card():
         # Redirect to theme customization instead of edit
         return redirect(url_for('dashboard.card_theme', id=card.id))
 
-    return render_template('dashboard/new_card_with_preview.html',
-                         form=form,
-                         title='Nueva Tarjeta',
-                         default_theme=default_theme)
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/new_card_pwa.html',
+                              form=form,
+                              default_theme=default_theme)
+    else:
+        return render_template('dashboard/new_card_with_preview.html',
+                              form=form,
+                              title='Nueva Tarjeta',
+                              default_theme=default_theme)
 
 @bp.route('/cards/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_card(id):
     card = get_user_card_or_404(id)
-    
+
     form = CardForm(obj=card)
     if form.validate_on_submit():
         # Update card fields
@@ -209,31 +221,41 @@ def edit_card(id):
         card.github = form.github.data
         card.behance = form.behance.data
         card.dribbble = form.dribbble.data
-        
+
         # Handle publishing
         if form.is_public.data and not card.is_public:
             card.publish()
         elif not form.is_public.data and card.is_public:
             card.unpublish()
-        
+
         try:
             db.session.commit()
-            
+
             # Clear cache for this card after successful commit
             CacheManager.invalidate_card(card.id)
-            
+
             # Additional cache clearing to be thorough
             cache.delete(f'card_data_{card.slug}')
             cache.delete(f'card_view_{card.slug}')
-            
+
             flash('¡Tarjeta actualizada exitosamente!', 'success')
             return redirect(url_for('dashboard.edit_card', id=card.id))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al actualizar la tarjeta: {str(e)}', 'error')
             return redirect(url_for('dashboard.edit_card', id=card.id))
-    
-    return render_template('dashboard/card_form.html', form=form, card=card, title='Editar Tarjeta')
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/card_edit_pwa.html', form=form, card=card)
+    else:
+        return render_template('dashboard/card_form.html', form=form, card=card, title='Editar Tarjeta')
 
 @bp.route('/cards/<int:id>/delete', methods=['POST'])
 @login_required
@@ -258,23 +280,23 @@ def delete_card(id):
 @login_required
 def card_services(id):
     card = get_user_card_or_404(id)
-    
+
     form = ServiceForm()
     if form.validate_on_submit():
         # Get the next order index
         last_service = Service.query.filter_by(card_id=card.id).order_by(Service.order_index.desc()).first()
         next_order = (last_service.order_index + 1) if last_service else 0
-        
+
         # Handle service image upload
         image_path = None
         if form.image.data:
             filename, _ = save_image(form.image.data, 'static/uploads')
             if filename:
                 image_path = filename
-        
+
         # Handle category creation
         category_name = handle_category_creation(form, 'service')
-        
+
         service = Service(
             card_id=card.id,
             title=form.title.data,
@@ -291,15 +313,26 @@ def card_services(id):
         )
         db.session.add(service)
         db.session.commit()
-        
+
         # Clear cache for the parent card
         CacheManager.invalidate_card(card.id)
-        
+
         flash('¡Servicio agregado exitosamente!', 'success')
         return redirect(url_for('dashboard.card_services', id=card.id))
-    
+
     services = card.services.order_by(Service.order_index).all()
-    return render_template('dashboard/services.html', card=card, services=services, form=form)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/services_pwa.html', card=card, services=services, form=form)
+    else:
+        return render_template('dashboard/services.html', card=card, services=services, form=form)
 
 @bp.route('/cards/<int:card_id>/services/<int:service_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -368,7 +401,7 @@ def delete_service(card_id, service_id):
 @login_required
 def card_gallery(id):
     card = get_user_card_or_404(id)
-    
+
     form = GalleryUploadForm()
     if form.validate_on_submit():
         # Check image limit (20 images maximum)
@@ -376,13 +409,13 @@ def card_gallery(id):
         if current_count >= 20:
             flash('Límite de imágenes alcanzado. Máximo 20 imágenes por galería. Elimina una imagen para subir otra.', 'error')
             return redirect(url_for('dashboard.card_gallery', id=card.id))
-        
+
         filename, thumbnail = save_image(form.image.data, 'static/uploads')
         if filename:
             # Get next order index
             last_item = GalleryItem.query.filter_by(card_id=card.id).order_by(GalleryItem.order_index.desc()).first()
             next_order = (last_item.order_index + 1) if last_item else 0
-            
+
             gallery_item = GalleryItem(
                 card_id=card.id,
                 image_path=filename,
@@ -392,18 +425,29 @@ def card_gallery(id):
             )
             db.session.add(gallery_item)
             db.session.commit()
-            
+
             # Clear cache for the parent card
             CacheManager.invalidate_card(card.id)
-            
+
             flash('¡Imagen subida exitosamente!', 'success')
         else:
             flash('Error al subir la imagen. Intenta de nuevo.', 'error')
-        
+
         return redirect(url_for('dashboard.card_gallery', id=card.id))
-    
+
     gallery_items = card.gallery_items.order_by(GalleryItem.order_index).all()
-    return render_template('dashboard/gallery.html', card=card, gallery_items=gallery_items, form=form)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/gallery_pwa.html', card=card, gallery_items=gallery_items, form=form)
+    else:
+        return render_template('dashboard/gallery.html', card=card, gallery_items=gallery_items, form=form)
 
 @bp.route('/cards/<int:card_id>/gallery/<int:item_id>/delete', methods=['POST'])
 @login_required
@@ -771,11 +815,11 @@ def card_products(id):
     card = get_user_card_or_404(id)
     products = card.products.order_by(Product.order_index.asc(), Product.created_at.desc()).all()
     form = ProductForm()
-    
+
     if form.validate_on_submit():
         # Handle category creation
         category_name = handle_category_creation(form, 'product')
-        
+
         product = Product(
             name=form.name.data,
             description=form.description.data,
@@ -791,23 +835,33 @@ def card_products(id):
             is_available=form.is_available.data,
             card_id=card.id
         )
-        
+
         # Handle image upload
         if form.image.data:
             filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
             if filename:
                 product.image_path = filename
-        
+
         db.session.add(product)
         db.session.commit()
-        
+
         # Clear cache for the parent card
         CacheManager.invalidate_card(card.id)
-        
+
         flash('Producto agregado correctamente', 'success')
         return redirect(url_for('dashboard.card_products', id=card.id))
-    
-    return render_template('dashboard/products.html', card=card, products=products, form=form)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/products_pwa.html', card=card, products=products, form=form)
+    else:
+        return render_template('dashboard/products.html', card=card, products=products, form=form)
 
 @bp.route('/cards/<int:card_id>/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required

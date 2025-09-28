@@ -1,0 +1,273 @@
+{% extends "base_pwa.html" %}
+
+{% block title %}Galería - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark">
+  <!-- Header -->
+  <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-background-light px-4 dark:border-slate-800/80 dark:bg-background-dark">
+    <button class="flex items-center justify-center" onclick="history.back()">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">close</span>
+    </button>
+    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Galería</h1>
+    <button class="flex items-center justify-center" onclick="document.getElementById('image').click()">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">add_photo_alternate</span>
+    </button>
+  </header>
+
+  <!-- Usage Indicator -->
+  <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-b border-slate-200/80 dark:border-slate-800/80">
+    <div class="flex items-center justify-between">
+      <span class="text-sm font-medium text-slate-700 dark:text-slate-300">
+        {{ gallery_items|length }}/20 imágenes
+      </span>
+      <div class="flex-1 mx-4">
+      <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+        <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: {{ (gallery_items|length / 20 * 100)|round }}%;"></div>
+      </div>
+    </div>
+      <span class="text-xs text-slate-500 dark:text-slate-400">
+        {% if gallery_items|length >= 20 %}Límite alcanzado{% else %}{{ 20 - gallery_items|length }} disponibles{% endif %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Upload Form (Hidden) -->
+  <div id="uploadForm" class="hidden bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-800/80">
+    <div class="p-6">
+      <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">Subir Nueva Imagen</h2>
+
+      <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        {{ form.hidden_tag() }}
+
+        <div>
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="image">Seleccionar Imagen</label>
+          <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-lg dark:border-slate-700">
+            <div class="space-y-1 text-center">
+              <div class="flex text-sm text-slate-600 dark:text-slate-400">
+                <label for="image" class="relative cursor-pointer bg-white dark:bg-slate-900 rounded-md font-medium text-primary hover:text-primary/80">
+                  <span>Haz clic para seleccionar</span>
+                  {{ form.image(class="sr-only", id="image") }}
+                </label>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">PNG, JPG, WEBP hasta 5MB</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="caption">Descripción (Opcional)</label>
+          {{ form.caption(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="Describe tu imagen...") }}
+        </div>
+
+        <div class="flex space-x-3">
+          <button type="button" onclick="toggleUploadForm()" class="flex-1 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 py-3 px-4 rounded-lg font-medium">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 bg-primary text-white py-3 px-4 rounded-lg font-medium">
+            Subir Imagen
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    {% if gallery_items %}
+      <div class="grid grid-cols-2 gap-4">
+        {% for item in gallery_items %}
+          <div class="bg-white dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
+            <!-- Image -->
+            <div class="relative aspect-square">
+              <img src="{{ url_for('static', filename='thumbs/' + item.thumbnail_path) }}"
+                   alt="{{ item.caption or 'Imagen' }}"
+                   class="w-full h-full object-cover cursor-pointer"
+                   onclick="viewImage('{{ url_for('static', filename='uploads/' + item.image_path) }}', '{{ item.caption or '' }}')">
+
+              <!-- Status Badges -->
+              <div class="absolute top-2 right-2 flex flex-col gap-1">
+                {% if item.is_featured %}
+                  <div class="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-xs">star</span>
+                  </div>
+                {% endif %}
+                {% if not item.is_visible %}
+                  <div class="w-6 h-6 bg-slate-500 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-xs">visibility_off</span>
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Overlay Actions -->
+              <div class="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                <div class="flex space-x-2">
+                  <button onclick="viewImage('{{ url_for('static', filename='uploads/' + item.image_path) }}', '{{ item.caption or '' }}')"
+                          class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
+                    <span class="material-symbols-outlined text-lg">visibility</span>
+                  </button>
+                  {% if not item.is_featured %}
+                    <button onclick="setFeatured({{ item.id }})"
+                            class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30">
+                      <span class="material-symbols-outlined text-lg">star</span>
+                    </button>
+                  {% endif %}
+                  <form method="POST" action="{{ url_for('dashboard.delete_gallery_item', card_id=card.id, item_id=item.id) }}"
+                        onsubmit="return confirm('¿Eliminar esta imagen?')" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit"
+                            class="w-10 h-10 bg-red-500/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-red-600/80">
+                      <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Caption -->
+            {% if item.caption %}
+              <div class="p-3">
+                <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{{ item.caption }}</p>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <!-- Empty State -->
+      <div class="text-center py-12">
+        <div class="mb-4">
+          <span class="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600">photo_library</span>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-2">Tu galería está vacía</h3>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">Sube tu primera imagen para mostrar tu trabajo</p>
+        <button onclick="document.getElementById('image').click()" class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+          <span class="material-symbols-outlined mr-2">add_photo_alternate</span>
+          Subir Primera Imagen
+        </button>
+      </div>
+    {% endif %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="flex h-20 shrink-0 items-center justify-around border-t border-slate-200/80 bg-background-light px-2 pt-1 dark:border-slate-800/80 dark:bg-background-dark">
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.index') }}">
+      <span class="material-symbols-outlined">home</span>
+      <span class="text-xs font-medium">Inicio</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 rounded-full bg-primary/10 px-4 py-2 text-primary dark:bg-primary/20" href="{{ url_for('dashboard.cards_list') }}">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">badge</span>
+      <span class="text-xs font-medium">Tarjetas</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.edit_card', id=card.id) }}">
+      <span class="material-symbols-outlined">edit</span>
+      <span class="text-xs font-medium">Editar</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.analytics') }}">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="text-xs font-medium">Analytics</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.profile') }}">
+      <span class="material-symbols-outlined">person</span>
+      <span class="text-xs font-medium">Perfil</span>
+    </a>
+  </footer>
+</div>
+
+<!-- Image Viewer Modal -->
+<div id="imageModal" class="fixed inset-0 z-50 hidden bg-black/90">
+  <div class="flex items-center justify-center h-full p-4">
+    <div class="relative max-w-full max-h-full">
+      <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain rounded-lg">
+      <button onclick="closeImageModal()" class="absolute top-4 right-4 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div id="imageCaption" class="absolute bottom-4 left-4 right-4 bg-black/50 rounded-lg p-3 text-white text-center"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleUploadForm() {
+  const form = document.getElementById('uploadForm');
+  const isHidden = form.classList.contains('hidden');
+
+  if (isHidden) {
+    form.classList.remove('hidden');
+    form.classList.add('block');
+  } else {
+    form.classList.add('hidden');
+    form.classList.remove('block');
+  }
+}
+
+function viewImage(src, caption) {
+  document.getElementById('modalImage').src = src;
+  document.getElementById('imageCaption').textContent = caption || '';
+  document.getElementById('imageModal').classList.remove('hidden');
+}
+
+function closeImageModal() {
+  document.getElementById('imageModal').classList.add('hidden');
+}
+
+function setFeatured(itemId) {
+  fetch(`/dashboard/gallery/${itemId}/set-featured`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert('Error al marcar como destacada');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error al procesar la solicitud');
+  });
+}
+
+// Handle file input change
+document.addEventListener('DOMContentLoaded', function() {
+  const fileInput = document.getElementById('image');
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        // Show upload form when file is selected
+        toggleUploadForm();
+      }
+    });
+  }
+
+  // Close modal when clicking outside
+  document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeImageModal();
+    }
+  });
+
+  // Close modal with escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeImageModal();
+    }
+  });
+});
+</script>
+
+<style>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,370 @@
+{% extends "base_pwa.html" %}
+
+{% block title %}Editar Tarjeta - Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark">
+  <!-- Header -->
+  <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-background-light px-4 dark:border-slate-800/80 dark:bg-background-dark">
+    <button class="flex items-center justify-center" onclick="history.back()">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">close</span>
+    </button>
+    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Editar Tarjeta</h1>
+    <div class="w-8"></div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <div class="overflow-x-auto border-b border-slate-200/80 bg-background-light dark:border-slate-800/80 dark:bg-background-dark">
+    <nav class="flex min-w-max">
+      <a class="tab-link active border-b-2 border-primary px-4 py-3 text-center text-sm font-semibold text-primary" href="#informacion" data-tab="informacion">
+        Información
+      </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#contacto" data-tab="contacto">
+        Contacto
+      </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#redes" data-tab="redes">
+        Redes
+      </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#servicios" data-tab="servicios">
+        Servicios
+      </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#productos" data-tab="productos">
+        Productos
+      </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#galeria" data-tab="galeria">
+        Galería
+      </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#tema" data-tab="tema">
+        Tema
+      </a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    <form method="POST" class="space-y-6" id="editForm">
+      {{ form.hidden_tag() }}
+
+      <!-- Información Tab -->
+      <div id="informacion" class="tab-content active">
+        <div class="space-y-6">
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="name">Nombre</label>
+            {{ form.name(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+            {% if form.name.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors[0] }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="title">Título</label>
+            {{ form.title(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="job_title">Puesto/Cargo</label>
+            {{ form.job_title(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="company">Empresa</label>
+            {{ form.company(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="bio">Bio</label>
+            {{ form.bio(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", rows="4") }}
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Máximo 500 caracteres</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto Tab -->
+      <div id="contacto" class="tab-content hidden">
+        <div class="space-y-6">
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="phone">Teléfono</label>
+            {{ form.phone(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="email_public">Email Público</label>
+            {{ form.email_public(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+            {% if form.email_public.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email_public.errors[0] }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="website">Sitio Web</label>
+            {{ form.website(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+            {% if form.website.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.website.errors[0] }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="location">Ubicación</label>
+            {{ form.location(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Redes Tab -->
+      <div id="redes" class="tab-content hidden">
+        <div class="space-y-6">
+          <!-- Redes principales -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Principales</h3>
+
+            <div class="grid grid-cols-1 gap-4">
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-instagram text-pink-500 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Instagram</label>
+                  {{ form.instagram(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-whatsapp text-green-500 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">WhatsApp</label>
+                  <div class="grid grid-cols-3 gap-2 mt-1">
+                    {{ form.whatsapp_country(class="rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                    <div class="col-span-2">
+                      {{ form.whatsapp(class="block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-facebook text-blue-600 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Facebook</label>
+                  {{ form.facebook(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-linkedin text-blue-700 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">LinkedIn</label>
+                  {{ form.linkedin(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Redes adicionales -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Adicionales</h3>
+
+            <div class="grid grid-cols-1 gap-4">
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-x-twitter text-black dark:text-white w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">X (Twitter)</label>
+                  {{ form.twitter(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-youtube text-red-600 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">YouTube</label>
+                  {{ form.youtube(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-tiktok text-black dark:text-white w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">TikTok</label>
+                  {{ form.tiktok(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-telegram text-blue-500 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Telegram</label>
+                  {{ form.telegram(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Redes profesionales -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Profesionales</h3>
+
+            <div class="grid grid-cols-1 gap-4">
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-github text-gray-800 dark:text-gray-200 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">GitHub</label>
+                  {{ form.github(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-behance text-blue-600 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Behance</label>
+                  {{ form.behance(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3">
+                <i class="fab fa-dribbble text-pink-500 w-5 text-center"></i>
+                <div class="flex-1">
+                  <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Dribbble</label>
+                  {{ form.dribbble(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Servicios Tab -->
+      <div id="servicios" class="tab-content hidden">
+        <div class="text-center py-8">
+          <div class="mb-4">
+            <span class="material-symbols-outlined text-4xl text-slate-400">design_services</span>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Gestionar Servicios</h3>
+          <p class="text-slate-600 dark:text-slate-400 mb-6">Agrega, edita y organiza los servicios que ofreces</p>
+          <a href="{{ url_for('dashboard.card_services', id=card.id) }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined mr-2">add</span>
+            Gestionar Servicios
+          </a>
+        </div>
+      </div>
+
+      <!-- Productos Tab -->
+      <div id="productos" class="tab-content hidden">
+        <div class="text-center py-8">
+          <div class="mb-4">
+            <span class="material-symbols-outlined text-4xl text-slate-400">shopping_bag</span>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Gestionar Productos</h3>
+          <p class="text-slate-600 dark:text-slate-400 mb-6">Agrega, edita y organiza los productos que vendes</p>
+          <a href="{{ url_for('dashboard.card_products', id=card.id) }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined mr-2">add</span>
+            Gestionar Productos
+          </a>
+        </div>
+      </div>
+
+      <!-- Galería Tab -->
+      <div id="galeria" class="tab-content hidden">
+        <div class="text-center py-8">
+          <div class="mb-4">
+            <span class="material-symbols-outlined text-4xl text-slate-400">photo_library</span>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Gestionar Galería</h3>
+          <p class="text-slate-600 dark:text-slate-400 mb-6">Sube y organiza las imágenes de tu galería</p>
+          <a href="{{ url_for('dashboard.card_gallery', id=card.id) }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined mr-2">add_photo_alternate</span>
+            Gestionar Galería
+          </a>
+        </div>
+      </div>
+
+      <!-- Tema Tab -->
+      <div id="tema" class="tab-content hidden">
+        <div class="text-center py-8">
+          <div class="mb-4">
+            <span class="material-symbols-outlined text-4xl text-slate-400">palette</span>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Personalizar Tema</h3>
+          <p class="text-slate-600 dark:text-slate-400 mb-6">Personaliza los colores, fuentes y diseño de tu tarjeta</p>
+          <a href="{{ url_for('dashboard.card_theme', id=card.id) }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined mr-2">brush</span>
+            Personalizar Tema
+          </a>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <!-- Footer -->
+  <footer class="flex h-20 shrink-0 items-center justify-around border-t border-slate-200/80 bg-background-light px-2 pt-1 dark:border-slate-800/80 dark:bg-background-dark">
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.index') }}">
+      <span class="material-symbols-outlined">home</span>
+      <span class="text-xs font-medium">Inicio</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 rounded-full bg-primary/10 px-4 py-2 text-primary dark:bg-primary/20" href="{{ url_for('dashboard.cards_list') }}">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">badge</span>
+      <span class="text-xs font-medium">Tarjetas</span>
+    </a>
+    <button type="submit" form="editForm" class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400">
+      <span class="material-symbols-outlined">save</span>
+      <span class="text-xs font-medium">Guardar</span>
+    </button>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.analytics') }}">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="text-xs font-medium">Analytics</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.profile') }}">
+      <span class="material-symbols-outlined">person</span>
+      <span class="text-xs font-medium">Perfil</span>
+    </a>
+  </footer>
+</div>
+
+<script>
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const tabLinks = document.querySelectorAll('.tab-link');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      // Remove active class from all tabs
+      tabLinks.forEach(l => {
+        l.classList.remove('active', 'border-b-2', 'border-primary', 'text-primary', 'font-semibold');
+        l.classList.add('border-transparent', 'text-slate-500', 'font-medium', 'dark:text-slate-400');
+      });
+
+      // Add active class to clicked tab
+      this.classList.add('active', 'border-b-2', 'border-primary', 'text-primary', 'font-semibold');
+      this.classList.remove('border-transparent', 'text-slate-500', 'font-medium', 'dark:text-slate-400');
+
+      // Hide all tab contents
+      tabContents.forEach(content => {
+        content.classList.add('hidden');
+        content.classList.remove('active');
+      });
+
+      // Show selected tab content
+      const targetTab = this.getAttribute('data-tab');
+      const targetContent = document.getElementById(targetTab);
+      if (targetContent) {
+        targetContent.classList.remove('hidden');
+        targetContent.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+
+<style>
+.tab-content {
+  display: block;
+}
+
+.tab-content.hidden {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+</style>
+{% endblock %}

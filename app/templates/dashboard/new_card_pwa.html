@@ -1,0 +1,427 @@
+{% extends "base_pwa.html" %}
+
+{% block title %}Nueva Tarjeta - Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark">
+  <!-- Header -->
+  <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-background-light px-4 dark:border-slate-800/80 dark:bg-background-dark">
+    <button class="flex items-center justify-center" onclick="history.back()">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">close</span>
+    </button>
+    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Nueva Tarjeta</h1>
+    <div class="w-8"></div>
+  </header>
+
+  <!-- Progress Indicator -->
+  <div class="flex items-center justify-center py-3 bg-background-light dark:bg-background-dark border-b border-slate-200/80 dark:border-slate-800/80">
+    <div class="flex items-center space-x-2">
+      <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-bold" id="step-1">1</div>
+        <div class="w-12 h-1 bg-slate-200 dark:bg-slate-700" id="progress-1"></div>
+      </div>
+      <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-sm font-bold" id="step-2">2</div>
+        <div class="w-12 h-1 bg-slate-200 dark:bg-slate-700" id="progress-2"></div>
+      </div>
+      <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-sm font-bold" id="step-3">3</div>
+        <div class="w-12 h-1 bg-slate-200 dark:bg-slate-700" id="progress-3"></div>
+      </div>
+      <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-sm font-bold" id="step-4">4</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    <form method="POST" class="space-y-6" id="newCardForm">
+      {{ form.hidden_tag() }}
+
+      <!-- Step 1: Información Personal -->
+      <div id="step1" class="step-content active">
+        <div class="space-y-6">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Información Personal</h2>
+            <p class="text-slate-600 dark:text-slate-400">Los datos básicos que aparecerán en tu tarjeta</p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="name">Nombre Completo *</label>
+            {{ form.name(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="Ej: Juan Pérez", id="preview-name") }}
+            {% if form.name.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors[0] }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="job_title">Puesto/Cargo</label>
+            {{ form.job_title(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="Ej: Desarrollador Full Stack", id="preview-job") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="company">Empresa</label>
+            {{ form.company(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="Ej: TechCorp S.A.", id="preview-company") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="bio">Biografía</label>
+            {{ form.bio(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", rows="3", placeholder="Cuéntanos sobre ti o tu negocio...", id="preview-bio") }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Información de Contacto -->
+      <div id="step2" class="step-content hidden">
+        <div class="space-y-6">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Información de Contacto</h2>
+            <p class="text-slate-600 dark:text-slate-400">Cómo pueden contactarte (opcional)</p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="phone">Teléfono</label>
+            {{ form.phone(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="+34 123 456 789", id="preview-phone") }}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="email_public">Email Público</label>
+            {{ form.email_public(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="contacto@empresa.com", id="preview-email") }}
+            {% if form.email_public.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.email_public.errors[0] }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="website">Sitio Web</label>
+            {{ form.website(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="miempresa.com", id="preview-website") }}
+            {% if form.website.errors %}
+              <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.website.errors[0] }}</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="location">Ubicación</label>
+            {{ form.location(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="Madrid, España", id="preview-location") }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Redes Sociales -->
+      <div id="step3" class="step-content hidden">
+        <div class="space-y-6">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Redes Sociales</h2>
+            <p class="text-slate-600 dark:text-slate-400">Conecta las más importantes</p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center space-x-3">
+              <i class="fab fa-instagram text-pink-500 w-5 text-center"></i>
+              <div class="flex-1">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Instagram</label>
+                {{ form.instagram(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="@tuusuario", id="preview-instagram") }}
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+              <i class="fab fa-whatsapp text-green-500 w-5 text-center"></i>
+              <div class="flex-1">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">WhatsApp</label>
+                <div class="grid grid-cols-3 gap-2 mt-1">
+                  {{ form.whatsapp_country(class="rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", id="preview-whatsapp-country") }}
+                  <div class="col-span-2">
+                    {{ form.whatsapp(class="block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="123 456 789", id="preview-whatsapp") }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+              <i class="fab fa-linkedin text-blue-700 w-5 text-center"></i>
+              <div class="flex-1">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">LinkedIn</label>
+                {{ form.linkedin(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="https://linkedin.com/in/tuperfil", id="preview-linkedin") }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Configuración Final -->
+      <div id="step4" class="step-content hidden">
+        <div class="space-y-6">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">Configuración Final</h2>
+            <p class="text-slate-600 dark:text-slate-400">Últimos detalles para tu tarjeta</p>
+          </div>
+
+          <div>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="title">Título de la Tarjeta</label>
+            {{ form.title(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white", placeholder="Ej: Juan Pérez - Desarrollador", id="preview-title") }}
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Si no especificas uno, usaremos tu nombre</p>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+            <div class="flex items-start space-x-3">
+              {{ form.is_public(class="mt-1") }}
+              <div class="flex-1">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="{{ form.is_public.id }}">
+                  Hacer pública mi tarjeta
+                </label>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  La tarjeta será visible públicamente y podrás compartir el enlace
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden theme field (default classic) -->
+          <input type="hidden" name="theme_id" value="{{ default_theme.id }}" />
+        </div>
+      </div>
+    </form>
+
+    <!-- Live Preview -->
+    <div class="mt-8 bg-white dark:bg-slate-800 rounded-lg p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Vista Previa</h3>
+
+      <div class="flex justify-center">
+        <div class="bg-gradient-to-br from-primary to-secondary p-4 rounded-2xl shadow-lg max-w-sm w-full">
+          <div class="bg-white rounded-xl p-6 text-center">
+            <!-- Avatar -->
+            <div class="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full mx-auto mb-4 flex items-center justify-center">
+              <span class="material-symbols-outlined text-white text-2xl">person</span>
+            </div>
+
+            <!-- Name -->
+            <h2 class="text-xl font-bold text-slate-800 mb-1" id="live-name">Tu Nombre</h2>
+            <p class="text-primary font-medium mb-1" id="live-job" style="display: none;">Tu Cargo</p>
+            <p class="text-slate-600 mb-3" id="live-company" style="display: none;">Tu Empresa</p>
+
+            <!-- Bio -->
+            <div class="bg-slate-50 rounded-lg p-3 mb-4" id="live-bio-container" style="display: none;">
+              <p class="text-slate-700 text-sm" id="live-bio">Tu biografía aparecerá aquí...</p>
+            </div>
+
+            <!-- Contact -->
+            <div class="space-y-2 mb-4" id="live-contact"></div>
+
+            <!-- Social -->
+            <div class="flex justify-center space-x-3" id="live-social"></div>
+
+            <!-- Footer -->
+            <div class="border-t border-slate-200 mt-4 pt-3">
+              <p class="text-xs text-slate-500">Creado con VCard</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer Navigation -->
+  <footer class="flex h-20 shrink-0 items-center justify-around border-t border-slate-200/80 bg-background-light px-2 pt-1 dark:border-slate-800/80 dark:bg-background-dark">
+    <button type="button" class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" id="prevBtn" style="display: none;">
+      <span class="material-symbols-outlined">arrow_back</span>
+      <span class="text-xs font-medium">Anterior</span>
+    </button>
+
+    <div class="flex-1"></div>
+
+    <button type="button" class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" id="nextBtn">
+      <span class="material-symbols-outlined">arrow_forward</span>
+      <span class="text-xs font-medium">Siguiente</span>
+    </button>
+
+    <button type="submit" form="newCardForm" class="flex flex-col items-center gap-1 text-primary" id="submitBtn" style="display: none;">
+      <span class="material-symbols-outlined">check</span>
+      <span class="text-xs font-medium">Crear</span>
+    </button>
+  </footer>
+</div>
+
+<script>
+// Form navigation
+let currentStep = 1;
+const totalSteps = 4;
+
+function showStep(step) {
+  // Hide all steps
+  document.querySelectorAll('.step-content').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+
+  // Show current step
+  const currentStepEl = document.getElementById(`step${step}`);
+  if (currentStepEl) {
+    currentStepEl.classList.remove('hidden');
+    currentStepEl.classList.add('active');
+  }
+
+  // Update progress indicators
+  for (let i = 1; i <= totalSteps; i++) {
+    const stepEl = document.getElementById(`step-${i}`);
+    const progressEl = document.getElementById(`progress-${i}`);
+
+    if (i <= step) {
+      stepEl.classList.remove('bg-slate-200', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-400');
+      stepEl.classList.add('bg-primary', 'text-white');
+      if (progressEl) {
+        progressEl.classList.add('bg-primary');
+        progressEl.classList.remove('bg-slate-200', 'dark:bg-slate-700');
+      }
+    } else {
+      stepEl.classList.remove('bg-primary', 'text-white');
+      stepEl.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-600', 'dark:text-slate-400');
+      if (progressEl) {
+        progressEl.classList.remove('bg-primary');
+        progressEl.classList.add('bg-slate-200', 'dark:bg-slate-700');
+      }
+    }
+  }
+
+  // Update navigation buttons
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
+
+  prevBtn.style.display = step === 1 ? 'none' : 'flex';
+  nextBtn.style.display = step === totalSteps ? 'none' : 'flex';
+  submitBtn.style.display = step === totalSteps ? 'flex' : 'none';
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (currentStep < totalSteps) {
+    currentStep++;
+    showStep(currentStep);
+  }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (currentStep > 1) {
+    currentStep--;
+    showStep(currentStep);
+  }
+});
+
+// Real-time preview updates
+function updatePreview() {
+  const name = document.getElementById('preview-name').value || 'Tu Nombre';
+  const job = document.getElementById('preview-job').value || '';
+  const company = document.getElementById('preview-company').value || '';
+  const bio = document.getElementById('preview-bio').value || '';
+  const phone = document.getElementById('preview-phone').value || '';
+  const email = document.getElementById('preview-email').value || '';
+  const website = document.getElementById('preview-website').value || '';
+  const location = document.getElementById('preview-location').value || '';
+  const instagram = document.getElementById('preview-instagram').value || '';
+  const whatsappCountry = document.getElementById('preview-whatsapp-country').value || '';
+  const whatsapp = document.getElementById('preview-whatsapp').value || '';
+  const linkedin = document.getElementById('preview-linkedin').value || '';
+
+  // Auto-update title if not manually set
+  const titleField = document.getElementById('preview-title');
+  if (titleField && !titleField.value && name !== 'Tu Nombre') {
+    const autoTitle = name + (job ? ' - ' + job : '');
+    titleField.value = autoTitle;
+  }
+
+  // Update name
+  document.getElementById('live-name').textContent = name;
+
+  // Update job title
+  const jobElement = document.getElementById('live-job');
+  if (job) {
+    jobElement.textContent = job;
+    jobElement.style.display = 'block';
+  } else {
+    jobElement.style.display = 'none';
+  }
+
+  // Update company
+  const companyElement = document.getElementById('live-company');
+  if (company) {
+    companyElement.textContent = company;
+    companyElement.style.display = 'block';
+  } else {
+    companyElement.style.display = 'none';
+  }
+
+  // Update bio
+  const bioContainer = document.getElementById('live-bio-container');
+  const bioElement = document.getElementById('live-bio');
+  if (bio) {
+    bioElement.textContent = bio;
+    bioContainer.style.display = 'block';
+  } else {
+    bioContainer.style.display = 'none';
+  }
+
+  // Update contact info
+  const contactContainer = document.getElementById('live-contact');
+  contactContainer.innerHTML = '';
+
+  if (phone) {
+    contactContainer.innerHTML += `<div class="flex items-center justify-center space-x-2 text-slate-600 text-sm"><span class="material-symbols-outlined text-sm">phone</span><span>${phone}</span></div>`;
+  }
+  if (email) {
+    contactContainer.innerHTML += `<div class="flex items-center justify-center space-x-2 text-slate-600 text-sm"><span class="material-symbols-outlined text-sm">email</span><span>${email}</span></div>`;
+  }
+  if (website) {
+    contactContainer.innerHTML += `<div class="flex items-center justify-center space-x-2 text-slate-600 text-sm"><span class="material-symbols-outlined text-sm">language</span><span>${website}</span></div>`;
+  }
+  if (location) {
+    contactContainer.innerHTML += `<div class="flex items-center justify-center space-x-2 text-slate-600 text-sm"><span class="material-symbols-outlined text-sm">location_on</span><span>${location}</span></div>`;
+  }
+
+  // Update social networks
+  const socialContainer = document.getElementById('live-social');
+  socialContainer.innerHTML = '';
+
+  if (instagram) {
+    socialContainer.innerHTML += `<div class="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center"><span class="material-symbols-outlined text-white text-sm">photo_camera</span></div>`;
+  }
+  if (whatsappCountry && whatsapp) {
+    socialContainer.innerHTML += `<div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><span class="material-symbols-outlined text-white text-sm">chat</span></div>`;
+  }
+  if (linkedin) {
+    socialContainer.innerHTML += `<div class="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center"><span class="material-symbols-outlined text-white text-sm">work</span></div>`;
+  }
+}
+
+// Add event listeners for real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+  const fields = [
+    'preview-name', 'preview-job', 'preview-company', 'preview-bio', 'preview-title',
+    'preview-phone', 'preview-email', 'preview-website', 'preview-location',
+    'preview-instagram', 'preview-whatsapp-country', 'preview-whatsapp', 'preview-linkedin'
+  ];
+
+  fields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('input', updatePreview);
+      field.addEventListener('change', updatePreview);
+    }
+  });
+
+  // Initial preview update
+  updatePreview();
+});
+</script>
+
+<style>
+.step-content {
+  display: block;
+}
+
+.step-content.hidden {
+  display: none;
+}
+
+.step-content.active {
+  display: block;
+}
+</style>
+{% endblock %}
