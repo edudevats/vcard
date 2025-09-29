@@ -46,11 +46,24 @@
                 </div>
             </div>
 
+            <!-- Status Alert for Private Cards -->
+            {% if not item.card.is_public %}
+            <div class="mx-4 mt-4 mb-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <div class="flex items-start gap-2">
+                    <span class="material-symbols-outlined text-yellow-600 dark:text-yellow-400 mt-0.5">warning</span>
+                    <div>
+                        <p class="text-sm font-medium text-yellow-900 dark:text-yellow-100">Tarjeta Privada</p>
+                        <p class="text-xs text-yellow-800 dark:text-yellow-200">El código QR no funcionará hasta que la tarjeta sea pública.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- QR Code Display -->
             <div class="p-4 bg-gray-50 dark:bg-gray-700">
                 <div class="text-center">
                     <div class="inline-block p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
-                        <img src="{{ item.qr_base64 }}" alt="Código QR de {{ item.card.name }}" class="w-32 h-32">
+                        <img id="qr-image-{{ item.card.id }}" src="{{ item.qr_base64 }}" alt="Código QR de {{ item.card.name }}" class="w-32 h-32">
                     </div>
                     <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">Escanea para ver la tarjeta</p>
                 </div>
@@ -60,35 +73,77 @@
             <div class="p-4">
                 <!-- URL Display -->
                 <div class="mb-4">
-                    <input type="text" id="card-url-{{ item.card.id }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm" value="{{ item.card_url }}" readonly>
+                    <div class="flex gap-2">
+                        <input type="text" id="card-url-{{ item.card.id }}" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm" value="{{ item.card_url }}" readonly>
+                        <button type="button" class="px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium" onclick="copyToClipboard('card-url-{{ item.card.id }}')">
+                            <span class="material-symbols-outlined text-sm">content_copy</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" class="flex flex-col items-center gap-1 p-3 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors" onclick="copyToClipboard('card-url-{{ item.card.id }}')">
+                <div class="grid grid-cols-4 gap-2 mb-4">
+                    <button type="button" class="flex flex-col items-center gap-1 p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors" onclick="copyToClipboard('card-url-{{ item.card.id }}')">
                         <span class="material-symbols-outlined text-sm">content_copy</span>
                         <span class="text-xs font-medium">Copiar</span>
                     </button>
-                    <a href="{{ url_for('dashboard.download_qr', id=item.card.id) }}" class="flex flex-col items-center gap-1 p-3 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                    <a href="{{ url_for('dashboard.download_qr', id=item.card.id) }}" class="flex flex-col items-center gap-1 p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
                         <span class="material-symbols-outlined text-sm">download</span>
                         <span class="text-xs font-medium">Descargar</span>
                     </a>
-                    <button type="button" class="flex flex-col items-center gap-1 p-3 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors" onclick="shareQR('{{ item.card.name }}', '{{ item.card_url }}')">
-                        <span class="material-symbols-outlined text-sm">share</span>
-                        <span class="text-xs font-medium">Compartir</span>
+                    <button type="button" class="flex flex-col items-center gap-1 p-2 bg-green-500/10 text-green-600 rounded-lg hover:bg-green-500/20 transition-colors" onclick="saveQR({{ item.card.id }}, '{{ item.card.name }}')">
+                        <span class="material-symbols-outlined text-sm">save</span>
+                        <span class="text-xs font-medium">Guardar</span>
+                    </button>
+                    <button type="button" class="flex flex-col items-center gap-1 p-2 bg-blue-500/10 text-blue-600 rounded-lg hover:bg-blue-500/20 transition-colors" onclick="printQR('{{ item.card.title or item.card.name }}', '{{ item.card_url }}', '{{ item.qr_base64 }}')">
+                        <span class="material-symbols-outlined text-sm">print</span>
+                        <span class="text-xs font-medium">Imprimir</span>
                     </button>
                 </div>
 
+                <!-- Share Button -->
+                <button type="button" class="w-full flex items-center justify-center gap-2 p-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors mb-4" onclick="shareQR('{{ item.card.name }}', '{{ item.card_url }}', '{{ item.qr_base64 }}')">
+                    <span class="material-symbols-outlined text-sm">share</span>
+                    <span class="text-sm font-medium">Compartir</span>
+                </button>
+
                 <!-- View Card Link -->
-                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <a href="{{ url_for('public.card_view', slug=item.card.slug) }}" target="_blank" class="flex items-center justify-center gap-2 w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                        <span class="material-symbols-outlined text-sm">visibility</span>
-                        <span class="text-sm font-medium">Ver Tarjeta</span>
-                    </a>
-                </div>
+                <a href="{{ url_for('public.card_view', slug=item.card.slug) }}" target="_blank" class="flex items-center justify-center gap-2 w-full p-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    <span class="material-symbols-outlined text-sm">visibility</span>
+                    <span class="text-sm font-medium">Ver Tarjeta</span>
+                </a>
             </div>
         </div>
         {% endfor %}
+    </div>
+
+    <!-- Usage Guide -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 mt-1">lightbulb</span>
+            <div>
+                <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">¿Cómo usar tu QR?</h4>
+                <div class="grid grid-cols-1 gap-3 text-sm text-blue-800 dark:text-blue-200">
+                    <div>
+                        <p class="font-medium mb-1">📱 En tu teléfono:</p>
+                        <ul class="text-xs space-y-1 ml-4">
+                            <li>• Guarda la imagen en tu galería</li>
+                            <li>• Úsala como fondo de pantalla</li>
+                            <li>• Compártela por WhatsApp o email</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-medium mb-1">🖨️ Material impreso:</p>
+                        <ul class="text-xs space-y-1 ml-4">
+                            <li>• Tarjetas de presentación</li>
+                            <li>• Flyers y folletos publicitarios</li>
+                            <li>• Carteles y banners</li>
+                            <li>• Pegatinas y stickers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     {% else %}
     <!-- Empty State -->
@@ -114,8 +169,53 @@
 
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Compartir Código QR</h3>
 
+        <!-- QR Preview -->
+        <div class="text-center mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <img id="modal-qr-image" src="" alt="QR Code" class="w-24 h-24 mx-auto mb-2 rounded">
+            <h4 id="modal-card-name" class="font-medium text-gray-900 dark:text-white"></h4>
+            <p id="modal-card-url" class="text-xs text-gray-600 dark:text-gray-400 break-all"></p>
+        </div>
+
         <div class="space-y-3" id="share-options">
-            <!-- Options will be populated by JavaScript -->
+            <button class="w-full flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" onclick="shareWhatsApp()">
+                <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">chat</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">WhatsApp</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Enviar por mensaje</p>
+                </div>
+            </button>
+
+            <button class="w-full flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" onclick="shareEmail()">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">mail</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">Email</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Enviar por correo</p>
+                </div>
+            </button>
+
+            <button class="w-full flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors" onclick="shareTelegram()">
+                <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">send</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">Telegram</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Compartir en Telegram</p>
+                </div>
+            </button>
+
+            <button class="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" onclick="copyQRLink()">
+                <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">link</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">Copiar Enlace</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Copiar URL al portapapeles</p>
+                </div>
+            </button>
         </div>
 
         <button class="w-full mt-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-medium" onclick="closeShareModal()">
@@ -151,86 +251,293 @@
 
 {% block scripts %}
 <script>
+// CSRF token for AJAX requests
+const csrfToken = "{{ csrf_token() }}";
+
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
     element.select();
+    element.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(element.value);
+
+    // Visual feedback
+    const button = element.nextElementSibling;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<span class="material-symbols-outlined text-sm">check</span>';
+    button.classList.add('copied');
+
     showNotification('¡URL copiada al portapapeles!', 'success');
+
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('copied');
+    }, 2000);
 }
 
-function shareQR(cardName, cardUrl) {
-    // Set modal title
+function shareQR(cardName, cardUrl, qrBase64) {
+    // Update modal content
     document.querySelector('#share-modal h3').textContent = `Compartir QR de ${cardName}`;
+    document.getElementById('modal-qr-image').src = qrBase64;
+    document.getElementById('modal-card-name').textContent = cardName;
+    document.getElementById('modal-card-url').textContent = cardUrl;
 
-    // Populate share options
-    const shareOptions = document.getElementById('share-options');
-    shareOptions.innerHTML = `
-        <button class="w-full flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" onclick="shareWhatsApp('${cardName}', '${cardUrl}')">
-            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <span class="material-symbols-outlined text-white">chat</span>
-            </div>
-            <div class="text-left">
-                <p class="font-medium text-gray-900 dark:text-white">WhatsApp</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Enviar por mensaje</p>
-            </div>
-        </button>
-
-        <button class="w-full flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" onclick="shareEmail('${cardName}', '${cardUrl}')">
-            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <span class="material-symbols-outlined text-white">mail</span>
-            </div>
-            <div class="text-left">
-                <p class="font-medium text-gray-900 dark:text-white">Email</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Enviar por correo</p>
-            </div>
-        </button>
-
-        <button class="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" onclick="copyQRLink('${cardUrl}')">
-            <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
-                <span class="material-symbols-outlined text-white">link</span>
-            </div>
-            <div class="text-left">
-                <p class="font-medium text-gray-900 dark:text-white">Copiar Enlace</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Copiar URL al portapapeles</p>
-            </div>
-        </button>
-    `;
+    // Store current card data for sharing functions
+    window.currentCardData = { name: cardName, url: cardUrl };
 
     document.getElementById('share-modal').classList.remove('hidden');
 }
 
 function closeShareModal() {
     document.getElementById('share-modal').classList.add('hidden');
+    window.currentCardData = null;
 }
 
-function shareWhatsApp(cardName, cardUrl) {
-    const text = `¡Mira mi tarjeta digital! ${cardName} - ${cardUrl}`;
+function shareWhatsApp() {
+    if (!window.currentCardData) return;
+    const text = `¡Mira mi tarjeta digital! ${window.currentCardData.name} - ${window.currentCardData.url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     closeShareModal();
 }
 
-function shareEmail(cardName, cardUrl) {
-    const subject = `Tarjeta Digital de ${cardName}`;
-    const body = `¡Hola!\n\nTe comparto mi tarjeta de presentación digital.\n\nPuedes verla escaneando este código QR o visitando: ${cardUrl}\n\nSaludos,\n${cardName}`;
+function shareEmail() {
+    if (!window.currentCardData) return;
+    const subject = `Tarjeta Digital de ${window.currentCardData.name}`;
+    const body = `¡Hola!\n\nTe comparto mi tarjeta de presentación digital.\n\nPuedes verla escaneando este código QR o visitando: ${window.currentCardData.url}\n\nSaludos,\n${window.currentCardData.name}`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
     closeShareModal();
 }
 
-function copyQRLink(cardUrl) {
-    navigator.clipboard.writeText(cardUrl);
+function shareTelegram() {
+    if (!window.currentCardData) return;
+    const text = `¡Mira mi tarjeta digital! ${window.currentCardData.name} - ${window.currentCardData.url}`;
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(window.currentCardData.url)}&text=${encodeURIComponent(text)}`, '_blank');
+    closeShareModal();
+}
+
+function copyQRLink() {
+    if (!window.currentCardData) return;
+    navigator.clipboard.writeText(window.currentCardData.url);
     showNotification('¡Enlace copiado al portapapeles!', 'success');
     closeShareModal();
 }
 
+function saveQR(cardId, cardName) {
+    // Show loading state
+    const saveBtn = event.target.closest('button');
+    const originalHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span class="material-symbols-outlined text-sm">hourglass_empty</span><span class="text-xs font-medium ml-1">Guardando...</span>';
+    saveBtn.disabled = true;
+
+    fetch(`/dashboard/cards/${cardId}/qr/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            saveBtn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span><span class="text-xs font-medium ml-1">¡Guardado!</span>';
+            saveBtn.classList.add('saved');
+            showNotification('¡Código QR guardado exitosamente!', 'success');
+
+            setTimeout(() => {
+                saveBtn.innerHTML = originalHTML;
+                saveBtn.classList.remove('saved');
+                saveBtn.disabled = false;
+            }, 2000);
+        } else {
+            showNotification('Error al guardar: ' + (data.error || 'Error desconocido'), 'error');
+            saveBtn.innerHTML = originalHTML;
+            saveBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al guardar el código QR: ' + error.message, 'error');
+        saveBtn.innerHTML = originalHTML;
+        saveBtn.disabled = false;
+    });
+}
+
+function printQR(cardTitle, cardUrl, qrBase64) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Código QR - ${cardTitle}</title>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 40px;
+                        text-align: center;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background: white;
+                    }
+                    .header {
+                        margin-bottom: 30px;
+                    }
+                    h1 {
+                        color: #1193d4;
+                        margin: 0 0 10px 0;
+                        font-size: 32px;
+                        font-weight: 600;
+                    }
+                    .subtitle {
+                        color: #666;
+                        font-size: 18px;
+                        margin: 0 0 30px 0;
+                    }
+                    .qr-wrapper {
+                        margin: 30px 0;
+                        padding: 30px;
+                        border: 2px solid #f0f0f0;
+                        border-radius: 15px;
+                        display: inline-block;
+                    }
+                    img {
+                        max-width: 400px;
+                        border-radius: 10px;
+                    }
+                    .url {
+                        font-size: 14px;
+                        color: #666;
+                        word-break: break-all;
+                        margin-top: 30px;
+                        padding: 15px;
+                        background: #f8f9fa;
+                        border-radius: 8px;
+                        font-family: monospace;
+                    }
+                    .instructions {
+                        margin-top: 30px;
+                        font-size: 12px;
+                        color: #888;
+                        line-height: 1.5;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${cardTitle}</h1>
+                    <div class="subtitle">Tarjeta Digital</div>
+                </div>
+                <div class="qr-wrapper">
+                    <img src="${qrBase64}" alt="Código QR">
+                </div>
+                <div class="url">${cardUrl}</div>
+                <div class="instructions">
+                    Escanea este código QR con tu teléfono para ver la tarjeta digital
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
 function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(n => n.remove());
+
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 left-4 right-4 z-50 p-4 rounded-lg text-white text-sm font-medium ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</span>
+            <span>${message}</span>
+        </div>
+    `;
+
     document.body.appendChild(notification);
 
+    // Show notification
+    setTimeout(() => notification.classList.add('show'), 100);
+
+    // Hide notification
     setTimeout(() => {
-        notification.remove();
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
+
+// Add event listeners when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('QR menu page loaded');
+});
 </script>
+
+<style>
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+    z-index: 10000;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    border-left: 4px solid #48bb78;
+    max-width: 400px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.error {
+    border-left-color: #f56565;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification-content span.material-symbols-outlined {
+    font-size: 1.25rem;
+}
+
+.notification.success .notification-content span.material-symbols-outlined {
+    color: #48bb78;
+}
+
+.notification.error .notification-content span.material-symbols-outlined {
+    color: #f56565;
+}
+
+.notification-content span:last-child {
+    color: #2d3748;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        border-radius: 8px;
+        padding: 0.875rem 1rem;
+    }
+
+    .notification-content {
+        gap: 0.5rem;
+    }
+
+    .notification-content span.material-symbols-outlined {
+        font-size: 1.125rem;
+    }
+
+    .notification-content span:last-child {
+        font-size: 0.8rem;
+    }
+}
+</style>
 {% endblock %}
