@@ -1522,4 +1522,5 @@ def qr_menu():
             'card_url': card_url
         })
 
-    return render_template('dashboard/qr_menu_pwa.html', cards_with_qr=cards_with_qr)
+    # Use qr_code_pwa.html template with show_list flag
+    return render_template('dashboard/qr_code_pwa.html', cards_with_qr=cards_with_qr, show_list=True)
