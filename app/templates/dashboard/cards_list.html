@@ -121,6 +121,11 @@
             <span class="material-symbols-outlined text-primary">add_box</span>
             <span class="font-medium">Nueva Tarjeta</span>
         </a>
+        <a href="{{ url_for('dashboard.qr_menu') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">qr_code</span>
+            <span class="font-medium">Códigos QR</span>
+        </a>
         <a href="{{ url_for('dashboard.analytics') }}"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-primary">bar_chart</span>

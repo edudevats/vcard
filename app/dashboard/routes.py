@@ -675,17 +675,27 @@ def apply_theme_preset(id):
 @login_required
 def card_qr(id):
     card = get_user_card_or_404(id)
-    
+
     # Generate the public URL for the QR code
     card_url = url_for('public.card_view', slug=card.slug, _external=True)
-    
+
     # Generate QR code with card theme colors
     qr_img = generate_styled_qr_code(card_url, card.theme, size=(400, 400))
-    
+
     # Convert to base64 for display
     qr_base64 = qr_to_base64(qr_img)
-    
-    return render_template('dashboard/qr_code.html', card=card, qr_base64=qr_base64, card_url=card_url)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/qr_code_pwa.html', card=card, qr_base64=qr_base64, card_url=card_url)
+    else:
+        return render_template('dashboard/qr_code.html', card=card, qr_base64=qr_base64, card_url=card_url)
 
 @bp.route('/cards/<int:id>/qr/download')
 @login_required
@@ -1407,18 +1417,18 @@ def profile():
     """User profile and password change"""
     form = ChangePasswordForm()
 
-    if form.validate_on_submit():
-        # Verify current password
+    if request.method == 'POST':
+        # First check if current password is correct
         if not current_user.check_password(form.current_password.data):
-            flash('La contraseña actual es incorrecta.', 'error')
+            form.current_password.errors.append('La contraseña actual es incorrecta.')
+        elif form.validate_on_submit():
+            # Update password
+            current_user.set_password(form.new_password.data)
+            db.session.commit()
+
+            flash('¡Contraseña cambiada exitosamente!', 'success')
             return redirect(url_for('dashboard.profile'))
-
-        # Update password
-        current_user.set_password(form.new_password.data)
-        db.session.commit()
-
-        flash('¡Contraseña cambiada exitosamente!', 'success')
-        return redirect(url_for('dashboard.profile'))
+        # If validation fails for other reasons, errors will be in form.errors
 
     # Detect device type from User-Agent
     user_agent = request.headers.get('User-Agent', '').lower()
@@ -1487,3 +1497,29 @@ def cards_list():
                           cards=cards,
                           status_filter=status_filter,
                           search_query=search_query)
+
+@bp.route('/qr-menu')
+@login_required
+def qr_menu():
+    """QR codes menu showing all user's cards with their QR codes"""
+    cards = current_user.cards.order_by(Card.created_at.desc()).all()
+
+    # Generate QR codes for each card
+    cards_with_qr = []
+    for card in cards:
+        # Generate the public URL for the QR code
+        card_url = url_for('public.card_view', slug=card.slug, _external=True)
+
+        # Generate QR code with card theme colors
+        qr_img = generate_styled_qr_code(card_url, card.theme, size=(300, 300))
+
+        # Convert to base64 for display
+        qr_base64 = qr_to_base64(qr_img)
+
+        cards_with_qr.append({
+            'card': card,
+            'qr_base64': qr_base64,
+            'card_url': card_url
+        })
+
+    return render_template('dashboard/qr_menu_pwa.html', cards_with_qr=cards_with_qr)

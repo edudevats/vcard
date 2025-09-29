@@ -1,0 +1,311 @@
+{% extends "base_pwa.html" %}
+
+{% set active_tab = 'create' %}
+{% set show_header = true %}
+{% set show_bottom_nav = true %}
+
+{% block title %}Código QR - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <!-- Header -->
+    <div class="text-center mb-6">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Código QR</h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ card.name }}</p>
+    </div>
+
+    <!-- QR Display -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 text-center border border-gray-200 dark:border-gray-700">
+        <div class="mb-4">
+            <div class="inline-block p-4 rounded-lg" style="background: linear-gradient(135deg, {{ card.theme.primary_color }}15, {{ card.theme.secondary_color }}15);">
+                <img id="qr-image" src="{{ qr_base64 }}" alt="Código QR de {{ card.name }}" class="w-48 h-48 rounded-lg">
+            </div>
+        </div>
+
+        <!-- URL Display -->
+        <div class="mb-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">URL de tu tarjeta</p>
+            <div class="flex gap-2">
+                <input type="text" id="card-url" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white text-sm" value="{{ card_url }}" readonly>
+                <button type="button" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium" onclick="copyToClipboard('card-url')">
+                    <span class="material-symbols-outlined text-sm">content_copy</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 gap-3">
+            <a href="{{ url_for('dashboard.download_qr', id=card.id) }}" class="flex items-center justify-center gap-2 p-3 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined">download</span>
+                <span class="text-sm font-medium">Descargar</span>
+            </a>
+            <button type="button" class="flex items-center justify-center gap-2 p-3 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors" onclick="shareQR()">
+                <span class="material-symbols-outlined">share</span>
+                <span class="text-sm font-medium">Compartir</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Customization Options -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Personalizar QR</h3>
+
+        <!-- Style Selection -->
+        <div class="mb-4">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Estilo</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="style-option">
+                    <input type="radio" name="qr-style" id="style-themed" value="themed" checked class="hidden">
+                    <label for="style-themed" class="block p-3 border-2 border-primary rounded-lg cursor-pointer bg-primary/5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded" style="background: linear-gradient(45deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});"></div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">Con colores</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-400">Tema personalizado</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <div class="style-option">
+                    <input type="radio" name="qr-style" id="style-classic" value="classic" class="hidden">
+                    <label for="style-classic" class="block p-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-primary">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-black rounded"></div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">Clásico</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-400">Blanco y negro</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Size Selection -->
+        <div class="mb-4">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Tamaño</p>
+            <select id="qr-size" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                <option value="300">Pequeño (300px)</option>
+                <option value="400" selected>Mediano (400px)</option>
+                <option value="600">Grande (600px)</option>
+            </select>
+        </div>
+
+        <!-- Regenerate Button -->
+        <button type="button" class="w-full bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors" onclick="regenerateQR()">
+            <span class="material-symbols-outlined text-sm mr-2">refresh</span>
+            Regenerar QR
+        </button>
+    </div>
+
+    <!-- Usage Tips -->
+    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 mt-1">lightbulb</span>
+            <div>
+                <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">¿Cómo usar tu QR?</h4>
+                <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                    <li>• Guarda la imagen en tu galería</li>
+                    <li>• Compártela por WhatsApp o email</li>
+                    <li>• Imprímela en tarjetas de presentación</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div id="share-modal" class="fixed inset-0 bg-black/50 hidden z-50" onclick="closeShareModal()">
+    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-2xl p-6" onclick="event.stopPropagation()">
+        <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Compartir Código QR</h3>
+
+        <div class="space-y-3">
+            <button class="w-full flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors" onclick="shareWhatsApp()">
+                <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">chat</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">WhatsApp</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Enviar por mensaje</p>
+                </div>
+            </button>
+
+            <button class="w-full flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors" onclick="shareEmail()">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">mail</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">Email</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Enviar por correo</p>
+                </div>
+            </button>
+
+            <button class="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" onclick="copyQRLink()">
+                <div class="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">link</span>
+                </div>
+                <div class="text-left">
+                    <p class="font-medium text-gray-900 dark:text-white">Copiar Enlace</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Copiar URL al portapapeles</p>
+                </div>
+            </button>
+        </div>
+
+        <button class="w-full mt-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg font-medium" onclick="closeShareModal()">
+            Cancelar
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block slide_menu_content %}
+<!-- Slide menu content for QR -->
+<div class="py-4">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Opciones QR</h3>
+    <div class="space-y-2">
+        <a href="{{ url_for('dashboard.card_theme', id=card.id) }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">palette</span>
+            <span class="font-medium">Cambiar Tema</span>
+        </a>
+        <a href="{{ url_for('dashboard.edit_card', id=card.id) }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">edit</span>
+            <span class="font-medium">Editar Tarjeta</span>
+        </a>
+        <a href="{{ url_for('public.card_view', slug=card.slug) }}" target="_blank"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">visibility</span>
+            <span class="font-medium">Ver Tarjeta</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function regenerateQR() {
+    const style = document.querySelector('input[name="qr-style"]:checked').value;
+    const size = document.getElementById('qr-size').value;
+
+    const qrImage = document.getElementById('qr-image');
+    const regenerateBtn = document.querySelector('button[onclick="regenerateQR()"]');
+
+    qrImage.style.opacity = '0.5';
+    regenerateBtn.innerHTML = '<span class="material-symbols-outlined text-sm mr-2">refresh</span>Generando...';
+    regenerateBtn.disabled = true;
+
+    fetch(`{{ url_for('dashboard.generate_qr', id=card.id) }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+        },
+        body: JSON.stringify({
+            style: style,
+            size: parseInt(size)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            qrImage.src = data.qr_code;
+            qrImage.style.opacity = '1';
+            regenerateBtn.innerHTML = '<span class="material-symbols-outlined text-sm mr-2">refresh</span>Regenerar QR';
+            regenerateBtn.disabled = false;
+            showNotification('¡Código QR actualizado!', 'success');
+        } else {
+            showNotification('Error al generar el código QR', 'error');
+            qrImage.style.opacity = '1';
+            regenerateBtn.innerHTML = '<span class="material-symbols-outlined text-sm mr-2">refresh</span>Regenerar QR';
+            regenerateBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al generar el código QR', 'error');
+        qrImage.style.opacity = '1';
+        regenerateBtn.innerHTML = '<span class="material-symbols-outlined text-sm mr-2">refresh</span>Regenerar QR';
+        regenerateBtn.disabled = false;
+    });
+}
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    navigator.clipboard.writeText(element.value);
+    showNotification('¡URL copiada al portapapeles!', 'success');
+}
+
+function shareQR() {
+    document.getElementById('share-modal').classList.remove('hidden');
+}
+
+function closeShareModal() {
+    document.getElementById('share-modal').classList.add('hidden');
+}
+
+function shareWhatsApp() {
+    const text = `¡Mira mi tarjeta digital! ${decodeURIComponent('{{ card.name }}')} - {{ card_url }}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    closeShareModal();
+}
+
+function shareEmail() {
+    const subject = `Tarjeta Digital de {{ card.name }}`;
+    const body = `¡Hola!\n\nTe comparto mi tarjeta de presentación digital.\n\nPuedes verla escaneando este código QR o visitando: {{ card_url }}\n\nSaludos,\n{{ card.name }}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+    closeShareModal();
+}
+
+function copyQRLink() {
+    navigator.clipboard.writeText('{{ card_url }}');
+    showNotification('¡Enlace copiado al portapapeles!', 'success');
+    closeShareModal();
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 left-4 right-4 z-50 p-4 rounded-lg text-white text-sm font-medium ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Initialize download link with default values
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultStyle = document.querySelector('input[name="qr-style"]:checked').value;
+    const defaultSize = document.getElementById('qr-size').value;
+    updateDownloadLink(defaultStyle, defaultSize);
+
+    // Add event listeners to style options
+    document.querySelectorAll('input[name="qr-style"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.style-option label').forEach(label => {
+                label.classList.remove('border-primary', 'bg-primary/5');
+                label.classList.add('border-gray-300', 'dark:border-gray-600');
+            });
+            this.parentElement.querySelector('label').classList.remove('border-gray-300', 'dark:border-gray-600');
+            this.parentElement.querySelector('label').classList.add('border-primary', 'bg-primary/5');
+            regenerateQR();
+        });
+    });
+});
+
+function updateDownloadLink(style, size) {
+    const downloadBtn = document.querySelector('a[href*="download_qr"]');
+    if (downloadBtn) {
+        const baseUrl = "{{ url_for('dashboard.download_qr', id=card.id) }}";
+        const params = new URLSearchParams();
+        params.append('style', style);
+        params.append('size', size);
+        downloadBtn.href = `${baseUrl}?${params.toString()}`;
+    }
+}
+</script>
+{% endblock %}

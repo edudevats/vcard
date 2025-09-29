@@ -43,39 +43,54 @@
             </button>
             <div id="password-section" class="hidden px-4 pb-4">
                 <form method="POST" class="space-y-3">
-                    {{ change_password_form.hidden_tag() }}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Contraseña Actual
-                        </label>
-                        <input type="password"
-                               name="current_password"
-                               required
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Nueva Contraseña
-                        </label>
-                        <input type="password"
-                               name="new_password"
-                               required
-                               minlength="6"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Confirmar Contraseña
-                        </label>
-                        <input type="password"
-                               name="confirm_password"
-                               required
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    </div>
-                    <button type="submit" class="w-full bg-primary text-white py-2 px-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
-                        Cambiar Contraseña
-                    </button>
-                </form>
+                   {{ form.hidden_tag() }}
+                   <div>
+                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                           Contraseña Actual
+                       </label>
+                       <input type="password"
+                              name="current_password"
+                              required
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                       {% if form.current_password.errors %}
+                           <div class="text-red-500 text-xs mt-1">
+                               {% for error in form.current_password.errors %}{{ error }}{% endfor %}
+                           </div>
+                       {% endif %}
+                   </div>
+                   <div>
+                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                           Nueva Contraseña
+                       </label>
+                       <input type="password"
+                              name="new_password"
+                              required
+                              minlength="6"
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                       {% if form.new_password.errors %}
+                           <div class="text-red-500 text-xs mt-1">
+                               {% for error in form.new_password.errors %}{{ error }}{% endfor %}
+                           </div>
+                       {% endif %}
+                   </div>
+                   <div>
+                       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                           Confirmar Contraseña
+                       </label>
+                       <input type="password"
+                              name="confirm_password"
+                              required
+                              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                       {% if form.confirm_password.errors %}
+                           <div class="text-red-500 text-xs mt-1">
+                               {% for error in form.confirm_password.errors %}{{ error }}{% endfor %}
+                           </div>
+                       {% endif %}
+                   </div>
+                   <button type="submit" class="w-full bg-primary text-white py-2 px-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+                       Cambiar Contraseña
+                   </button>
+               </form>
             </div>
         </div>
 
@@ -164,13 +179,13 @@
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Configuración</h3>
     <div class="space-y-2">
         <a href="#password-section"
-           onclick="toggleSection('password-section'); closeSlideMenu();"
+           onclick="toggleSection('password-section');"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-primary">lock</span>
             <span class="font-medium">Cambiar Contraseña</span>
         </a>
         <a href="#account-section"
-           onclick="toggleSection('account-section'); closeSlideMenu();"
+           onclick="toggleSection('account-section');"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-primary">info</span>
             <span class="font-medium">Información de Cuenta</span>
@@ -203,32 +218,38 @@ function toggleSection(sectionId) {
 document.addEventListener('DOMContentLoaded', function() {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
 
-    // Initialize toggle state
-    const isDark = document.documentElement.classList.contains('dark');
-    updateToggleState(isDark);
+    if (darkModeToggle) {
+        // Initialize toggle state based on localStorage and current state
+        const savedDarkMode = localStorage.getItem('darkMode');
+        const isDark = savedDarkMode === 'true' || (!savedDarkMode && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    darkModeToggle.addEventListener('click', function() {
-        const html = document.documentElement;
-        const currentlyDark = html.classList.contains('dark');
-        const newDarkState = !currentlyDark;
+        // Apply initial state
+        document.documentElement.classList.toggle('dark', isDark);
+        updateToggleState(isDark);
 
-        html.classList.toggle('dark', newDarkState);
-        localStorage.setItem('darkMode', newDarkState ? 'true' : 'false');
-        updateToggleState(newDarkState);
-    });
+        darkModeToggle.addEventListener('click', function() {
+            const html = document.documentElement;
+            const currentlyDark = html.classList.contains('dark');
+            const newDarkState = !currentlyDark;
 
-    function updateToggleState(isDark) {
-        const toggle = darkModeToggle.querySelector('span');
-        if (isDark) {
-            darkModeToggle.classList.add('dark:bg-primary');
-            darkModeToggle.classList.remove('bg-gray-200');
-            toggle.classList.add('dark:translate-x-6');
-            toggle.classList.remove('translate-x-1');
-        } else {
-            darkModeToggle.classList.remove('dark:bg-primary');
-            darkModeToggle.classList.add('bg-gray-200');
-            toggle.classList.remove('dark:translate-x-6');
-            toggle.classList.add('translate-x-1');
+            html.classList.toggle('dark', newDarkState);
+            localStorage.setItem('darkMode', newDarkState ? 'true' : 'false');
+            updateToggleState(newDarkState);
+        });
+
+        function updateToggleState(isDark) {
+            const toggle = darkModeToggle.querySelector('span');
+            if (isDark) {
+                darkModeToggle.classList.add('bg-primary');
+                darkModeToggle.classList.remove('bg-gray-200');
+                toggle.classList.add('translate-x-6');
+                toggle.classList.remove('translate-x-1');
+            } else {
+                darkModeToggle.classList.remove('bg-primary');
+                darkModeToggle.classList.add('bg-gray-200');
+                toggle.classList.remove('translate-x-6');
+                toggle.classList.add('translate-x-1');
+            }
         }
     }
 });
