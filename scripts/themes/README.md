@@ -1,6 +1,6 @@
 # Scripts de Temas
 
-Scripts para crear y gestionar temas del proyecto VCard.
+Scripts para crear y gestionar temas del proyecto ATScard.
 
 ## Scripts Disponibles
 

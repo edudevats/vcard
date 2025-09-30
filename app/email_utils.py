@@ -44,7 +44,7 @@ def send_welcome_email(user):
     """Send welcome email after registration"""
     send_email(
         user.email,
-        'Bienvenido a VCard',
+        'Bienvenido a ATScard',
         'welcome',
         user=user
     )

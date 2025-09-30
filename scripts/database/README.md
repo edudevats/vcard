@@ -1,6 +1,6 @@
 # Scripts de Base de Datos
 
-Scripts para actualizar y mantener la base de datos del proyecto VCard.
+Scripts para actualizar y mantener la base de datos del proyecto ATScard.
 
 ## ⚠️ IMPORTANTE
 **SIEMPRE hacer backup de la base de datos antes de ejecutar cualquier script.**

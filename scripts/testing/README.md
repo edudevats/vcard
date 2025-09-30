@@ -1,6 +1,6 @@
 # Scripts de Testing
 
-Scripts para probar y validar funcionalidades del proyecto VCard.
+Scripts para probar y validar funcionalidades del proyecto ATScard.
 
 ## Scripts Disponibles
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script to create default themes for the VCard application
+Script to create default themes for the ATScard application
 Run this after applying migrations to populate the database with default themes
 """
 from app import create_app, db

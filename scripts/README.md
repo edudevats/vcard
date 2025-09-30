@@ -1,6 +1,6 @@
 # Scripts de Mantenimiento
 
-Esta carpeta contiene scripts útiles para el mantenimiento y configuración del proyecto VCard.
+Esta carpeta contiene scripts útiles para el mantenimiento y configuración del proyecto ATScard.
 
 ## Estructura de Carpetas
 

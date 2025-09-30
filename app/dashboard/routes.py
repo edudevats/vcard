@@ -922,10 +922,10 @@ def edit_product(card_id, product_id):
 def analytics():
     """Enhanced analytics dashboard"""
     days = request.args.get('days', 30, type=int)
-    
+
     # Get user's analytics data
     analytics_data = AnalyticsService.get_user_analytics(current_user.id, days)
-    
+
     # Get device analytics for all user's cards
     card_ids = [card['card_id'] for card in analytics_data.get('cards_analytics', [])]
     device_analytics = {}
@@ -939,10 +939,10 @@ def analytics():
             CardView.card_id.in_(card_ids),
             CardView.viewed_at >= get_date_range_utc(days)[0]
         ).group_by(CardView.device_type).all()
-        
+
         total_user_views = sum(stat.count for stat in user_device_query)
         user_device_breakdown = []
-        
+
         for stat in user_device_query:
             device_type = stat.device_type or 'Unknown'
             percentage = (stat.count / total_user_views * 100) if total_user_views > 0 else 0
@@ -951,11 +951,11 @@ def analytics():
                 'count': stat.count,
                 'percentage': round(percentage, 1)
             })
-        
+
         # Calculate mobile vs desktop for user
         mobile_count = sum(d['count'] for d in user_device_breakdown if d['device_type'] in ['mobile', 'tablet'])
         desktop_count = sum(d['count'] for d in user_device_breakdown if d['device_type'] == 'desktop')
-        
+
         device_analytics = {
             'device_breakdown': user_device_breakdown,
             'total_views': total_user_views,
@@ -970,14 +970,14 @@ def analytics():
                 }
             }
         }
-    
+
     # Calculate growth rate
     prev_period_views = 0
     if analytics_data['cards_analytics']:
         prev_start, _ = get_date_range_utc(days*2)
         _, prev_period_end = get_date_range_utc(days)
         prev_period_start = prev_start
-        
+
         card_ids = [card['card_id'] for card in analytics_data['cards_analytics']]
         if card_ids:
             prev_period_views = CardView.query.filter(
@@ -985,11 +985,11 @@ def analytics():
                 CardView.viewed_at >= prev_period_start,
                 CardView.viewed_at < prev_period_end
             ).count()
-    
+
     growth_rate = 0
     if prev_period_views > 0:
         growth_rate = ((analytics_data['period_views'] - prev_period_views) / prev_period_views) * 100
-    
+
     # Global views today
     global_views_today = 0
     if analytics_data['cards_analytics']:
@@ -1001,17 +1001,17 @@ def analytics():
                 CardView.viewed_at >= today_start,
                 CardView.viewed_at <= today_end
             ).count()
-    
+
     # Aggregate data across all cards for charts
     all_daily_views = {}
     all_device_stats = {}
     all_browser_stats = {}
     all_location_stats = {}
     all_hourly_stats = {}
-    
+
     for card_analytics in analytics_data['cards_analytics']:
         card_data = card_analytics['analytics']
-        
+
         # Aggregate daily views
         for day in card_data['daily_views']:
             date = day['date']
@@ -1019,7 +1019,7 @@ def analytics():
                 all_daily_views[date] += day['views']
             else:
                 all_daily_views[date] = day['views']
-        
+
         # Aggregate device stats
         for device in card_data['device_stats']:
             device_name = device['device']
@@ -1027,7 +1027,7 @@ def analytics():
                 all_device_stats[device_name] += device['count']
             else:
                 all_device_stats[device_name] = device['count']
-        
+
         # Aggregate browser stats
         for browser in card_data['browser_stats']:
             browser_name = browser['browser']
@@ -1035,7 +1035,7 @@ def analytics():
                 all_browser_stats[browser_name] += browser['count']
             else:
                 all_browser_stats[browser_name] = browser['count']
-        
+
         # Aggregate location stats
         for location in card_data['location_stats']:
             country = location['country']
@@ -1043,7 +1043,7 @@ def analytics():
                 all_location_stats[country] += location['count']
             else:
                 all_location_stats[country] = location['count']
-        
+
         # Aggregate hourly stats
         for hour in card_data['hourly_stats']:
             hour_num = hour['hour']
@@ -1051,7 +1051,7 @@ def analytics():
                 all_hourly_stats[hour_num] += hour['count']
             else:
                 all_hourly_stats[hour_num] = hour['count']
-    
+
     # Format aggregated data for charts
     aggregated_analytics = {
         'total_views': analytics_data['total_views'],
@@ -1064,11 +1064,24 @@ def analytics():
         'location_stats': [{'country': country, 'count': count} for country, count in sorted(all_location_stats.items(), key=lambda x: x[1], reverse=True)[:10]],
         'hourly_stats': [{'hour': hour, 'count': all_hourly_stats.get(hour, 0)} for hour in range(24)]
     }
-    
-    return render_template('dashboard/analytics.html', 
-                         global_stats=aggregated_analytics,
-                         cards_analytics=analytics_data['cards_analytics'],
-                         device_analytics=device_analytics)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/analytics_pwa.html',
+                              global_stats=aggregated_analytics,
+                              cards_analytics=analytics_data['cards_analytics'],
+                              device_analytics=device_analytics)
+    else:
+        return render_template('dashboard/analytics.html',
+                              global_stats=aggregated_analytics,
+                              cards_analytics=analytics_data['cards_analytics'],
+                              device_analytics=device_analytics)
 
 
 @bp.route('/analytics-data')

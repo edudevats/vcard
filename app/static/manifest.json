@@ -1,6 +1,6 @@
 {
-  "name": "VCard Digital - Tarjetas de Presentación Digitales",
-  "short_name": "VCard Digital",
+  "name": "ATScard Digital - Tarjetas de Presentación Digitales",
+  "short_name": "ATScard Digital",
   "description": "Crea y gestiona tus tarjetas de presentación digitales de forma profesional",
   "start_url": "/",
   "id": "/",
@@ -155,7 +155,7 @@
   ],
   "protocol_handlers": [
     {
-      "protocol": "web+vcard",
+      "protocol": "web+atscard",
       "url": "/c/%s"
     }
   ],

@@ -20,13 +20,13 @@ class Config:
     SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year for static files
     
     # Email configuration
-    APP_NAME = os.environ.get('APP_NAME', 'VCard Digital')
+    APP_NAME = os.environ.get('APP_NAME', 'ATScard Digital')
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'localhost')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', '587'))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() == 'true'
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@vcard-digital.com')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@atscard.app')
     
     # Cache configuration
     CACHE_TYPE = os.environ.get('CACHE_TYPE', 'simple')

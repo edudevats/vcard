@@ -1,0 +1,366 @@
+{% extends "base_pwa.html" %}
+
+{% set active_tab = 'analytics' %}
+{% set show_header = true %}
+{% set show_bottom_nav = true %}
+
+{% block title %}Analytics - ATScard Digital{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <!-- Period Selector -->
+    <div class="mb-6">
+        <div class="flex gap-2 justify-center">
+            <button onclick="loadAnalytics(7)" class="px-4 py-2 text-sm rounded-lg {{ 'bg-primary text-white' if request.args.get('days', 30)|int == 7 else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }} transition-colors">
+                7 días
+            </button>
+            <button onclick="loadAnalytics(30)" class="px-4 py-2 text-sm rounded-lg {{ 'bg-primary text-white' if request.args.get('days', 30)|int == 30 else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }} transition-colors">
+                30 días
+            </button>
+            <button onclick="loadAnalytics(90)" class="px-4 py-2 text-sm rounded-lg {{ 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' if request.args.get('days', 30)|int != 90 else 'bg-primary text-white' }} transition-colors">
+                90 días
+            </button>
+        </div>
+    </div>
+
+    <!-- Global Summary Cards -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Visitas</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ global_stats.total_views }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Visitas Período</p>
+            <p class="text-2xl font-bold text-primary">{{ global_stats.period_views }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Crecimiento</p>
+            <p class="text-2xl font-bold {{ 'text-green-600' if global_stats.growth_rate >= 0 else 'text-red-600' }}">
+                {{ "%.1f"|format(global_stats.growth_rate or 0) }}%
+            </p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Visitas Hoy</p>
+            <p class="text-2xl font-bold text-orange-600">{{ global_stats.views_today or 0 }}</p>
+        </div>
+    </div>
+
+    <!-- Global Charts -->
+    <div class="space-y-6 mb-8">
+        <!-- Daily Views Chart -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Visitas Diarias</h3>
+            <div class="h-64">
+                <canvas id="globalDailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Device Distribution -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Dispositivos</h3>
+            <div class="h-64">
+                <canvas id="globalDeviceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Individual Cards Analytics -->
+    {% if cards_analytics %}
+    <div class="space-y-6">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Analytics por Tarjeta</h2>
+
+        <!-- Cards Navigation -->
+        <div class="flex gap-2 overflow-x-auto pb-2">
+            {% for card_data in cards_analytics %}
+            <button onclick="showCardAnalytics({{ card_data.card_id }})"
+                    id="card-tab-{{ card_data.card_id }}"
+                    class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap {{ 'bg-primary text-white' if loop.first else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }} transition-colors">
+                {{ card_data.card_name }}
+                <span class="ml-2 px-2 py-1 bg-primary/20 dark:bg-primary/30 rounded-full text-xs">{{ card_data.views }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Cards Content -->
+        {% for card_data in cards_analytics %}
+        <div id="card-analytics-{{ card_data.card_id }}" class="card-analytics {{ 'block' if loop.first else 'hidden' }}">
+            <!-- Card Summary -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Visitas</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ card_data.analytics.total_views }}</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Período Actual</p>
+                    <p class="text-xl font-bold text-primary">{{ card_data.analytics.period_views }}</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Tipos Dispositivos</p>
+                    <p class="text-xl font-bold text-blue-600">{{ card_data.analytics.device_stats|length }}</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Visitas Hoy</p>
+                    <p class="text-xl font-bold text-orange-600">{{ card_data.analytics.views_today or 0 }}</p>
+                </div>
+            </div>
+
+            <!-- Card Charts -->
+            <div class="space-y-6">
+                <!-- Daily Views -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Visitas Diarias</h4>
+                    <div class="h-48">
+                        <canvas id="dailyChart-{{ card_data.card_id }}"></canvas>
+                    </div>
+                </div>
+
+                <!-- Device Distribution -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Dispositivos</h4>
+                    <div class="h-48">
+                        <canvas id="deviceChart-{{ card_data.card_id }}"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Stats -->
+            <div class="grid grid-cols-1 gap-4 mt-6">
+                <!-- Browser Stats -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Navegadores Más Usados</h4>
+                    {% if card_data.analytics.browser_stats %}
+                        <div class="space-y-2">
+                            {% for browser in card_data.analytics.browser_stats[:5] %}
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ browser.browser }}</span>
+                                <span class="px-2 py-1 bg-primary/20 dark:bg-primary/30 rounded-full text-xs font-medium">{{ browser.count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No hay datos de navegadores</p>
+                    {% endif %}
+                </div>
+
+                <!-- Recent Daily Views -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Visitas por Día (Últimos 7 días)</h4>
+                    {% if card_data.analytics.daily_views %}
+                        <div class="space-y-2">
+                            {% for day in card_data.analytics.daily_views[-7:] %}
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ day.date }}</span>
+                                <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium">{{ day.views }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No hay datos de visitas diarias</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl text-gray-400 dark:text-gray-500">bar_chart</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay datos de analytics</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">Crea una tarjeta y compártela para ver las estadísticas</p>
+        <a href="{{ url_for('dashboard.new_card') }}"
+           class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined">add</span>
+            Crear Tarjeta
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Chart configurations
+let globalCharts = {};
+let individualCharts = {};
+
+// Initialize charts
+document.addEventListener('DOMContentLoaded', function() {
+    initializeGlobalCharts();
+    initializeIndividualCharts();
+});
+
+function initializeGlobalCharts() {
+    // Global Daily Views Chart
+    const globalDailyCtx = document.getElementById('globalDailyChart');
+    if (globalDailyCtx) {
+        const dailyData = {{ global_stats.daily_views | tojson }};
+
+        globalCharts.daily = new Chart(globalDailyCtx, {
+            type: 'line',
+            data: {
+                labels: dailyData.map(d => d.date),
+                datasets: [{
+                    label: 'Visitas',
+                    data: dailyData.map(d => d.views),
+                    borderColor: '#1193d4',
+                    backgroundColor: '#1193d420',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Global Device Chart
+    const globalDeviceCtx = document.getElementById('globalDeviceChart');
+    if (globalDeviceCtx) {
+        const deviceData = {{ global_stats.device_stats | tojson }};
+
+        globalCharts.device = new Chart(globalDeviceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: deviceData.map(d => d.device),
+                datasets: [{
+                    data: deviceData.map(d => d.count),
+                    backgroundColor: ['#1193d4', '#28a745', '#ffc107', '#dc3545', '#6f42c1']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function initializeIndividualCharts() {
+    {% for card_data in cards_analytics %}
+    // Daily chart for card {{ card_data.card_id }}
+    const dailyCtx{{ card_data.card_id }} = document.getElementById('dailyChart-{{ card_data.card_id }}');
+    if (dailyCtx{{ card_data.card_id }}) {
+        const dailyData{{ card_data.card_id }} = {{ card_data.analytics.daily_views | tojson }};
+
+        individualCharts['daily-{{ card_data.card_id }}'] = new Chart(dailyCtx{{ card_data.card_id }}, {
+            type: 'bar',
+            data: {
+                labels: dailyData{{ card_data.card_id }}.map(d => d.date),
+                datasets: [{
+                    label: 'Visitas',
+                    data: dailyData{{ card_data.card_id }}.map(d => d.views),
+                    backgroundColor: '#28a745'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Device chart for card {{ card_data.card_id }}
+    const deviceCtx{{ card_data.card_id }} = document.getElementById('deviceChart-{{ card_data.card_id }}');
+    if (deviceCtx{{ card_data.card_id }}) {
+        const deviceData{{ card_data.card_id }} = {{ card_data.analytics.device_stats | tojson }};
+
+        individualCharts['device-{{ card_data.card_id }}'] = new Chart(deviceCtx{{ card_data.card_id }}, {
+            type: 'pie',
+            data: {
+                labels: deviceData{{ card_data.card_id }}.map(d => d.device),
+                datasets: [{
+                    data: deviceData{{ card_data.card_id }}.map(d => d.count),
+                    backgroundColor: ['#1193d4', '#28a745', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    {% endfor %}
+}
+
+function loadAnalytics(days) {
+    // Update active button states
+    document.querySelectorAll('.flex.gap-2 button').forEach(btn => {
+        btn.classList.remove('bg-primary', 'text-white');
+        btn.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+    });
+    event.target.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+    event.target.classList.add('bg-primary', 'text-white');
+
+    // Reload page with new days parameter
+    window.location.href = `${window.location.pathname}?days=${days}`;
+}
+
+function showCardAnalytics(cardId) {
+    // Hide all card analytics
+    document.querySelectorAll('.card-analytics').forEach(el => {
+        el.classList.add('hidden');
+    });
+
+    // Show selected card analytics
+    document.getElementById(`card-analytics-${cardId}`).classList.remove('hidden');
+
+    // Update tab states
+    document.querySelectorAll('[id^="card-tab-"]').forEach(tab => {
+        tab.classList.remove('bg-primary', 'text-white');
+        tab.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+    });
+    document.getElementById(`card-tab-${cardId}`).classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-700', 'dark:text-gray-300');
+    document.getElementById(`card-tab-${cardId}`).classList.add('bg-primary', 'text-white');
+}
+</script>
+{% endblock %}
