@@ -3,7 +3,7 @@ from flask_wtf.csrf import validate_csrf
 from flask_login import login_required, current_user
 from functools import wraps
 from sqlalchemy import func
-from ..models import Card, Service, Product, GalleryItem, Theme, CardView, Category
+from ..models import Card, Service, Product, GalleryItem, Theme, CardView, Category, AppointmentSystem, AppointmentType, Appointment
 from .. import db, cache
 from . import bp
 from .forms import CardForm, ServiceForm, ProductForm, GalleryUploadForm, AvatarUploadForm, ThemeCustomizationForm, ChangePasswordForm
@@ -31,7 +31,7 @@ def handle_category_creation(form, category_type):
     return form.category.data if form.category.data else None
 from ..analytics import AnalyticsService, get_analytics_summary
 from ..cache_utils import CacheManager
-from ..timezone_utils import now_utc_for_db, get_date_range_utc, format_local_datetime, now_local
+from ..timezone_utils import now_utc_for_db, get_date_range_utc, format_local_datetime, now_local, today_start_utc
 from datetime import datetime, timedelta
 import os
 import io
@@ -1537,3 +1537,427 @@ def qr_menu():
 
     # Use qr_code_pwa.html template with show_list flag
     return render_template('dashboard/qr_code_pwa.html', cards_with_qr=cards_with_qr, show_list=True)
+
+# ============================================================================
+# SISTEMA DE TURNOS - Rutas del Dashboard
+# ============================================================================
+
+@bp.route('/appointments')
+@login_required
+def appointments():
+    """Panel principal de gestión de turnos para el médico"""
+    # Verificar si el usuario tiene el sistema de turnos habilitado
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta. Contacta al administrador.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    system = current_user.appointment_system
+
+    # Obtener turno actual (en progreso)
+    current_appointment = system.get_current_appointment()
+
+    # Obtener todos los turnos en espera, ordenados por tiempo de creación (FIFO)
+    waiting_appointments = system.appointments.filter_by(status='waiting').order_by(Appointment.created_at).all()
+
+    # Estadísticas del día
+    today_start = today_start_utc()
+    today_stats = {
+        'completed': system.appointments.filter(
+            Appointment.status == 'completed',
+            Appointment.created_at >= today_start
+        ).count(),
+        'cancelled': system.appointments.filter(
+            Appointment.status == 'cancelled',
+            Appointment.created_at >= today_start
+        ).count(),
+        'no_show': system.appointments.filter(
+            Appointment.status == 'no_show',
+            Appointment.created_at >= today_start
+        ).count(),
+        'waiting': len(waiting_appointments)
+    }
+
+    # Obtener tipos de citas activos
+    appointment_types = system.get_active_types()
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/appointments_pwa.html',
+                              system=system,
+                              current_appointment=current_appointment,
+                              waiting_appointments=waiting_appointments,
+                              today_stats=today_stats,
+                              appointment_types=appointment_types)
+    else:
+        return render_template('dashboard/appointments/index.html',
+                              system=system,
+                              current_appointment=current_appointment,
+                              waiting_appointments=waiting_appointments,
+                              today_stats=today_stats,
+                              appointment_types=appointment_types)
+
+@bp.route('/appointments/settings', methods=['GET', 'POST'])
+@login_required
+def appointments_settings():
+    """Configuración del sistema de turnos y gestión de tipos de citas"""
+    from .forms import AppointmentSystemForm, AppointmentTypeForm
+
+    # Verificar si el usuario tiene el sistema de turnos habilitado
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta. Contacta al administrador.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    system = current_user.appointment_system
+
+    # Formulario de configuración del sistema
+    system_form = AppointmentSystemForm(obj=system)
+    if system_form.validate_on_submit() and request.form.get('form_type') == 'system':
+        system.business_name = system_form.business_name.data
+        system.welcome_message = system_form.welcome_message.data
+        system.business_hours = system_form.business_hours.data
+        system.display_mode = system_form.display_mode.data
+        db.session.commit()
+        flash('Configuración actualizada exitosamente', 'success')
+        return redirect(url_for('dashboard.appointments_settings'))
+
+    # Obtener todos los tipos de citas
+    appointment_types = system.appointment_types.order_by(AppointmentType.order_index).all()
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/appointments_settings_pwa.html',
+                              system=system,
+                              system_form=system_form,
+                              appointment_types=appointment_types)
+    else:
+        return render_template('dashboard/appointments/settings.html',
+                              system=system,
+                              system_form=system_form,
+                              appointment_types=appointment_types)
+
+@bp.route('/appointments/types/new', methods=['GET', 'POST'])
+@login_required
+def new_appointment_type():
+    """Crear nuevo tipo de cita"""
+    from .forms import AppointmentTypeForm
+    from ..models import AppointmentSystem, AppointmentType
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    system = current_user.appointment_system
+
+    # Verificar límite de tipos de citas
+    if not system.can_add_type():
+        flash(f'Has alcanzado el límite de {system.max_appointment_types} tipos de citas.', 'error')
+        return redirect(url_for('dashboard.appointments_settings'))
+
+    form = AppointmentTypeForm()
+    if form.validate_on_submit():
+        # Obtener el siguiente order_index
+        last_type = system.appointment_types.order_by(AppointmentType.order_index.desc()).first()
+        next_order = (last_type.order_index + 1) if last_type else 0
+
+        appointment_type = AppointmentType(
+            appointment_system_id=system.id,
+            name=form.name.data,
+            description=form.description.data,
+            color=form.color.data,
+            estimated_duration=form.estimated_duration.data,
+            prefix=form.prefix.data.upper(),
+            is_active=form.is_active.data,
+            order_index=next_order
+        )
+        db.session.add(appointment_type)
+        db.session.commit()
+        flash(f'Tipo de cita "{appointment_type.name}" creado exitosamente', 'success')
+        return redirect(url_for('dashboard.appointments_settings'))
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/appointments_type_form_pwa.html',
+                              form=form,
+                              title='Nuevo Tipo de Cita')
+    else:
+        return render_template('dashboard/appointments/type_form.html',
+                              form=form,
+                              title='Nuevo Tipo de Cita')
+
+@bp.route('/appointments/types/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_appointment_type(id):
+    """Editar tipo de cita existente"""
+    from .forms import AppointmentTypeForm
+    from ..models import AppointmentType
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    appointment_type = AppointmentType.query.filter_by(
+        id=id,
+        appointment_system_id=current_user.appointment_system.id
+    ).first_or_404()
+
+    form = AppointmentTypeForm(obj=appointment_type)
+    if form.validate_on_submit():
+        appointment_type.name = form.name.data
+        appointment_type.description = form.description.data
+        appointment_type.color = form.color.data
+        appointment_type.estimated_duration = form.estimated_duration.data
+        appointment_type.prefix = form.prefix.data.upper()
+        appointment_type.is_active = form.is_active.data
+        db.session.commit()
+        flash(f'Tipo de cita "{appointment_type.name}" actualizado exitosamente', 'success')
+        return redirect(url_for('dashboard.appointments_settings'))
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/appointments_type_form_pwa.html',
+                              form=form,
+                              appointment_type=appointment_type,
+                              title='Editar Tipo de Cita')
+    else:
+        return render_template('dashboard/appointments/type_form.html',
+                              form=form,
+                              appointment_type=appointment_type,
+                              title='Editar Tipo de Cita')
+
+@bp.route('/appointments/types/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_appointment_type(id):
+    """Eliminar tipo de cita"""
+    from ..models import AppointmentType
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    appointment_type = AppointmentType.query.filter_by(
+        id=id,
+        appointment_system_id=current_user.appointment_system.id
+    ).first_or_404()
+
+    # Verificar si hay turnos activos de este tipo
+    active_appointments = appointment_type.appointments.filter(
+        Appointment.status.in_(['waiting', 'in_progress'])
+    ).count()
+
+    if active_appointments > 0:
+        flash(f'No se puede eliminar el tipo de cita porque tiene {active_appointments} turnos activos.', 'error')
+        return redirect(url_for('dashboard.appointments_settings'))
+
+    type_name = appointment_type.name
+    db.session.delete(appointment_type)
+    db.session.commit()
+    flash(f'Tipo de cita "{type_name}" eliminado exitosamente', 'success')
+    return redirect(url_for('dashboard.appointments_settings'))
+
+@bp.route('/appointments/call-next', methods=['POST'])
+@login_required
+def call_next_appointment():
+    """Llamar al siguiente paciente en la cola (AJAX)"""
+    from ..models import Appointment
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    system = current_user.appointment_system
+
+    # Verificar si ya hay un turno en progreso
+    current_appointment = system.get_current_appointment()
+    if current_appointment:
+        return jsonify({
+            'success': False,
+            'message': f'Ya tienes un turno en progreso: {current_appointment.ticket_number}'
+        }), 400
+
+    # Obtener el siguiente turno en espera (FIFO)
+    next_appointment = system.appointments.filter_by(status='waiting').order_by(Appointment.created_at).first()
+
+    if not next_appointment:
+        return jsonify({'success': False, 'message': 'No hay turnos en espera'}), 404
+
+    # Llamar al paciente
+    next_appointment.call()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'appointment': {
+            'id': next_appointment.id,
+            'ticket_number': next_appointment.ticket_number,
+            'patient_name': next_appointment.patient_name,
+            'patient_phone': next_appointment.patient_phone,
+            'type_name': next_appointment.type.name,
+            'type_color': next_appointment.type.color
+        }
+    })
+
+@bp.route('/appointments/<int:id>/complete', methods=['POST'])
+@login_required
+def complete_appointment(id):
+    """Completar turno actual"""
+    from ..models import Appointment
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    appointment = Appointment.query.filter_by(
+        id=id,
+        appointment_system_id=current_user.appointment_system.id
+    ).first_or_404()
+
+    # Si el turno está en espera, llamarlo primero
+    if appointment.status == 'waiting':
+        appointment.call()
+        db.session.commit()
+
+    # Verificar estado actual
+    if appointment.status == 'completed':
+        return jsonify({'success': False, 'message': f'Este turno ya fue completado'}), 400
+    elif appointment.status == 'cancelled':
+        return jsonify({'success': False, 'message': f'Este turno fue cancelado'}), 400
+    elif appointment.status == 'no_show':
+        return jsonify({'success': False, 'message': f'Este turno fue marcado como ausente'}), 400
+    elif appointment.status != 'in_progress':
+        return jsonify({'success': False, 'message': f'Estado inválido: {appointment.status}'}), 400
+
+    notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
+    appointment.complete(notes)
+    db.session.commit()
+
+    # Llamar automáticamente al siguiente en la cola si existe
+    system = current_user.appointment_system
+    next_appointment = system.appointments.filter_by(status='waiting').order_by(Appointment.created_at).first()
+    if next_appointment:
+        next_appointment.call()
+        db.session.commit()
+
+    if request.is_json:
+        return jsonify({'success': True, 'message': f'Turno {appointment.ticket_number} completado'})
+    else:
+        flash(f'Turno {appointment.ticket_number} completado exitosamente', 'success')
+        return redirect(url_for('dashboard.appointments'))
+
+@bp.route('/appointments/<int:id>/cancel', methods=['POST'])
+@login_required
+def cancel_appointment(id):
+    """Cancelar turno"""
+    from ..models import Appointment
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    appointment = Appointment.query.filter_by(
+        id=id,
+        appointment_system_id=current_user.appointment_system.id
+    ).first_or_404()
+
+    if appointment.status not in ['waiting', 'in_progress']:
+        return jsonify({'success': False, 'message': f'Este turno no se puede cancelar (estado: {appointment.status})'}), 400
+
+    reason = request.json.get('reason', '') if request.is_json else request.form.get('reason', '')
+    was_in_progress = appointment.status == 'in_progress'
+    appointment.cancel(reason)
+    db.session.commit()
+
+    # Si era el turno actual, llamar automáticamente al siguiente si existe
+    if was_in_progress:
+        system = current_user.appointment_system
+        next_appointment = system.appointments.filter_by(status='waiting').order_by(Appointment.created_at).first()
+        if next_appointment:
+            next_appointment.call()
+            db.session.commit()
+
+    if request.is_json:
+        return jsonify({'success': True, 'message': f'Turno {appointment.ticket_number} cancelado'})
+    else:
+        flash(f'Turno {appointment.ticket_number} cancelado', 'info')
+        return redirect(url_for('dashboard.appointments'))
+
+@bp.route('/appointments/<int:id>/no-show', methods=['POST'])
+@login_required
+def mark_no_show(id):
+    """Marcar paciente como ausente"""
+    from ..models import Appointment
+
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    appointment = Appointment.query.filter_by(
+        id=id,
+        appointment_system_id=current_user.appointment_system.id
+    ).first_or_404()
+
+    # Si el turno está en espera, llamarlo primero
+    if appointment.status == 'waiting':
+        appointment.call()
+        db.session.commit()
+
+    # Ahora marcar como ausente
+    if appointment.status not in ['in_progress', 'waiting']:
+        return jsonify({'success': False, 'message': f'Este turno ya fue procesado (estado: {appointment.status})'}), 400
+
+    appointment.mark_no_show()
+    db.session.commit()
+
+    # Llamar automáticamente al siguiente en la cola si existe
+    system = current_user.appointment_system
+    next_appointment = system.appointments.filter_by(status='waiting').order_by(Appointment.created_at).first()
+    if next_appointment:
+        next_appointment.call()
+        db.session.commit()
+
+    if request.is_json:
+        return jsonify({'success': True, 'message': f'Turno {appointment.ticket_number} marcado como ausente'})
+    else:
+        flash(f'Turno {appointment.ticket_number} marcado como ausente', 'info')
+        return redirect(url_for('dashboard.appointments'))
+
+@bp.route('/appointments/reset-daily-queue', methods=['POST'])
+@login_required
+def reset_daily_queue():
+    """Reiniciar la cola diaria - cancelar turnos en espera del día anterior"""
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    system = current_user.appointment_system
+
+    # Ejecutar el reset diario
+    cancelled_count = system.reset_daily_queue()
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': f'Cola diaria reiniciada. {cancelled_count} turnos antiguos cancelados.',
+            'cancelled_count': cancelled_count
+        })
+    else:
+        flash(f'Cola diaria reiniciada exitosamente. {cancelled_count} turnos antiguos fueron cancelados.', 'success')
+        return redirect(url_for('dashboard.appointments'))

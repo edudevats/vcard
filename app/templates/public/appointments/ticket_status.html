@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Tu Turno {{ appointment.ticket_number }} - {{ system.business_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0">{{ system.business_name }}</h3>
+                </div>
+                <div class="card-body text-center p-5">
+                    <div class="ticket-display mb-4" style="color: {{ appointment.type.color }};">
+                        {{ appointment.ticket_number }}
+                    </div>
+
+                    <span class="badge badge-lg mb-3" style="background-color: {{ appointment.type.color }}; font-size: 1.2rem;">
+                        {{ appointment.type.name }}
+                    </span>
+
+                    <h4 class="mt-3">{{ appointment.patient_name }}</h4>
+
+                    {% if appointment.status == 'waiting' %}
+                        <div class="alert alert-info mt-4">
+                            <i class="fas fa-clock me-2"></i>Tu turno está en espera
+                        </div>
+
+                        <div class="position-info mb-4">
+                            <h2 class="mb-0" id="position">
+                                {% if position > 0 %}
+                                    Posición: {{ position }}
+                                {% else %}
+                                    Próximo turno
+                                {% endif %}
+                            </h2>
+                            <small class="text-muted">Tiempo de espera: <span id="waitingTime">{{ appointment.get_waiting_time() }}</span> min</small>
+                        </div>
+
+                    {% elif appointment.status == 'in_progress' %}
+                        <div class="alert alert-success mt-4">
+                            <i class="fas fa-user-md me-2"></i>¡Es tu turno! Pasa a la consulta
+                        </div>
+
+                    {% elif appointment.status == 'completed' %}
+                        <div class="alert alert-success mt-4">
+                            <i class="fas fa-check-circle me-2"></i>Turno completado
+                        </div>
+
+                    {% elif appointment.status == 'cancelled' %}
+                        <div class="alert alert-danger mt-4">
+                            <i class="fas fa-times-circle me-2"></i>Turno cancelado
+                            {% if appointment.cancellation_reason %}
+                                <br><small>{{ appointment.cancellation_reason }}</small>
+                            {% endif %}
+                        </div>
+
+                    {% elif appointment.status == 'no_show' %}
+                        <div class="alert alert-warning mt-4">
+                            <i class="fas fa-user-times me-2"></i>Marcado como ausente
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('public.appointments_queue', username=username) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver Cola de Espera
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ticket-display {
+    font-size: 5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+@media (max-width: 768px) {
+    .ticket-display {
+        font-size: 3.5rem;
+    }
+}
+</style>
+
+<script>
+// Auto-update status every 5 seconds if waiting
+{% if appointment.status == 'waiting' %}
+function updateStatus() {
+    fetch('{{ url_for("public.appointment_ticket_status_json", username=username, ticket_number=appointment.ticket_number) }}')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('position').textContent =
+                data.position > 0 ? `Posición: ${data.position}` : 'Próximo turno';
+            document.getElementById('waitingTime').textContent = data.waiting_time;
+
+            // Reload page if status changed
+            if (data.status !== 'waiting') {
+                location.reload();
+            }
+        });
+}
+
+setInterval(updateStatus, 5000);
+{% endif %}
+</script>
+{% endblock %}

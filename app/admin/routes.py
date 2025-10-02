@@ -361,10 +361,45 @@ def reject_user(user_id):
     if user.is_approved:
         flash(f'No se puede rechazar al usuario {user.email} porque ya está aprobado', 'error')
         return redirect(url_for('admin.pending_approvals'))
-    
+
     user_email = user.email
     db.session.delete(user)
     db.session.commit()
-    
+
     flash(f'Solicitud de registro de {user_email} rechazada y eliminada', 'success')
     return redirect(url_for('admin.pending_approvals'))
+
+# ============================================================================
+# SISTEMA DE TURNOS - Administración
+# ============================================================================
+
+@bp.route('/users/<int:id>/toggle-appointments', methods=['POST'])
+@login_required
+@admin_required
+def toggle_appointments(id):
+    """Activar/desactivar sistema de turnos para un usuario"""
+    from ..models import AppointmentSystem
+
+    user = User.query.get_or_404(id)
+
+    # Verificar si el usuario ya tiene un sistema de turnos
+    if not user.appointment_system:
+        # Crear nuevo sistema de turnos
+        appointment_system = AppointmentSystem(
+            user_id=user.id,
+            is_enabled=True,
+            business_name=f"Consultorio de {user.email}",
+            max_appointment_types=10,
+            display_mode='simple'
+        )
+        db.session.add(appointment_system)
+        db.session.commit()
+        flash(f'Sistema de turnos activado para {user.email}', 'success')
+    else:
+        # Toggle del estado
+        user.appointment_system.is_enabled = not user.appointment_system.is_enabled
+        db.session.commit()
+        status = 'activado' if user.appointment_system.is_enabled else 'desactivado'
+        flash(f'Sistema de turnos {status} para {user.email}', 'success')
+
+    return redirect(url_for('admin.edit_user', id=user.id))

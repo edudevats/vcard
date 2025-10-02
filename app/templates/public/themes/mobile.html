@@ -419,6 +419,15 @@
             <button class="action-btn btn-share" onclick="shareCard()">
                 <i class="fas fa-share-alt"></i> COMPARTIR
             </button>
+
+            <!-- Appointment System Button -->
+            {% if card.owner.appointment_system and card.owner.appointment_system.is_enabled %}
+            <a href="{{ url_for('public.appointments_public', username=card.owner.email.split('@')[0]) }}"
+               class="action-btn btn-appointments"
+               style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                <i class="fas fa-calendar-check"></i> TOMA UN TURNO
+            </a>
+            {% endif %}
         </div>
         
         <!-- Secondary Social Networks -->

@@ -35,6 +35,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     cards = db.relationship('Card', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
+    appointment_system = db.relationship('AppointmentSystem', backref='owner', uselist=False, cascade='all, delete-orphan')
     
     def normalize_email(self, email):
         """Normalize email to lowercase for case-insensitive comparison"""
@@ -716,9 +717,230 @@ class CardView(db.Model):
     city = db.Column(db.String(100))  # User's city
     session_id = db.Column(db.String(100))  # Session tracking
     viewed_at = db.Column(db.DateTime, default=now_utc_for_db, index=True)
-    
+
     # Relationship
     card = db.relationship('Card', backref=db.backref('views', lazy='dynamic', cascade='all, delete-orphan'))
-    
+
     def __repr__(self):
         return f'<CardView {self.card_id} at {self.viewed_at}>'
+
+class AppointmentSystem(db.Model):
+    """Sistema de turnos/citas para consultorios - Un sistema por usuario"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    is_enabled = db.Column(db.Boolean, default=False, nullable=False)  # Controlado por admin
+    business_name = db.Column(db.String(200))  # Nombre del consultorio
+    welcome_message = db.Column(db.Text)  # Mensaje de bienvenida para pacientes
+    business_hours = db.Column(db.String(500))  # Horario de atención
+    max_appointment_types = db.Column(db.Integer, default=10)  # Límite de tipos de citas
+    display_mode = db.Column(Enum('simple', 'detailed', name='display_modes'), default='simple')
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
+
+    # Relationships
+    appointment_types = db.relationship('AppointmentType', backref='system', lazy='dynamic', cascade='all, delete-orphan')
+    appointments = db.relationship('Appointment', backref='system', lazy='dynamic', cascade='all, delete-orphan')
+
+    def can_add_type(self):
+        """Verificar si puede agregar más tipos de citas"""
+        return self.appointment_types.filter_by(is_active=True).count() < self.max_appointment_types
+
+    def get_active_types(self):
+        """Obtener tipos de citas activos ordenados"""
+        return self.appointment_types.filter_by(is_active=True).order_by(AppointmentType.order_index).all()
+
+    def get_waiting_count(self):
+        """Obtener cantidad de turnos en espera"""
+        return self.appointments.filter_by(status='waiting').count()
+
+    def get_current_appointment(self):
+        """Obtener turno actualmente en atención"""
+        return self.appointments.filter_by(status='in_progress').first()
+
+    def cleanup_old_appointments(self, days_old=7):
+        """Limpiar turnos completados, cancelados y ausentes de hace X días"""
+        from datetime import timedelta
+        cutoff_date = now_utc_for_db() - timedelta(days=days_old)
+
+        old_appointments = self.appointments.filter(
+            Appointment.status.in_(['completed', 'cancelled', 'no_show']),
+            Appointment.created_at < cutoff_date
+        ).all()
+
+        count = len(old_appointments)
+        for appointment in old_appointments:
+            db.session.delete(appointment)
+
+        return count
+
+    def reset_daily_queue(self):
+        """Resetear cola diaria - cancelar todos los turnos en espera del día anterior"""
+        today_start = today_start_utc()
+
+        old_waiting = self.appointments.filter(
+            Appointment.status == 'waiting',
+            Appointment.created_at < today_start
+        ).all()
+
+        count = 0
+        for appointment in old_waiting:
+            appointment.cancel('Turno expirado - nuevo día')
+            count += 1
+
+        return count
+
+    def get_daily_stats(self):
+        """Obtener estadísticas del día actual"""
+        today_start = today_start_utc()
+
+        return {
+            'total': self.appointments.filter(Appointment.created_at >= today_start).count(),
+            'completed': self.appointments.filter(
+                Appointment.status == 'completed',
+                Appointment.created_at >= today_start
+            ).count(),
+            'waiting': self.appointments.filter_by(status='waiting').count(),
+            'in_progress': self.appointments.filter_by(status='in_progress').count(),
+            'cancelled': self.appointments.filter(
+                Appointment.status == 'cancelled',
+                Appointment.created_at >= today_start
+            ).count(),
+            'no_show': self.appointments.filter(
+                Appointment.status == 'no_show',
+                Appointment.created_at >= today_start
+            ).count(),
+        }
+
+    def __repr__(self):
+        return f'<AppointmentSystem user_id={self.user_id}>'
+
+class AppointmentType(db.Model):
+    """Tipos de citas configurables (1-10 por sistema)"""
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_system_id = db.Column(db.Integer, db.ForeignKey('appointment_system.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)  # "Consulta General", "Inyecciones", etc.
+    description = db.Column(db.String(500))
+    color = db.Column(db.String(7), default='#6366f1')  # Color hex para identificación visual
+    estimated_duration = db.Column(db.Integer, default=30)  # Duración estimada en minutos
+    prefix = db.Column(db.String(5), default='A')  # Prefijo para números de ticket (A, B, C, etc.)
+    is_active = db.Column(db.Boolean, default=True)
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+
+    # Relationships
+    appointments = db.relationship('Appointment', backref='type', lazy='dynamic', cascade='all, delete-orphan')
+
+    def get_next_ticket_number(self):
+        """Generar siguiente número de ticket para este tipo"""
+        # Obtener el último ticket del día
+        today_start = today_start_utc()
+        last_appointment = self.appointments.filter(
+            Appointment.created_at >= today_start
+        ).order_by(Appointment.created_at.desc()).first()
+
+        if last_appointment and last_appointment.ticket_number:
+            # Extraer número del ticket (ej: "A005" -> 5)
+            try:
+                last_num = int(last_appointment.ticket_number[len(self.prefix):])
+                next_num = last_num + 1
+            except (ValueError, IndexError):
+                next_num = 1
+        else:
+            next_num = 1
+
+        # Formatear con ceros (ej: "A001", "B023")
+        return f"{self.prefix}{next_num:03d}"
+
+    def get_waiting_count(self):
+        """Cantidad de turnos en espera para este tipo"""
+        return self.appointments.filter_by(status='waiting').count()
+
+    def __repr__(self):
+        return f'<AppointmentType {self.name}>'
+
+class Appointment(db.Model):
+    """Turno/Cita individual"""
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_system_id = db.Column(db.Integer, db.ForeignKey('appointment_system.id'), nullable=False)
+    appointment_type_id = db.Column(db.Integer, db.ForeignKey('appointment_type.id'), nullable=False)
+
+    # Información del paciente
+    patient_name = db.Column(db.String(200), nullable=False)
+    patient_phone = db.Column(db.String(20))
+    patient_email = db.Column(db.String(120))
+
+    # Control de turno
+    ticket_number = db.Column(db.String(20), nullable=False, index=True)  # Ej: "A001", "B042"
+    status = db.Column(
+        Enum('waiting', 'in_progress', 'completed', 'cancelled', 'no_show', name='appointment_statuses'),
+        default='waiting',
+        nullable=False,
+        index=True
+    )
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=now_utc_for_db, index=True)
+    called_at = db.Column(db.DateTime)  # Cuando se llamó al paciente
+    completed_at = db.Column(db.DateTime)  # Cuando se completó la atención
+    cancelled_at = db.Column(db.DateTime)
+
+    # Notas adicionales
+    notes = db.Column(db.Text)
+    cancellation_reason = db.Column(db.String(500))
+
+    # Metadata
+    ip_address = db.Column(db.String(45))  # IP del paciente al tomar turno
+    user_agent = db.Column(db.String(500))
+
+    def call(self):
+        """Llamar al paciente (pasar a 'in_progress')"""
+        self.status = 'in_progress'
+        self.called_at = now_utc_for_db()
+
+    def complete(self, notes=None):
+        """Completar la atención"""
+        self.status = 'completed'
+        self.completed_at = now_utc_for_db()
+        if notes:
+            self.notes = notes
+
+    def cancel(self, reason=None):
+        """Cancelar el turno"""
+        self.status = 'cancelled'
+        self.cancelled_at = now_utc_for_db()
+        if reason:
+            self.cancellation_reason = reason
+
+    def mark_no_show(self):
+        """Marcar como ausente"""
+        self.status = 'no_show'
+        self.completed_at = now_utc_for_db()
+
+    def get_waiting_time(self):
+        """Obtener tiempo de espera en minutos"""
+        if self.status == 'waiting':
+            delta = now_utc_for_db() - self.created_at
+            return int(delta.total_seconds() / 60)
+        return 0
+
+    def get_position_in_queue(self):
+        """Obtener posición en la cola (considerando intercalado)"""
+        if self.status != 'waiting':
+            return 0
+
+        # Contar turnos en espera creados antes de este
+        waiting_before = Appointment.query.filter(
+            Appointment.appointment_system_id == self.appointment_system_id,
+            Appointment.status == 'waiting',
+            Appointment.created_at < self.created_at
+        ).count()
+
+        return waiting_before + 1
+
+    def get_local_created_at(self):
+        """Obtener fecha de creación en hora local formateada"""
+        from .timezone_utils import format_local_datetime
+        return format_local_datetime(self.created_at, '%d/%m/%Y %H:%M')
+
+    def __repr__(self):
+        return f'<Appointment {self.ticket_number} - {self.status}>'

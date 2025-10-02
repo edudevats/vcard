@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Tomar Turno - {{ system.business_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>{{ system.business_name }}
+                    </h3>
+                    {% if system.business_hours %}
+                        <small>{{ system.business_hours }}</small>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    {% if system.welcome_message %}
+                        <div class="alert alert-info">
+                            {{ system.welcome_message }}
+                        </div>
+                    {% endif %}
+
+                    {% if returning_patient and patient_name %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-user-check me-2"></i>
+                            <strong>¡Bienvenido de nuevo, {{ patient_name }}!</strong>
+                            <p class="mb-0 mt-1">
+                                <small>Hemos guardado tu información para hacer el proceso más rápido.</small>
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    <h5 class="mb-4">Solicitar Turno</h5>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.appointment_type_id.label(class="form-label required") }}
+                            {{ form.appointment_type_id(class="form-select form-select-lg") }}
+                            <small class="form-text text-muted">Selecciona el tipo de atención que necesitas</small>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.patient_name.label(class="form-label required") }}
+                            {{ form.patient_name() }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.patient_phone.label(class="form-label required") }}
+                            {{ form.patient_phone() }}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form.patient_email.label(class="form-label") }}
+                            {{ form.patient_email() }}
+                        </div>
+
+                        {{ form.submit() }}
+
+                        <a href="{{ url_for('public.appointments_queue', username=username) }}"
+                           class="btn btn-outline-secondary w-100 mt-2">
+                            <i class="fas fa-list me-2"></i>Ver Cola de Espera
+                        </a>
+
+                        {% if returning_patient %}
+                        <a href="{{ url_for('public.my_appointments', username=username) }}"
+                           class="btn btn-outline-primary w-100 mt-2">
+                            <i class="fas fa-ticket-alt me-2"></i>Ver Mis Turnos
+                        </a>
+                        {% endif %}
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="text-muted mb-2">Turnos en espera actualmente:</p>
+                        <h2 class="text-primary">{{ system.get_waiting_count() }}</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipos de Citas Info -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Tipos de Atención Disponibles</h6>
+                </div>
+                <div class="card-body">
+                    {% for apt_type in appointment_types %}
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge me-2" style="background-color: {{ apt_type.color }}; min-width: 60px;">
+                                {{ apt_type.prefix }}
+                            </span>
+                            <div>
+                                <strong>{{ apt_type.name }}</strong>
+                                {% if apt_type.description %}
+                                    <br><small class="text-muted">{{ apt_type.description }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

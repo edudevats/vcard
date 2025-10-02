@@ -4,7 +4,7 @@ import click
 from flask import current_app
 from flask.cli import with_appcontext
 from app import create_app, db
-from app.models import User, Theme, Card, Service, GalleryItem
+from app.models import User, Theme, Card, Service, GalleryItem, AppointmentSystem, Appointment
 
 app = create_app()
 
@@ -98,7 +98,7 @@ def seed_data():
     seed_themes()
     
     # Create sample admin if doesn't exist
-    admin_email = 'admin@vcard.test'
+    admin_email = 'admin@atscard.app'
     if not User.query.filter_by(email=admin_email).first():
         admin = User(email=admin_email, role='admin', max_cards=50)
         admin.set_password('admin123')
@@ -156,6 +156,84 @@ def seed_data():
     
     db.session.commit()
     click.echo('Sample data created successfully.')
+
+# ============================================================================
+# COMANDOS PARA SISTEMA DE TURNOS
+# ============================================================================
+
+@app.cli.command()
+def cleanup_appointments():
+    """Limpiar turnos antiguos (completados, cancelados, ausentes) de hace más de 7 días."""
+    total_cleaned = 0
+
+    systems = AppointmentSystem.query.filter_by(is_enabled=True).all()
+
+    for system in systems:
+        count = system.cleanup_old_appointments(days_old=7)
+        if count > 0:
+            click.echo(f'Sistema {system.owner.email}: {count} turnos eliminados')
+            total_cleaned += count
+
+    db.session.commit()
+    click.echo(f'Total de turnos eliminados: {total_cleaned}')
+
+@app.cli.command()
+def reset_daily_queues():
+    """Resetear colas diarias - cancelar turnos en espera del día anterior."""
+    total_reset = 0
+
+    systems = AppointmentSystem.query.filter_by(is_enabled=True).all()
+
+    for system in systems:
+        count = system.reset_daily_queue()
+        if count > 0:
+            click.echo(f'Sistema {system.owner.email}: {count} turnos expirados cancelados')
+            total_reset += count
+
+    db.session.commit()
+    click.echo(f'Total de turnos cancelados: {total_reset}')
+
+@app.cli.command()
+@click.option('--email', prompt=True, help='Email del usuario')
+@click.option('--days', default=7, help='Días de antigüedad (default: 7)')
+def cleanup_user_appointments(email, days):
+    """Limpiar turnos antiguos de un usuario específico."""
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        click.echo(f'Usuario {email} no encontrado.')
+        return
+
+    if not user.appointment_system:
+        click.echo(f'El usuario {email} no tiene sistema de turnos.')
+        return
+
+    count = user.appointment_system.cleanup_old_appointments(days_old=days)
+    db.session.commit()
+
+    click.echo(f'Limpiados {count} turnos antiguos de {email}')
+
+@app.cli.command()
+def appointments_stats():
+    """Mostrar estadísticas del sistema de turnos."""
+    systems = AppointmentSystem.query.filter_by(is_enabled=True).all()
+
+    if not systems:
+        click.echo('No hay sistemas de turnos activos.')
+        return
+
+    click.echo('\n=== ESTADÍSTICAS DE SISTEMAS DE TURNOS ===\n')
+
+    for system in systems:
+        stats = system.get_daily_stats()
+        click.echo(f'📋 {system.owner.email} - {system.business_name}')
+        click.echo(f'   Total hoy: {stats["total"]}')
+        click.echo(f'   ✅ Completados: {stats["completed"]}')
+        click.echo(f'   ⏳ En espera: {stats["waiting"]}')
+        click.echo(f'   🔄 En progreso: {stats["in_progress"]}')
+        click.echo(f'   ❌ Cancelados: {stats["cancelled"]}')
+        click.echo(f'   👻 Ausentes: {stats["no_show"]}')
+        click.echo('')
 
 if __name__ == '__main__':
     app.run(debug=True)

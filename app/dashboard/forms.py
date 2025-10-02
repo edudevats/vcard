@@ -309,7 +309,67 @@ class ChangePasswordForm(FlaskForm):
                                    render_kw={'class': 'form-control'})
     new_password = PasswordField('Nueva Contraseña', validators=[DataRequired(), Length(min=6)],
                                render_kw={'class': 'form-control'})
-    confirm_password = PasswordField('Confirmar Nueva Contraseña', 
+    confirm_password = PasswordField('Confirmar Nueva Contraseña',
                                    validators=[DataRequired(), EqualTo('new_password', 'Las contraseñas no coinciden')],
                                    render_kw={'class': 'form-control'})
     submit = SubmitField('Cambiar Contraseña', render_kw={'class': 'btn btn-primary'})
+
+# Formularios para Sistema de Turnos
+class AppointmentSystemForm(FlaskForm):
+    """Formulario de configuración del sistema de turnos"""
+    business_name = StringField('Nombre del Consultorio/Negocio', validators=[DataRequired()],
+                               render_kw={'class': 'form-control', 'placeholder': 'ej: Consultorio Médico Dr. García'})
+    welcome_message = TextAreaField('Mensaje de Bienvenida', validators=[Optional(), Length(max=500)],
+                                   render_kw={'class': 'form-control', 'rows': 3,
+                                             'placeholder': 'Mensaje que verán los pacientes al tomar turno...'})
+    business_hours = StringField('Horario de Atención', validators=[Optional()],
+                                render_kw={'class': 'form-control', 'placeholder': 'ej: Lun-Vie 9:00 - 18:00'})
+    display_mode = SelectField('Modo de Visualización', validators=[DataRequired()],
+                              choices=[
+                                  ('simple', 'Simple - Solo números de turno'),
+                                  ('detailed', 'Detallado - Con nombres y tiempos')
+                              ],
+                              render_kw={'class': 'form-select'})
+    submit = SubmitField('Guardar Configuración', render_kw={'class': 'btn btn-primary'})
+
+class AppointmentTypeForm(FlaskForm):
+    """Formulario para crear/editar tipos de citas"""
+    name = StringField('Nombre del Tipo de Cita', validators=[DataRequired(), Length(max=100)],
+                      render_kw={'class': 'form-control', 'placeholder': 'ej: Consulta General, Inyecciones, etc.'})
+    description = StringField('Descripción', validators=[Optional(), Length(max=500)],
+                             render_kw={'class': 'form-control', 'placeholder': 'Descripción breve del servicio'})
+    color = StringField('Color de Identificación', validators=[DataRequired()],
+                       render_kw={'type': 'color', 'class': 'form-control form-control-color'})
+    estimated_duration = SelectField('Duración Estimada', validators=[DataRequired()], coerce=int,
+                                    choices=[
+                                        (15, '15 minutos'),
+                                        (30, '30 minutos'),
+                                        (45, '45 minutos'),
+                                        (60, '1 hora'),
+                                        (90, '1 hora 30 min'),
+                                        (120, '2 horas')
+                                    ],
+                                    render_kw={'class': 'form-select'})
+    prefix = StringField('Prefijo para Tickets', validators=[DataRequired(), Length(min=1, max=5)],
+                        render_kw={'class': 'form-control', 'placeholder': 'ej: A, B, C, CON, INY',
+                                  'maxlength': '5', 'style': 'text-transform: uppercase;'})
+    is_active = BooleanField('Activo', default=True,
+                            render_kw={'class': 'form-check-input'})
+    submit = SubmitField('Guardar Tipo de Cita', render_kw={'class': 'btn btn-primary'})
+
+class TakeAppointmentForm(FlaskForm):
+    """Formulario público para que pacientes tomen turnos"""
+    appointment_type_id = SelectField('Tipo de Cita', validators=[DataRequired()], coerce=int,
+                                     render_kw={'class': 'form-select'})
+    patient_name = StringField('Nombre Completo', validators=[DataRequired(), Length(max=200)],
+                              render_kw={'class': 'form-control', 'placeholder': 'Tu nombre completo'})
+    patient_phone = StringField('Teléfono', validators=[DataRequired(), Length(max=20)],
+                               render_kw={'class': 'form-control', 'placeholder': '+54 123 456 789'})
+    patient_email = StringField('Email (opcional)', validators=[Optional(), Email()],
+                               render_kw={'class': 'form-control', 'placeholder': 'tu@email.com'})
+    submit = SubmitField('Tomar Turno', render_kw={'class': 'btn btn-success btn-lg w-100'})
+
+    def __init__(self, appointment_types=None, *args, **kwargs):
+        super(TakeAppointmentForm, self).__init__(*args, **kwargs)
+        if appointment_types:
+            self.appointment_type_id.choices = [(t.id, t.name) for t in appointment_types]

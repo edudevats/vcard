@@ -1,0 +1,333 @@
+{% extends "base_pwa.html" %}
+
+{% set active_tab = 'appointments' %}
+{% set show_header = true %}
+{% set show_bottom_nav = true %}
+
+{% block title %}Sistema de Turnos - ATScard Digital{% endblock %}
+
+{% block content %}
+<div class="p-4 space-y-6">
+    <!-- Header Section -->
+    <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <span class="material-symbols-outlined text-primary align-middle mr-2">calendar_today</span>
+            Sistema de Turnos
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ system.business_name }}</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
+            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ today_stats.completed }}</div>
+            <div class="text-sm text-green-700 dark:text-green-300">Completados</div>
+        </div>
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center border border-yellow-200 dark:border-yellow-800">
+            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ today_stats.waiting }}</div>
+            <div class="text-sm text-yellow-700 dark:text-yellow-300">En Espera</div>
+        </div>
+        <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center border border-red-200 dark:border-red-800">
+            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ today_stats.cancelled }}</div>
+            <div class="text-sm text-red-700 dark:text-red-300">Cancelados</div>
+        </div>
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center border border-blue-200 dark:border-blue-800">
+            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ today_stats.no_show }}</div>
+            <div class="text-sm text-blue-700 dark:text-blue-300">Ausentes</div>
+        </div>
+    </div>
+
+    <!-- Current Appointment -->
+    {% if current_appointment %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <span class="material-symbols-outlined text-primary mr-2">person</span>
+            Turno Actual
+        </h2>
+
+        <div class="text-center mb-4">
+            <div class="text-6xl font-bold mb-2" style="color: {{ current_appointment.type.color }};">
+                {{ current_appointment.ticket_number }}
+            </div>
+            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                 style="background-color: {{ current_appointment.type.color }}20; color: {{ current_appointment.type.color }};">
+                {{ current_appointment.type.name }}
+            </div>
+        </div>
+
+        <div class="space-y-3 mb-6">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Paciente:</span>
+                <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.patient_name }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Teléfono:</span>
+                <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.patient_phone }}</span>
+            </div>
+            {% if current_appointment.patient_email %}
+            <div class="flex items-center justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Email:</span>
+                <span class="font-semibold text-gray-900 dark:text-white text-sm">{{ current_appointment.patient_email }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+            <button onclick="completeAppointment({{ current_appointment.id }})"
+                    class="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg font-semibold transition-colors flex flex-col items-center">
+                <span class="material-symbols-outlined mb-1">check_circle</span>
+                <span class="text-xs">Completar</span>
+            </button>
+            <button onclick="markNoShow({{ current_appointment.id }})"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-semibold transition-colors flex flex-col items-center">
+                <span class="material-symbols-outlined mb-1">person_off</span>
+                <span class="text-xs">Ausente</span>
+            </button>
+            <button onclick="cancelAppointment({{ current_appointment.id }})"
+                    class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-semibold transition-colors flex flex-col items-center">
+                <span class="material-symbols-outlined mb-1">cancel</span>
+                <span class="text-xs">Cancelar</span>
+            </button>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl text-gray-400 dark:text-gray-500">person</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay turno en atención</h3>
+        {% if waiting_appointments %}
+        <button onclick="callNext()"
+                class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center">
+            <span class="material-symbols-outlined mr-2">notifications_active</span>
+            Llamar Siguiente
+        </button>
+        {% else %}
+        <p class="text-gray-600 dark:text-gray-400 mb-4">No hay turnos en espera</p>
+        <a href="{{ url_for('public.appointments_public', username=current_user.email.split('@')[0]) }}"
+           class="text-primary hover:text-primary/80 font-semibold inline-flex items-center" target="_blank">
+            <span class="material-symbols-outlined mr-1">open_in_new</span>
+            Ver página pública
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Waiting Queue -->
+    {% if waiting_appointments %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <span class="material-symbols-outlined text-primary mr-2">queue</span>
+                Cola de Espera
+                <span class="ml-auto bg-primary text-white text-sm px-2 py-1 rounded-full">{{ waiting_appointments|length }}</span>
+            </h2>
+        </div>
+
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for appointment in waiting_appointments %}
+            <div class="p-4 flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-xl font-bold" style="color: {{ appointment.type.color }};">
+                            {{ appointment.ticket_number }}
+                        </span>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium"
+                              style="background-color: {{ appointment.type.color }}20; color: {{ appointment.type.color }};">
+                            {{ appointment.type.name }}
+                        </span>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div>{{ appointment.patient_name }}</div>
+                        <div>{{ appointment.patient_phone }}</div>
+                        <div>{{ appointment.get_waiting_time() }} min esperando</div>
+                    </div>
+                </div>
+                <button onclick="cancelAppointment({{ appointment.id }})"
+                        class="text-red-500 hover:text-red-600 p-2">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="fixed bottom-20 right-4 space-y-3">
+        <button onclick="resetDailyQueue()"
+                class="bg-yellow-500 hover:bg-yellow-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors">
+            <span class="material-symbols-outlined">refresh</span>
+        </button>
+        <a href="{{ url_for('dashboard.appointments_settings') }}"
+           class="bg-primary hover:bg-primary/90 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors">
+            <span class="material-symbols-outlined">settings</span>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Get CSRF token from the page
+function getCSRFToken() {
+    // Try to get from meta tag
+    let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) return token;
+
+    // Try to get from hidden input
+    token = document.querySelector('input[name="csrf_token"]')?.value;
+    if (token) return token;
+
+    // Fallback to template variable
+    return '{{ csrf_token() }}';
+}
+
+function callNext() {
+    fetch('{{ url_for("dashboard.call_next_appointment") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            showNotification(data.message || 'Error al llamar siguiente turno', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error al procesar la solicitud', 'error');
+    });
+}
+
+function completeAppointment(id) {
+    if (confirm('¿Marcar este turno como completado?')) {
+        fetch(`/dashboard/appointments/${id}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showNotification(data.message || 'Error al completar turno', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al procesar la solicitud', 'error');
+        });
+    }
+}
+
+function markNoShow(id) {
+    if (confirm('¿Marcar este paciente como ausente?')) {
+        fetch(`/dashboard/appointments/${id}/no-show`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showNotification(data.message || 'Error', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al procesar la solicitud', 'error');
+        });
+    }
+}
+
+function cancelAppointment(id) {
+    const reason = prompt('Razón de cancelación (opcional):');
+    if (reason !== null) {
+        fetch(`/dashboard/appointments/${id}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                showNotification(data.message || 'Error al cancelar', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al procesar la solicitud', 'error');
+        });
+    }
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+
+// Notification helper
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+        type === 'error' ? 'bg-red-500 text-white' :
+        type === 'success' ? 'bg-green-500 text-white' :
+        'bg-blue-500 text-white'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <span class="flex-1">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-2">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
+}
+
+function resetDailyQueue() {
+    if (confirm('¿Estás seguro de que quieres reiniciar la cola diaria? Esto cancelará todos los turnos en espera del día anterior.')) {
+        fetch('{{ url_for("dashboard.reset_daily_queue") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Error al reiniciar la cola diaria', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al procesar la solicitud', 'error');
+        });
+    }
+}
+</script>
+{% endblock %}

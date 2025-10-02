@@ -70,11 +70,12 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Usuario</th>
-                                        <th width="12%">Rol</th>
-                                        <th width="12%">Estado</th>
-                                        <th width="12%">Tarjetas</th>
-                                        <th width="10%">Vistas</th>
-                                        <th width="12%">Registro</th>
+                                        <th width="10%">Rol</th>
+                                        <th width="10%">Estado</th>
+                                        <th width="10%">Turnos</th>
+                                        <th width="10%">Tarjetas</th>
+                                        <th width="8%">Vistas</th>
+                                        <th width="10%">Registro</th>
                                         <th width="20%">Acciones</th>
                                     </tr>
                                 </thead>
@@ -128,11 +129,27 @@
                                                     </span>
                                                 {% endif %}
                                             </td>
+                                            <td class="text-center">
+                                                {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                                    <span class="badge bg-success" title="Sistema de turnos activo">
+                                                        <i class="fas fa-calendar-check"></i>
+                                                    </span>
+                                                    {% if user.appointment_system.get_waiting_count() > 0 %}
+                                                        <div class="mt-1">
+                                                            <small class="text-muted">{{ user.appointment_system.get_waiting_count() }} en espera</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary" title="Sistema de turnos inactivo">
+                                                        <i class="fas fa-calendar-times"></i>
+                                                    </span>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <span class="me-2">{{ user.cards.count() }}/{{ user.max_cards }}</span>
                                                     <div class="progress flex-grow-1" style="height: 6px;">
-                                                        <div class="progress-bar" role="progressbar" 
+                                                        <div class="progress-bar" role="progressbar"
                                                              style="width: {{ (user.cards.count() / user.max_cards * 100) if user.max_cards > 0 else 0 }}%">
                                                         </div>
                                                     </div>
@@ -207,14 +224,33 @@
                                                                 {% endif %}
                                                                 
                                                                 <li>
-                                                                    <a class="dropdown-item" href="#" 
+                                                                    <a class="dropdown-item" href="#"
                                                                        onclick="updateLimits({{ user.id }}, {{ user.max_cards }}, '{{ user.email }}')">
                                                                         <i class="fas fa-sliders-h me-2"></i>Límites
                                                                     </a>
                                                                 </li>
-                                                                
+
+                                                                <li><hr class="dropdown-divider"></li>
+
                                                                 <li>
-                                                                    <a class="dropdown-item text-info" href="#" 
+                                                                    <form method="POST" action="{{ url_for('admin.toggle_appointments', id=user.id) }}" class="d-inline">
+                                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                                        {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                                                            <button type="submit" class="dropdown-item text-warning">
+                                                                                <i class="fas fa-calendar-times me-2"></i>Desactivar Turnos
+                                                                            </button>
+                                                                        {% else %}
+                                                                            <button type="submit" class="dropdown-item text-success">
+                                                                                <i class="fas fa-calendar-check me-2"></i>Activar Turnos
+                                                                            </button>
+                                                                        {% endif %}
+                                                                    </form>
+                                                                </li>
+
+                                                                <li><hr class="dropdown-divider"></li>
+
+                                                                <li>
+                                                                    <a class="dropdown-item text-info" href="#"
                                                                        onclick="resetPassword({{ user.id }}, '{{ user.email }}')">
                                                                         <i class="fas fa-key me-2"></i>Cambiar Contraseña
                                                                     </a>

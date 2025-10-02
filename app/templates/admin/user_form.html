@@ -200,10 +200,32 @@
                                     
                                     <hr>
                                     
-                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                    <button type="button" class="btn btn-outline-info btn-sm"
                                             onclick="sendPasswordReset('{{ user.email }}')">
                                         <i class="fas fa-key me-2"></i>Resetear Contraseña
                                     </button>
+
+                                    <hr>
+
+                                    <!-- Sistema de Turnos -->
+                                    <form method="POST" action="{{ url_for('admin.toggle_appointments', id=user.id) }}"
+                                          onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado del sistema de turnos?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                                <i class="fas fa-calendar-times me-2"></i>Desactivar Sistema de Turnos
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                                                <i class="fas fa-calendar-check me-2"></i>Activar Sistema de Turnos
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                    {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fas fa-check-circle text-success me-1"></i>Sistema activo
+                                        </small>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
