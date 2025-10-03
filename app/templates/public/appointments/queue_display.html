@@ -1,200 +1,529 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cola de Espera - {{ system.business_name }}</title>
 
-{% block title %}Cola de Espera - {{ system.business_name }}{% endblock %}
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Cola de espera en tiempo real - {{ system.business_name }}">
+    <meta name="keywords" content="turnos, cola, espera, {{ system.business_name }}">
 
-{% block content %}
-<div class="container-fluid py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
-    <div class="text-center mb-4">
-        <h1 class="text-white mb-2">{{ system.business_name }}</h1>
-        <p class="text-white-50">Sistema de Turnos</p>
-    </div>
+    <!-- Open Graph -->
+    <meta property="og:title" content="Cola de Espera - {{ system.business_name }}">
+    <meta property="og:description" content="Visualiza la cola de turnos en tiempo real">
+    <meta property="og:type" content="website">
 
-    <!-- Current Appointment -->
-    <div class="row justify-content-center mb-4">
-        <div class="col-lg-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-success text-white text-center py-3">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user-md me-2"></i>Turno Actual
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') if card and card.theme else 'Roboto' }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '{{ card.theme.font_family if card and card.theme else 'Roboto' }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header-title h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-title p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+
+        .current-section {
+            margin-bottom: 30px;
+        }
+
+        .current-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .current-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #2ed573, #1dd1a1);
+            box-shadow: 0 2px 10px rgba(46, 213, 115, 0.4);
+        }
+
+        .current-card-header {
+            background: linear-gradient(135deg, #2ed573, #1dd1a1);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(46, 213, 115, 0.3);
+        }
+
+        .current-card-header h4 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .current-ticket {
+            font-size: 6rem;
+            font-weight: 900;
+            line-height: 1;
+            margin: 20px 0;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            margin-top: 15px;
+        }
+
+        .patient-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+
+        .empty-current {
+            padding: 60px 30px;
+        }
+
+        .empty-current i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .empty-current p {
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .waiting-section {
+            margin-bottom: 30px;
+        }
+
+        .waiting-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .waiting-card-header {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .waiting-card-header h4 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .waiting-count-badge {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .waiting-list {
+            padding: 0;
+        }
+
+        .waiting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 30px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .waiting-item:last-child {
+            border-bottom: none;
+        }
+
+        .waiting-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .waiting-item-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .ticket-number-small {
+            font-size: 2rem;
+            font-weight: 900;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .waiting-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .type-badge-small {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .waiting-patient-name {
+            font-size: 1rem;
+            color: #555;
+            margin-top: 3px;
+        }
+
+        .waiting-time {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #999;
+            font-size: 0.95rem;
+        }
+
+        .empty-waiting {
+            text-align: center;
+            padding: 60px 30px;
+        }
+
+        .empty-waiting i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .empty-waiting p {
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .action-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn-take-ticket {
+            display: inline-block;
+            padding: 18px 40px;
+            background: rgba(255, 255, 255, 0.98);
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .btn-take-ticket:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .header-title h1 {
+                font-size: 2rem;
+            }
+
+            .current-card {
+                padding: 30px 20px;
+            }
+
+            .current-ticket {
+                font-size: 4rem;
+            }
+
+            .waiting-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .waiting-item-left {
+                width: 100%;
+            }
+
+            .ticket-number-small {
+                font-size: 1.5rem;
+                min-width: 70px;
+            }
+
+            .waiting-card-header {
+                padding: 15px 20px;
+            }
+
+            .waiting-card-header h4 {
+                font-size: 1.1rem;
+            }
+
+            .btn-take-ticket {
+                width: 100%;
+                padding: 16px 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header-title h1 {
+                font-size: 1.6rem;
+            }
+
+            .current-card {
+                padding: 25px 15px;
+            }
+
+            .current-ticket {
+                font-size: 3rem;
+            }
+
+            .waiting-item {
+                padding: 15px;
+            }
+
+            .ticket-number-small {
+                font-size: 1.3rem;
+                min-width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Title -->
+        <div class="header-title">
+            <h1>{{ system.business_name }}</h1>
+            <p>Sistema de Turnos en Tiempo Real</p>
+        </div>
+
+        <!-- Current Appointment Section -->
+        <div class="current-section">
+            <div class="current-card">
+                <div class="current-card-header">
+                    <h4>
+                        <i class="fas fa-user-md"></i>
+                        <span>Turno Actual</span>
                     </h4>
                 </div>
-                <div class="card-body text-center py-5" id="currentAppointment">
+                <div id="currentAppointment">
                     {% if current_appointment %}
                         <div class="current-ticket" style="color: {{ current_appointment.type.color }};">
                             {{ current_appointment.ticket_number }}
                         </div>
-                        <div class="mt-3">
-                            <span class="badge badge-lg" style="background-color: {{ current_appointment.type.color }}; font-size: 1.2rem;">
-                                {{ current_appointment.type.name }}
-                            </span>
-                        </div>
+                        <span class="type-badge" style="background-color: {{ current_appointment.type.color }};">
+                            {{ current_appointment.type.name }}
+                        </span>
                         {% if system.display_mode == 'detailed' %}
-                            <h4 class="mt-3">{{ current_appointment.patient_name }}</h4>
+                            <div class="patient-name">{{ current_appointment.patient_name }}</div>
                         {% endif %}
                     {% else %}
-                        <div class="text-muted">
-                            <i class="fas fa-clock fa-3x mb-3"></i>
+                        <div class="empty-current">
+                            <i class="fas fa-clock"></i>
                             <p>Esperando próximo turno...</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Waiting Queue -->
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0">
-                        <i class="fas fa-list me-2"></i>Próximos Turnos
-                        <span class="badge bg-light text-primary ms-2" id="waitingCount">
-                            {{ waiting_appointments|length }}
-                        </span>
+        <!-- Waiting Queue Section -->
+        <div class="waiting-section">
+            <div class="waiting-card">
+                <div class="waiting-card-header">
+                    <h4>
+                        <i class="fas fa-list"></i>
+                        <span>Próximos Turnos</span>
                     </h4>
+                    <span class="waiting-count-badge" id="waitingCount">
+                        {{ waiting_appointments|length }}
+                    </span>
                 </div>
-                <div class="card-body p-0" id="waitingQueue">
+                <div id="waitingQueue">
                     {% if waiting_appointments %}
-                        <div class="list-group list-group-flush">
+                        <div class="waiting-list">
                             {% for appointment in waiting_appointments %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="ticket-number-small me-3" style="color: {{ appointment.type.color }};">
+                                <div class="waiting-item">
+                                    <div class="waiting-item-left">
+                                        <div class="ticket-number-small" style="color: {{ appointment.type.color }};">
                                             {{ appointment.ticket_number }}
                                         </div>
-                                        <div>
-                                            <span class="badge" style="background-color: {{ appointment.type.color }};">
+                                        <div class="waiting-item-info">
+                                            <span class="type-badge-small" style="background-color: {{ appointment.type.color }};">
                                                 {{ appointment.type.name }}
                                             </span>
                                             {% if system.display_mode == 'detailed' %}
-                                                <div class="mt-1">{{ appointment.patient_name }}</div>
+                                                <div class="waiting-patient-name">{{ appointment.patient_name }}</div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>{{ appointment.get_waiting_time() }} min
+                                    <div class="waiting-time">
+                                        <i class="fas fa-clock"></i>
+                                        <span>{{ appointment.get_waiting_time() }} min</span>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <div class="text-center py-5 text-muted">
-                            <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <div class="empty-waiting">
+                            <i class="fas fa-inbox"></i>
                             <p>No hay turnos en espera</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Take Appointment Button -->
-    <div class="row justify-content-center mt-4">
-        <div class="col-lg-8 text-center">
-            <a href="{{ url_for('public.appointments_public', username=username) }}"
-               class="btn btn-lg btn-light shadow">
-                <i class="fas fa-plus-circle me-2"></i>Tomar Turno
+        <!-- My Tickets Button -->
+        <div class="action-section">
+            <a href="{{ url_for('public.my_appointments', username=username) }}" class="btn-take-ticket">
+                <i class="fas fa-ticket-alt me-2"></i>Ver Mis Turnos
             </a>
         </div>
     </div>
-</div>
 
-<style>
-.current-ticket {
-    font-size: 6rem;
-    font-weight: bold;
-    line-height: 1;
-}
-
-.ticket-number-small {
-    font-size: 2rem;
-    font-weight: bold;
-    min-width: 80px;
-}
-
-@media (max-width: 768px) {
-    .current-ticket {
-        font-size: 4rem;
-    }
-    .ticket-number-small {
-        font-size: 1.5rem;
-        min-width: 60px;
-    }
-}
-</style>
-
-<script>
-// Auto-refresh every 5 seconds
-function updateQueue() {
-    fetch('{{ url_for("public.appointments_queue_json", username=username) }}')
-        .then(response => response.json())
-        .then(data => {
-            // Update current appointment
-            const currentDiv = document.getElementById('currentAppointment');
-            if (data.current) {
-                currentDiv.innerHTML = `
-                    <div class="current-ticket" style="color: ${data.current.type_color};">
-                        ${data.current.ticket_number}
-                    </div>
-                    <div class="mt-3">
-                        <span class="badge badge-lg" style="background-color: ${data.current.type_color}; font-size: 1.2rem;">
-                            ${data.current.type_name}
-                        </span>
-                    </div>
-                    ${data.current.patient_name ? `<h4 class="mt-3">${data.current.patient_name}</h4>` : ''}
-                `;
-            } else {
-                currentDiv.innerHTML = `
-                    <div class="text-muted">
-                        <i class="fas fa-clock fa-3x mb-3"></i>
-                        <p>Esperando próximo turno...</p>
-                    </div>
-                `;
-            }
-
-            // Update waiting count
-            document.getElementById('waitingCount').textContent = data.waiting_count;
-
-            // Update waiting queue
-            const queueDiv = document.getElementById('waitingQueue');
-            if (data.waiting.length > 0) {
-                let html = '<div class="list-group list-group-flush">';
-                data.waiting.forEach(apt => {
-                    html += `
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <div class="d-flex align-items-center">
-                                <div class="ticket-number-small me-3" style="color: ${apt.type_color};">
-                                    ${apt.ticket_number}
-                                </div>
-                                <div>
-                                    <span class="badge" style="background-color: ${apt.type_color};">
-                                        ${apt.type_name}
-                                    </span>
-                                    ${apt.patient_name ? `<div class="mt-1">${apt.patient_name}</div>` : ''}
-                                </div>
+    <script>
+        // Auto-refresh every 5 seconds
+        function updateQueue() {
+            fetch('{{ url_for("public.appointments_queue_json", username=username) }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update current appointment
+                    const currentDiv = document.getElementById('currentAppointment');
+                    if (data.current) {
+                        currentDiv.innerHTML = `
+                            <div class="current-ticket" style="color: ${data.current.type_color};">
+                                ${data.current.ticket_number}
                             </div>
-                            <div class="text-muted">
-                                <i class="fas fa-clock me-1"></i>${apt.waiting_time} min
+                            <span class="type-badge" style="background-color: ${data.current.type_color};">
+                                ${data.current.type_name}
+                            </span>
+                            ${data.current.patient_name ? `<div class="patient-name">${data.current.patient_name}</div>` : ''}
+                        `;
+                    } else {
+                        currentDiv.innerHTML = `
+                            <div class="empty-current">
+                                <i class="fas fa-clock"></i>
+                                <p>Esperando próximo turno...</p>
                             </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                queueDiv.innerHTML = html;
-            } else {
-                queueDiv.innerHTML = `
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-inbox fa-3x mb-3"></i>
-                        <p>No hay turnos en espera</p>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => console.error('Error updating queue:', error));
-}
+                        `;
+                    }
 
-// Update every 5 seconds
-setInterval(updateQueue, 5000);
-</script>
-{% endblock %}
+                    // Update waiting count
+                    document.getElementById('waitingCount').textContent = data.waiting_count;
+
+                    // Update waiting queue
+                    const queueDiv = document.getElementById('waitingQueue');
+                    if (data.waiting.length > 0) {
+                        let html = '<div class="waiting-list">';
+                        data.waiting.forEach(apt => {
+                            html += `
+                                <div class="waiting-item">
+                                    <div class="waiting-item-left">
+                                        <div class="ticket-number-small" style="color: ${apt.type_color};">
+                                            ${apt.ticket_number}
+                                        </div>
+                                        <div class="waiting-item-info">
+                                            <span class="type-badge-small" style="background-color: ${apt.type_color};">
+                                                ${apt.type_name}
+                                            </span>
+                                            ${apt.patient_name ? `<div class="waiting-patient-name">${apt.patient_name}</div>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="waiting-time">
+                                        <i class="fas fa-clock"></i>
+                                        <span>${apt.waiting_time} min</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        queueDiv.innerHTML = html;
+                    } else {
+                        queueDiv.innerHTML = `
+                            <div class="empty-waiting">
+                                <i class="fas fa-inbox"></i>
+                                <p>No hay turnos en espera</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => console.error('Error updating queue:', error));
+        }
+
+        // Update every 5 seconds
+        setInterval(updateQueue, 5000);
+    </script>
+</body>
+</html>

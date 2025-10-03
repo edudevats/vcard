@@ -229,19 +229,22 @@ def appointments_public(username):
 
     # Verificar que tenga sistema de turnos habilitado
     if not user.appointment_system or not user.appointment_system.is_enabled:
-        return render_template('public/appointments/not_available.html'), 404
+        card = user.cards.first()
+        return render_template('public/appointments/not_available.html', card=card), 404
 
     system = user.appointment_system
 
     # Verificar si el sistema está aceptando turnos
     if not system.is_accepting_appointments:
-        return render_template('public/appointments/paused.html', system=system, username=username)
+        card = user.cards.first()
+        return render_template('public/appointments/paused.html', system=system, username=username, card=card)
 
     # Obtener tipos de citas activos
     appointment_types = system.get_active_types()
 
     if not appointment_types:
-        return render_template('public/appointments/no_types.html', system=system)
+        card = user.cards.first()
+        return render_template('public/appointments/no_types.html', system=system, card=card)
 
     # Leer cookies del paciente
     patient_cookie_name = f'patient_info_{system.id}'
@@ -322,8 +325,8 @@ def appointments_public(username):
             'last_ticket': ticket_number
         }
 
-        # Crear respuesta con redirección
-        response = make_response(redirect(url_for('public.appointment_ticket', username=username, ticket_number=ticket_number)))
+        # Crear respuesta con redirección (agregar parámetro para indicar que es un turno nuevo)
+        response = make_response(redirect(url_for('public.appointment_ticket', username=username, ticket_number=ticket_number, new=1)))
 
         # Establecer cookie con 30 días de expiración
         expires = datetime.now() + timedelta(days=30)
@@ -335,7 +338,7 @@ def appointments_public(username):
             samesite='Lax'
         )
 
-        flash(f'¡Turno tomado exitosamente! Tu número es: {ticket_number}', 'success')
+        flash(f'¡Has tomado un turno exitosamente! Tu número es: {ticket_number}', 'success')
         return response
 
     # Pasar información de cookies a la plantilla para mensajes de bienvenida
@@ -350,13 +353,15 @@ def appointments_public(username):
         except:
             pass
 
+    card = user.cards.first()
     return render_template('public/appointments/take_ticket.html',
                          system=system,
                          form=form,
                          appointment_types=appointment_types,
                          username=username,
                          returning_patient=returning_patient,
-                         patient_name=patient_name_from_cookie)
+                         patient_name=patient_name_from_cookie,
+                         card=card)
 
 @bp.route('/turnos/<username>/mis-turnos')
 def my_appointments(username):
@@ -422,12 +427,14 @@ def my_appointments(username):
         Appointment.created_at >= seven_days_ago
     ).order_by(Appointment.created_at.desc()).limit(10).all()
 
+    card = user.cards.first()
     return render_template('public/appointments/my_tickets.html',
                          system=system,
                          username=username,
                          patient_name=patient_name,
                          active_appointments=active_appointments,
-                         recent_appointments=recent_appointments)
+                         recent_appointments=recent_appointments,
+                         card=card)
 
 @bp.route('/turnos/<username>/cola')
 def appointments_queue(username):
@@ -455,11 +462,13 @@ def appointments_queue(username):
     waiting_appointments = system.appointments.filter_by(status='waiting')\
         .order_by(Appointment.created_at).limit(10).all()
 
+    card = user.cards.first()
     return render_template('public/appointments/queue_display.html',
                          system=system,
                          current_appointment=current_appointment,
                          waiting_appointments=waiting_appointments,
-                         username=username)
+                         username=username,
+                         card=card)
 
 @bp.route('/turnos/<username>/cola/json')
 def appointments_queue_json(username):
@@ -536,11 +545,17 @@ def appointment_ticket(username, ticket_number):
     # Calcular posición en cola
     position = appointment.get_position_in_queue()
 
+    # Detectar si es un turno recién creado (viene del formulario)
+    is_new_ticket = request.args.get('new', '0') == '1'
+
+    card = user.cards.first()
     return render_template('public/appointments/ticket_status.html',
                          system=system,
                          appointment=appointment,
                          position=position,
-                         username=username)
+                         username=username,
+                         card=card,
+                         is_new_ticket=is_new_ticket)
 
 @bp.route('/turnos/<username>/ticket/<ticket_number>/status/json')
 def appointment_ticket_status_json(username, ticket_number):

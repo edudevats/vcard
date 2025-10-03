@@ -1,202 +1,603 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Turnos - {{ system.business_name }}</title>
 
-{% block title %}Mis Turnos - {{ system.business_name }}{% endblock %}
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Mis turnos en {{ system.business_name }}">
+    <meta name="keywords" content="turnos, citas, {{ system.business_name }}, {{ patient_name }}">
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <!-- Header -->
-            <div class="card shadow-lg mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">
-                        <i class="fas fa-ticket-alt me-2"></i>Mis Turnos
-                    </h3>
-                    <p class="mb-0 mt-2">
-                        <i class="fas fa-user me-2"></i>{{ patient_name }}
-                    </p>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ system.business_name }}</h5>
-                        <a href="{{ url_for('public.appointments_public', username=username) }}"
-                           class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Tomar Nuevo Turno
-                        </a>
-                    </div>
-                </div>
+    <!-- Open Graph -->
+    <meta property="og:title" content="Mis Turnos - {{ system.business_name }}">
+    <meta property="og:description" content="Consulta tus turnos activos y recientes">
+    <meta property="og:type" content="website">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') if card and card.theme else 'Roboto' }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '{{ card.theme.font_family if card and card.theme else 'Roboto' }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-card h3 {
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info {
+            color: #666;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .business-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .business-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #2ed573, #1dd1a1);
+            color: white;
+            padding: 20px 25px;
+        }
+
+        .section-header h5 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-header-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .section-body {
+            padding: 25px;
+        }
+
+        .appointment-card {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .appointment-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .appointment-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .appointment-card.in-progress {
+            border-color: #2ed573;
+            background: linear-gradient(135deg, #2ed57305, #1dd1a105);
+        }
+
+        .appointment-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .ticket-section {
+            text-align: center;
+        }
+
+        .ticket-number-display {
+            font-size: 2.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .info-section h6 {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+        }
+
+        .info-section .status-success {
+            color: #2ed573;
+        }
+
+        .info-section .status-waiting {
+            color: #f39c12;
+        }
+
+        .info-section p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-section {
+            text-align: center;
+        }
+
+        .position-badge {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .position-badge h4 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .position-badge small {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+
+        .btn-outline:hover {
+            background: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            color: white;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            background: #f8f9fa;
+        }
+
+        .table th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: white;
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, #2ed573, #1dd1a1);
+        }
+
+        .status-cancelled {
+            background: linear-gradient(135deg, #f39c12, #f8b500);
+        }
+
+        .status-no-show {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #3498db15, #2980b915);
+            border: 1px solid #3498db30;
+            color: #333;
+        }
+
+        .alert i {
+            color: #3498db;
+        }
+
+        .quick-actions {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .action-btn i {
+            font-size: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .header-card {
+                padding: 25px 20px;
+            }
+
+            .appointment-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table {
+                font-size: 0.9rem;
+            }
+
+            .table th, .table td {
+                padding: 10px;
+            }
+
+            .business-info {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header-card {
+                padding: 20px 15px;
+            }
+
+            .header-card h3 {
+                font-size: 1.5rem;
+            }
+
+            .section-header h5 {
+                font-size: 1.1rem;
+            }
+
+            .ticket-number-display {
+                font-size: 2rem;
+            }
+
+            .position-badge h4 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <h3>
+                <i class="fas fa-ticket-alt"></i>
+                <span>Mis Turnos</span>
+            </h3>
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span>{{ patient_name }}</span>
             </div>
 
-            <!-- Active Appointments -->
-            {% if active_appointments %}
-            <div class="card shadow-lg mb-4">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-clock me-2"></i>Turnos Activos
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% for appointment in active_appointments %}
-                    <div class="appointment-card mb-3 p-3 border rounded {% if appointment.status == 'in_progress' %}border-success bg-success bg-opacity-10{% else %}border-secondary{% endif %}">
-                        <div class="row align-items-center">
-                            <div class="col-md-3 text-center">
-                                <div class="ticket-number-display"
-                                     style="font-size: 2.5rem; font-weight: bold; color: {{ appointment.type.color }};">
-                                    {{ appointment.ticket_number }}
+            <div class="business-info">
+                <div class="business-name">{{ system.business_name }}</div>
+                <a href="{{ url_for('public.appointments_public', username=username) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    <span>Tomar Nuevo Turno</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Active Appointments -->
+        {% if active_appointments %}
+        <div class="section-card">
+            <div class="section-header">
+                <h5>
+                    <i class="fas fa-clock"></i>
+                    <span>Turnos Activos</span>
+                </h5>
+            </div>
+            <div class="section-body">
+                {% for appointment in active_appointments %}
+                <div class="appointment-card {% if appointment.status == 'in_progress' %}in-progress{% endif %}">
+                    <div class="appointment-grid">
+                        <div class="ticket-section">
+                            <div class="ticket-number-display" style="color: {{ appointment.type.color }};">
+                                {{ appointment.ticket_number }}
+                            </div>
+                            <span class="type-badge" style="background-color: {{ appointment.type.color }};">
+                                {{ appointment.type.name }}
+                            </span>
+                        </div>
+                        <div class="info-section">
+                            <h6>
+                                {% if appointment.status == 'in_progress' %}
+                                    <i class="fas fa-check-circle status-success"></i>
+                                    <strong>¡Es tu turno! Pasa a la consulta</strong>
+                                {% else %}
+                                    <i class="fas fa-hourglass-half status-waiting"></i>
+                                    En espera
+                                {% endif %}
+                            </h6>
+                            <p>
+                                <i class="far fa-calendar"></i>
+                                {{ appointment.get_local_created_at() }}
+                            </p>
+                            {% if appointment.patient_phone %}
+                            <p>
+                                <i class="fas fa-phone"></i>
+                                {{ appointment.patient_phone }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="action-section">
+                            {% if appointment.status == 'waiting' %}
+                                {% set position = appointment.get_position_in_queue() %}
+                                <div class="position-badge">
+                                    <h4>{{ position }}</h4>
+                                    <small>en la fila</small>
                                 </div>
-                                <span class="badge" style="background-color: {{ appointment.type.color }};">
+                            {% endif %}
+                            <a href="{{ url_for('public.appointment_ticket', username=username, ticket_number=appointment.ticket_number) }}"
+                               class="btn btn-outline" style="margin-top: 10px;">
+                                <i class="fas fa-eye"></i>
+                                Ver Detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert">
+            <i class="fas fa-info-circle"></i>
+            <div>No tienes turnos activos en este momento.</div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Appointments -->
+        {% if recent_appointments %}
+        <div class="section-card">
+            <div class="section-header section-header-secondary">
+                <h5>
+                    <i class="fas fa-history"></i>
+                    <span>Turnos Recientes (últimos 7 días)</span>
+                </h5>
+            </div>
+            <div class="section-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Tipo</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in recent_appointments %}
+                        <tr>
+                            <td>
+                                <strong style="color: {{ appointment.type.color }};">
+                                    {{ appointment.ticket_number }}
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="type-badge" style="background-color: {{ appointment.type.color }};">
                                     {{ appointment.type.name }}
                                 </span>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="mb-2">
-                                    {% if appointment.status == 'in_progress' %}
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <strong>¡Es tu turno! Pasa a la consulta</strong>
-                                    {% else %}
-                                        <i class="fas fa-hourglass-half text-warning me-2"></i>
-                                        En espera
-                                    {% endif %}
-                                </h6>
-                                <p class="mb-1">
-                                    <small class="text-muted">
-                                        <i class="far fa-calendar me-1"></i>
-                                        {{ appointment.get_local_created_at() }}
-                                    </small>
-                                </p>
-                                {% if appointment.patient_phone %}
-                                <p class="mb-0">
-                                    <small class="text-muted">
-                                        <i class="fas fa-phone me-1"></i>{{ appointment.patient_phone }}
-                                    </small>
-                                </p>
+                            </td>
+                            <td>
+                                <small>{{ appointment.get_local_created_at() }}</small>
+                            </td>
+                            <td>
+                                {% if appointment.status == 'completed' %}
+                                    <span class="status-badge status-completed">Completado</span>
+                                {% elif appointment.status == 'cancelled' %}
+                                    <span class="status-badge status-cancelled">Cancelado</span>
+                                {% elif appointment.status == 'no_show' %}
+                                    <span class="status-badge status-no-show">No asistió</span>
                                 {% endif %}
-                            </div>
-                            <div class="col-md-3 text-center">
-                                {% if appointment.status == 'waiting' %}
-                                    {% set position = appointment.get_position_in_queue() %}
-                                    <div class="position-badge">
-                                        <h4 class="text-primary mb-0">{{ position }}</h4>
-                                        <small class="text-muted">en la fila</small>
-                                    </div>
-                                {% endif %}
-                                <a href="{{ url_for('public.appointment_ticket', username=username, ticket_number=appointment.ticket_number) }}"
-                                   class="btn btn-sm btn-outline-primary mt-2">
-                                    <i class="fas fa-eye me-1"></i>Ver Detalles
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                No tienes turnos activos en este momento.
-            </div>
-            {% endif %}
-
-            <!-- Recent Appointments -->
-            {% if recent_appointments %}
-            <div class="card shadow-lg">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history me-2"></i>Turnos Recientes (últimos 7 días)
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Ticket</th>
-                                    <th>Tipo</th>
-                                    <th>Fecha</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for appointment in recent_appointments %}
-                                <tr>
-                                    <td>
-                                        <strong style="color: {{ appointment.type.color }};">
-                                            {{ appointment.ticket_number }}
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        <span class="badge" style="background-color: {{ appointment.type.color }};">
-                                            {{ appointment.type.name }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <small>{{ appointment.get_local_created_at() }}</small>
-                                    </td>
-                                    <td>
-                                        {% if appointment.status == 'completed' %}
-                                            <span class="badge bg-success">Completado</span>
-                                        {% elif appointment.status == 'cancelled' %}
-                                            <span class="badge bg-warning">Cancelado</span>
-                                        {% elif appointment.status == 'no_show' %}
-                                            <span class="badge bg-danger">No asistió</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Quick Actions -->
-            <div class="card shadow-lg mt-4">
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-4 mb-3 mb-md-0">
-                            <a href="{{ url_for('public.appointments_public', username=username) }}"
-                               class="btn btn-outline-primary w-100">
-                                <i class="fas fa-plus-circle mb-2" style="font-size: 2rem;"></i>
-                                <br>Tomar Nuevo Turno
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3 mb-md-0">
-                            <a href="{{ url_for('public.appointments_queue', username=username) }}"
-                               class="btn btn-outline-secondary w-100">
-                                <i class="fas fa-list mb-2" style="font-size: 2rem;"></i>
-                                <br>Ver Cola de Espera
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <button onclick="location.reload()"
-                                    class="btn btn-outline-success w-100">
-                                <i class="fas fa-sync-alt mb-2" style="font-size: 2rem;"></i>
-                                <br>Actualizar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Auto-refresh notice -->
-            {% if active_appointments %}
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-sync-alt me-2"></i>
-                <small>Esta página se actualiza automáticamente cada 30 segundos.</small>
-            </div>
-            {% endif %}
         </div>
-    </div>
-</div>
+        {% endif %}
 
-<!-- Auto-refresh script -->
-{% if active_appointments %}
-<script>
-    // Auto-refresh every 30 seconds if there are active appointments
-    setTimeout(function() {
-        location.reload();
-    }, 30000);
-</script>
-{% endif %}
-{% endblock %}
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="actions-grid">
+                <a href="{{ url_for('public.appointments_public', username=username) }}" class="action-btn">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Tomar Nuevo Turno</span>
+                </a>
+                <a href="{{ url_for('public.appointments_queue', username=username) }}" class="action-btn">
+                    <i class="fas fa-list"></i>
+                    <span>Ver Cola de Espera</span>
+                </a>
+                <button onclick="location.reload()" class="action-btn" style="border: 2px solid #e0e0e0; background: white; cursor: pointer;">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Actualizar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Auto-refresh notice -->
+        {% if active_appointments %}
+        <div class="alert">
+            <i class="fas fa-sync-alt"></i>
+            <small>Esta página se actualiza automáticamente cada 30 segundos.</small>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Auto-refresh script -->
+    {% if active_appointments %}
+    <script>
+        // Auto-refresh every 30 seconds if there are active appointments
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+    {% endif %}
+</body>
+</html>

@@ -1,124 +1,487 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomar Turno - {{ system.business_name }}</title>
 
-{% block title %}Tomar Turno - {{ system.business_name }}{% endblock %}
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Sistema de turnos - {{ system.business_name }}. {{ system.welcome_message[:100] if system.welcome_message else '' }}">
+    <meta name="keywords" content="turnos, citas, {{ system.business_name }}">
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3 class="mb-0">
-                        <i class="fas fa-calendar-check me-2"></i>{{ system.business_name }}
-                    </h3>
-                    {% if system.business_hours %}
-                        <small>{{ system.business_hours }}</small>
-                    {% endif %}
+    <!-- Open Graph -->
+    <meta property="og:title" content="Tomar Turno - {{ system.business_name }}">
+    <meta property="og:description" content="Sistema de turnos y citas para {{ system.business_name }}">
+    <meta property="og:type" content="website">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') if card and card.theme else 'Roboto' }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '{{ card.theme.font_family if card and card.theme else 'Roboto' }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .header {
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .header .business-hours {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #3498db15, #2980b915);
+            border: 1px solid #3498db30;
+            color: #2c3e50;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #2ed57315, #1dd1a115);
+            border: 1px solid #2ed57330;
+            color: #2c3e50;
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .alert p {
+            margin-bottom: 0;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-label.required:after {
+            content: ' *';
+            color: #e74c3c;
+        }
+
+        .form-select, .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-select:focus, .form-control:focus {
+            outline: none;
+            border-color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            box-shadow: 0 0 0 3px {{ card.theme.primary_color if card and card.theme else '#667eea' }}15;
+        }
+
+        .form-text {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .mb-3 {
+            margin-bottom: 20px;
+        }
+
+        .mb-4 {
+            margin-bottom: 25px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .col-3 {
+            flex: 0 0 25%;
+        }
+
+        .col-9 {
+            flex: 0 0 calc(75% - 10px);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            border-color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .btn-outline:hover {
+            background: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .mt-2 {
+            margin-top: 10px;
+        }
+
+        .waiting-count {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}10, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }}10);
+            border-radius: 15px;
+            margin-top: 25px;
+        }
+
+        .waiting-count p {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .waiting-count h2 {
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .types-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .types-card-header {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}15, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }}15);
+            padding: 20px 25px;
+            border-bottom: 1px solid {{ card.theme.primary_color if card and card.theme else '#667eea' }}20;
+        }
+
+        .types-card-header h6 {
+            margin: 0;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .types-card-body {
+            padding: 25px;
+        }
+
+        .type-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .type-item:last-child {
+            border-bottom: none;
+        }
+
+        .type-badge {
+            background-color: var(--type-color);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            min-width: 70px;
+            text-align: center;
+            box-shadow: 0 3px 10px var(--type-color)30;
+        }
+
+        .type-info strong {
+            display: block;
+            color: #333;
+            margin-bottom: 3px;
+            font-size: 1rem;
+        }
+
+        .type-info small {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .header {
+                padding: 25px 20px;
+                margin-bottom: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .main-card {
+                padding: 25px 20px;
+            }
+
+            .types-card-body {
+                padding: 20px;
+            }
+
+            .row {
+                flex-direction: row;
+            }
+
+            .col-3 {
+                flex: 0 0 30%;
+            }
+
+            .col-9 {
+                flex: 0 0 calc(70% - 10px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .main-card {
+                padding: 20px 15px;
+            }
+
+            .btn {
+                padding: 14px 20px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-calendar-check"></i> {{ system.business_name }}</h1>
+            {% if system.business_hours %}
+                <div class="business-hours">{{ system.business_hours }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="main-card">
+            {% if system.welcome_message %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>{{ system.welcome_message }}</div>
                 </div>
-                <div class="card-body p-4">
-                    {% if system.welcome_message %}
-                        <div class="alert alert-info">
-                            {{ system.welcome_message }}
-                        </div>
-                    {% endif %}
+            {% endif %}
 
-                    {% if returning_patient and patient_name %}
-                        <div class="alert alert-success">
-                            <i class="fas fa-user-check me-2"></i>
-                            <strong>¡Bienvenido de nuevo, {{ patient_name }}!</strong>
-                            <p class="mb-0 mt-1">
-                                <small>Hemos guardado tu información para hacer el proceso más rápido.</small>
-                            </p>
-                        </div>
-                    {% endif %}
-
-                    <h5 class="mb-4">Solicitar Turno</h5>
-
-                    <form method="POST">
-                        {{ form.hidden_tag() }}
-
-                        <div class="mb-3">
-                            {{ form.appointment_type_id.label(class="form-label required") }}
-                            {{ form.appointment_type_id(class="form-select form-select-lg") }}
-                            <small class="form-text text-muted">Selecciona el tipo de atención que necesitas</small>
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.patient_name.label(class="form-label required") }}
-                            {{ form.patient_name() }}
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label required">Teléfono</label>
-                            <div class="row">
-                                <div class="col-3">
-                                    {{ form.patient_phone_country() }}
-                                </div>
-                                <div class="col-9">
-                                    {{ form.patient_phone() }}
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">Ingresa tu número de teléfono</small>
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.patient_email.label(class="form-label" + (" required" if system.require_patient_email else "")) }}
-                            {{ form.patient_email() }}
-                        </div>
-
-                        {% if system.collect_patient_birthdate %}
-                        <div class="mb-4">
-                            {{ form.patient_birthdate.label(class="form-label") }}
-                            {{ form.patient_birthdate() }}
-                        </div>
-                        {% endif %}
-
-                        {{ form.submit() }}
-
-                        <a href="{{ url_for('public.appointments_queue', username=username) }}"
-                           class="btn btn-outline-secondary w-100 mt-2">
-                            <i class="fas fa-list me-2"></i>Ver Cola de Espera
-                        </a>
-
-                        {% if returning_patient %}
-                        <a href="{{ url_for('public.my_appointments', username=username) }}"
-                           class="btn btn-outline-primary w-100 mt-2">
-                            <i class="fas fa-ticket-alt me-2"></i>Ver Mis Turnos
-                        </a>
-                        {% endif %}
-                    </form>
-
-                    <hr class="my-4">
-
-                    <div class="text-center">
-                        <p class="text-muted mb-2">Turnos en espera actualmente:</p>
-                        <h2 class="text-primary">{{ system.get_waiting_count() }}</h2>
+            {% if returning_patient and patient_name %}
+                <div class="alert alert-success">
+                    <i class="fas fa-user-check"></i>
+                    <div>
+                        <strong>¡Bienvenido de nuevo, {{ patient_name }}!</strong>
+                        <p>Hemos guardado tu información para hacer el proceso más rápido.</p>
                     </div>
                 </div>
+            {% endif %}
+
+            <div class="section-title">
+                <i class="fas fa-hand-point-right"></i>
+                <span>Solicitar Turno</span>
             </div>
 
-            <!-- Tipos de Citas Info -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Tipos de Atención Disponibles</h6>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    {{ form.appointment_type_id.label(class="form-label required") }}
+                    {{ form.appointment_type_id(class="form-select") }}
+                    <small class="form-text">Selecciona el tipo de atención que necesitas</small>
                 </div>
-                <div class="card-body">
-                    {% for apt_type in appointment_types %}
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="badge me-2" style="background-color: {{ apt_type.color }}; min-width: 60px;">
-                                {{ apt_type.prefix }}
-                            </span>
-                            <div>
-                                <strong>{{ apt_type.name }}</strong>
-                                {% if apt_type.description %}
-                                    <br><small class="text-muted">{{ apt_type.description }}</small>
-                                {% endif %}
-                            </div>
+
+                <div class="mb-3">
+                    {{ form.patient_name.label(class="form-label required") }}
+                    {{ form.patient_name(class="form-control") }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label required">Teléfono</label>
+                    <div class="row">
+                        <div class="col-3">
+                            {{ form.patient_phone_country(class="form-select") }}
                         </div>
-                    {% endfor %}
+                        <div class="col-9">
+                            {{ form.patient_phone(class="form-control") }}
+                        </div>
+                    </div>
+                    <small class="form-text">Ingresa tu número de teléfono</small>
                 </div>
+
+                <div class="mb-3">
+                    {{ form.patient_email.label(class="form-label" + (" required" if system.require_patient_email else "")) }}
+                    {{ form.patient_email(class="form-control") }}
+                </div>
+
+                {% if system.collect_patient_birthdate %}
+                <div class="mb-4">
+                    {{ form.patient_birthdate.label(class="form-label") }}
+                    {{ form.patient_birthdate(class="form-control") }}
+                </div>
+                {% endif %}
+
+                {{ form.submit(class="btn btn-primary") }}
+
+                <a href="{{ url_for('public.appointments_queue', username=username) }}"
+                   class="btn btn-outline mt-2">
+                    <i class="fas fa-list me-2"></i>Ver Cola de Espera
+                </a>
+
+                {% if returning_patient %}
+                <a href="{{ url_for('public.my_appointments', username=username) }}"
+                   class="btn btn-outline mt-2">
+                    <i class="fas fa-ticket-alt me-2"></i>Ver Mis Turnos
+                </a>
+                {% endif %}
+            </form>
+
+            <div class="waiting-count">
+                <p>Turnos en espera actualmente:</p>
+                <h2>{{ system.get_waiting_count() }}</h2>
+            </div>
+        </div>
+
+        <!-- Tipos de Citas Info -->
+        <div class="types-card">
+            <div class="types-card-header">
+                <h6><i class="fas fa-list-ul me-2"></i>Tipos de Atención Disponibles</h6>
+            </div>
+            <div class="types-card-body">
+                {% for apt_type in appointment_types %}
+                    <div class="type-item">
+                        <span class="type-badge" style="--type-color: {{ apt_type.color }}; background-color: {{ apt_type.color }};">
+                            {{ apt_type.prefix }}
+                        </span>
+                        <div class="type-info">
+                            <strong>{{ apt_type.name }}</strong>
+                            {% if apt_type.description %}
+                                <small>{{ apt_type.description }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

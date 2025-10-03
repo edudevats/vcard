@@ -1,16 +1,122 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin Tipos de Citas - {{ system.business_name }}</title>
 
-{% block title %}Sin Tipos de Citas{% endblock %}
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
-            <i class="fas fa-inbox fa-5x text-muted mb-4"></i>
-            <h2>{{ system.business_name }}</h2>
-            <p class="text-muted">No hay tipos de citas configurados en este momento.</p>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-icon {
+            font-size: 5rem;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #333;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .business-name {
+            color: #667eea;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .info-card {
+                padding: 50px 30px;
+            }
+
+            .info-icon {
+                font-size: 4rem;
+            }
+
+            h2 {
+                font-size: 1.6rem;
+            }
+
+            .business-name {
+                font-size: 1.1rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .info-card {
+                padding: 40px 25px;
+            }
+
+            .info-icon {
+                font-size: 3.5rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="info-card">
+            <i class="fas fa-inbox info-icon"></i>
+            <div class="business-name">{{ system.business_name }}</div>
+            <h2>No hay tipos de citas configurados</h2>
             <p>Por favor, intenta más tarde.</p>
         </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>

@@ -1,110 +1,362 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Turno {{ appointment.ticket_number }} - {{ system.business_name }}</title>
 
-{% block title %}Tu Turno {{ appointment.ticket_number }} - {{ system.business_name }}{% endblock %}
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Estado de tu turno {{ appointment.ticket_number }} - {{ system.business_name }}">
+    <meta name="keywords" content="turno, ticket, {{ appointment.ticket_number }}, {{ system.business_name }}">
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center py-4">
-                    <h3 class="mb-0">{{ system.business_name }}</h3>
+    <!-- Open Graph -->
+    <meta property="og:title" content="Turno {{ appointment.ticket_number }} - {{ system.business_name }}">
+    <meta property="og:description" content="Consulta el estado de tu turno en {{ system.business_name }}">
+    <meta property="og:type" content="website">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') if card and card.theme else 'Roboto' }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '{{ card.theme.font_family if card and card.theme else 'Roboto' }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .ticket-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .card-body {
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .ticket-display {
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 25px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+
+        .patient-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+
+        .status-alert {
+            padding: 20px 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1rem;
+        }
+
+        .status-alert i {
+            font-size: 1.5rem;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #3498db15, #2980b915);
+            border: 2px solid #3498db50;
+            color: #2c3e50;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #2ed57315, #1dd1a115);
+            border: 2px solid #2ed57350;
+            color: #2c3e50;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #f39c1215, #f8b50015);
+            border: 2px solid #f39c1250;
+            color: #2c3e50;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #e74c3c15, #c0392b15);
+            border: 2px solid #e74c3c50;
+            color: #2c3e50;
+        }
+
+        .alert-info i {
+            color: #3498db;
+        }
+
+        .alert-success i {
+            color: #2ed573;
+        }
+
+        .alert-warning i {
+            color: #f39c12;
+        }
+
+        .alert-danger i {
+            color: #e74c3c;
+        }
+
+        .position-info {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}10, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }}10);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+        }
+
+        .position-info h2 {
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .position-info small {
+            color: #999;
+            font-size: 0.95rem;
+        }
+
+        .btn-queue {
+            display: inline-block;
+            padding: 16px 35px;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .btn-queue:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-header {
+                padding: 25px 20px;
+            }
+
+            .card-header h3 {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 40px 25px;
+            }
+
+            .ticket-display {
+                font-size: 3.5rem;
+            }
+
+            .patient-name {
+                font-size: 1.3rem;
+            }
+
+            .status-alert {
+                font-size: 1rem;
+                padding: 18px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .card-header {
+                padding: 20px 15px;
+            }
+
+            .card-header h3 {
+                font-size: 1.3rem;
+            }
+
+            .card-body {
+                padding: 30px 20px;
+            }
+
+            .ticket-display {
+                font-size: 3rem;
+            }
+
+            .btn-queue {
+                width: 100%;
+                padding: 16px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="ticket-card">
+            <div class="card-header">
+                <h3>{{ system.business_name }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="ticket-display" style="color: {{ appointment.type.color }};">
+                    {{ appointment.ticket_number }}
                 </div>
-                <div class="card-body text-center p-5">
-                    <div class="ticket-display mb-4" style="color: {{ appointment.type.color }};">
-                        {{ appointment.ticket_number }}
+
+                <span class="type-badge" style="background-color: {{ appointment.type.color }};">
+                    {{ appointment.type.name }}
+                </span>
+
+                <div class="patient-name">{{ appointment.patient_name }}</div>
+
+                {% if is_new_ticket %}
+                    <div class="status-alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>¡Has tomado un turno exitosamente!</strong>
+                            <br><small>Tu número de turno es {{ appointment.ticket_number }}. Puedes cerrar esta página y volver cuando sea tu turno.</small>
+                        </div>
                     </div>
 
-                    <span class="badge badge-lg mb-3" style="background-color: {{ appointment.type.color }}; font-size: 1.2rem;">
-                        {{ appointment.type.name }}
-                    </span>
+                    <div class="position-info">
+                        <h2>
+                            {% if position > 0 %}
+                                {{ position }} personas delante de ti
+                            {% else %}
+                                Próximo turno
+                            {% endif %}
+                        </h2>
+                        <small>Tiempo de espera estimado: {{ appointment.get_waiting_time() }} min</small>
+                    </div>
 
-                    <h4 class="mt-3">{{ appointment.patient_name }}</h4>
+                {% elif appointment.status == 'waiting' %}
+                    <div class="status-alert alert-info">
+                        <i class="fas fa-clock"></i>
+                        <div>Tu turno está en espera</div>
+                    </div>
 
-                    {% if appointment.status == 'waiting' %}
-                        <div class="alert alert-info mt-4">
-                            <i class="fas fa-clock me-2"></i>Tu turno está en espera
-                        </div>
+                    <div class="position-info">
+                        <h2 id="position">
+                            {% if position > 0 %}
+                                Posición: {{ position }}
+                            {% else %}
+                                Próximo turno
+                            {% endif %}
+                        </h2>
+                        <small>Tiempo de espera: <span id="waitingTime">{{ appointment.get_waiting_time() }}</span> min</small>
+                    </div>
 
-                        <div class="position-info mb-4">
-                            <h2 class="mb-0" id="position">
-                                {% if position > 0 %}
-                                    Posición: {{ position }}
-                                {% else %}
-                                    Próximo turno
-                                {% endif %}
-                            </h2>
-                            <small class="text-muted">Tiempo de espera: <span id="waitingTime">{{ appointment.get_waiting_time() }}</span> min</small>
-                        </div>
+                {% elif appointment.status == 'in_progress' %}
+                    <div class="status-alert alert-success">
+                        <i class="fas fa-user-md"></i>
+                        <div><strong>¡Es tu turno! Pasa a la consulta</strong></div>
+                    </div>
 
-                    {% elif appointment.status == 'in_progress' %}
-                        <div class="alert alert-success mt-4">
-                            <i class="fas fa-user-md me-2"></i>¡Es tu turno! Pasa a la consulta
-                        </div>
+                {% elif appointment.status == 'completed' %}
+                    <div class="status-alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>Turno completado</div>
+                    </div>
 
-                    {% elif appointment.status == 'completed' %}
-                        <div class="alert alert-success mt-4">
-                            <i class="fas fa-check-circle me-2"></i>Turno completado
-                        </div>
-
-                    {% elif appointment.status == 'cancelled' %}
-                        <div class="alert alert-danger mt-4">
-                            <i class="fas fa-times-circle me-2"></i>Turno cancelado
+                {% elif appointment.status == 'cancelled' %}
+                    <div class="status-alert alert-danger">
+                        <i class="fas fa-times-circle"></i>
+                        <div>
+                            Turno cancelado
                             {% if appointment.cancellation_reason %}
                                 <br><small>{{ appointment.cancellation_reason }}</small>
                             {% endif %}
                         </div>
-
-                    {% elif appointment.status == 'no_show' %}
-                        <div class="alert alert-warning mt-4">
-                            <i class="fas fa-user-times me-2"></i>Marcado como ausente
-                        </div>
-                    {% endif %}
-
-                    <div class="mt-4">
-                        <a href="{{ url_for('public.appointments_queue', username=username) }}" class="btn btn-outline-primary">
-                            <i class="fas fa-list me-2"></i>Ver Cola de Espera
-                        </a>
                     </div>
-                </div>
+
+                {% elif appointment.status == 'no_show' %}
+                    <div class="status-alert alert-warning">
+                        <i class="fas fa-user-times"></i>
+                        <div>Marcado como ausente</div>
+                    </div>
+                {% endif %}
+
+                <a href="{{ url_for('public.appointments_queue', username=username) }}" class="btn-queue">
+                    <i class="fas fa-list me-2"></i>Ver Cola de Espera
+                </a>
             </div>
         </div>
     </div>
-</div>
 
-<style>
-.ticket-display {
-    font-size: 5rem;
-    font-weight: bold;
-    line-height: 1;
-}
+    <script>
+        // Auto-update status every 5 seconds if waiting
+        {% if appointment.status == 'waiting' %}
+        function updateStatus() {
+            fetch('{{ url_for("public.appointment_ticket_status_json", username=username, ticket_number=appointment.ticket_number) }}')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('position').textContent =
+                        data.position > 0 ? `Posición: ${data.position}` : 'Próximo turno';
+                    document.getElementById('waitingTime').textContent = data.waiting_time;
 
-@media (max-width: 768px) {
-    .ticket-display {
-        font-size: 3.5rem;
-    }
-}
-</style>
+                    // Reload page if status changed
+                    if (data.status !== 'waiting') {
+                        location.reload();
+                    }
+                });
+        }
 
-<script>
-// Auto-update status every 5 seconds if waiting
-{% if appointment.status == 'waiting' %}
-function updateStatus() {
-    fetch('{{ url_for("public.appointment_ticket_status_json", username=username, ticket_number=appointment.ticket_number) }}')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('position').textContent =
-                data.position > 0 ? `Posición: ${data.position}` : 'Próximo turno';
-            document.getElementById('waitingTime').textContent = data.waiting_time;
-
-            // Reload page if status changed
-            if (data.status !== 'waiting') {
-                location.reload();
-            }
-        });
-}
-
-setInterval(updateStatus, 5000);
-{% endif %}
-</script>
-{% endblock %}
+        setInterval(updateStatus, 5000);
+        {% endif %}
+    </script>
+</body>
+</html>
