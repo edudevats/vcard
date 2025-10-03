@@ -22,6 +22,9 @@
       <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#contacto" data-tab="contacto">
         Contacto
       </a>
+      <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#avatar" data-tab="avatar">
+        Avatar
+      </a>
       <a class="tab-link border-b-2 border-transparent px-4 py-3 text-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200" href="#redes" data-tab="redes">
         Redes
       </a>
@@ -110,6 +113,21 @@
             <label class="text-sm font-medium text-slate-700 dark:text-slate-300" for="location">Ubicación</label>
             {{ form.location(class="mt-1 block w-full rounded-lg border-slate-300 bg-white p-3 shadow-sm focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-900/40 dark:text-white") }}
           </div>
+        </div>
+      </div>
+
+      <!-- Avatar Tab -->
+      <div id="avatar" class="tab-content hidden">
+        <div class="text-center py-8">
+          <div class="mb-4">
+            <span class="material-symbols-outlined text-4xl text-slate-400">account_circle</span>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">Gestionar Avatar</h3>
+          <p class="text-slate-600 dark:text-slate-400 mb-6">Sube y personaliza tu foto de perfil</p>
+          <a href="{{ url_for('dashboard.card_avatar', id=card.id) }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined mr-2">account_circle</span>
+            Gestionar Avatar
+          </a>
         </div>
       </div>
 
