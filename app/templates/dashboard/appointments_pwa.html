@@ -77,7 +77,7 @@
                     <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.get_full_phone() or current_appointment.patient_phone }}</span>
                     {% if current_appointment.get_full_phone() %}
                         <a href="{{ current_appointment.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
-                            <span class="material-symbols-outlined text-sm">send</span>
+                            <i class="fab fa-whatsapp"></i>
                         </a>
                     {% endif %}
                 </div>
@@ -161,7 +161,7 @@
                             <span>{{ appointment.get_full_phone() or appointment.patient_phone }}</span>
                             {% if appointment.get_full_phone() %}
                                 <a href="{{ appointment.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
-                                    <span class="material-symbols-outlined text-xs">send</span>
+                                    <i class="fab fa-whatsapp"></i>
                                 </a>
                             {% endif %}
                         </div>
