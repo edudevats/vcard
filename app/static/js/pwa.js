@@ -254,9 +254,18 @@ class PWAManager {
     
     async subscribeToNotifications() {
         try {
+            // Get VAPID public key from server
+            const response = await fetch('/api/vapid-public-key');
+            const data = await response.json();
+
+            if (!response.ok || !data.publicKey) {
+                console.error('Failed to get VAPID public key:', data);
+                return;
+            }
+
             const subscription = await this.swRegistration.pushManager.subscribe({
                 userVisibleOnly: true,
-                // applicationServerKey: this.urlB64ToUint8Array('YOUR_VAPID_PUBLIC_KEY') // VAPID key needed for production
+                applicationServerKey: this.urlB64ToUint8Array(data.publicKey)
             });
             
             // Send subscription to server

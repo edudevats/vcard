@@ -23,8 +23,13 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <button class="btn btn-warning me-2" onclick="resetDailyQueue()">
-                        <i class="fas fa-refresh me-2"></i>Reiniciar Cola Diaria
+                    <button class="btn {% if system.is_accepting_appointments %}btn-warning{% else %}btn-success{% endif %} me-2"
+                            onclick="togglePause()">
+                        <i class="fas {% if system.is_accepting_appointments %}fa-pause{% else %}fa-play{% endif %} me-2"></i>
+                        {% if system.is_accepting_appointments %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
+                    </button>
+                    <button class="btn btn-outline-warning me-2" onclick="resetDailyQueue()">
+                        <i class="fas fa-refresh me-2"></i>Reiniciar Cola
                     </button>
                     <a href="{{ url_for('dashboard.appointments_settings') }}" class="btn btn-outline-primary">
                         <i class="fas fa-cog me-2"></i>Configuración
@@ -97,7 +102,12 @@
                                 </span>
                             </p>
                             <p class="text-muted mb-2">
-                                <i class="fas fa-phone me-2"></i>{{ current_appointment.patient_phone }}
+                                <i class="fas fa-phone me-2"></i>{{ current_appointment.get_full_phone() or current_appointment.patient_phone }}
+                                {% if current_appointment.get_full_phone() %}
+                                    <a href="{{ current_appointment.get_whatsapp_url() }}" target="_blank" class="btn btn-sm btn-success ms-2">
+                                        <i class="fab fa-whatsapp"></i> Enviar Mensaje
+                                    </a>
+                                {% endif %}
                                 {% if current_appointment.patient_email %}
                                     <br><i class="fas fa-envelope me-2"></i>{{ current_appointment.patient_email }}
                                 {% endif %}
@@ -167,7 +177,14 @@
                                         </span>
                                     </td>
                                     <td>{{ appointment.patient_name }}</td>
-                                    <td>{{ appointment.patient_phone }}</td>
+                                    <td>
+                                        {{ appointment.get_full_phone() or appointment.patient_phone }}
+                                        {% if appointment.get_full_phone() %}
+                                            <a href="{{ appointment.get_whatsapp_url() }}" target="_blank" class="btn btn-sm btn-success">
+                                                <i class="fab fa-whatsapp"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ appointment.get_waiting_time() }} min</td>
                                     <td>
                                         <button class="btn btn-sm btn-danger" onclick="cancelAppointment({{ appointment.id }})">
@@ -382,6 +399,37 @@ function resetDailyQueue() {
                 location.reload();
             } else {
                 alert(data.message || 'Error al reiniciar la cola diaria');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+function togglePause() {
+    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_appointments else 'false' }};
+    const action = isCurrentlyAccepting ? 'pausar' : 'reanudar';
+    const confirmMessage = isCurrentlyAccepting
+        ? '¿Pausar la toma de turnos? Los pacientes no podrán tomar nuevos turnos.'
+        : '¿Reanudar la toma de turnos? Los pacientes podrán volver a tomar turnos.';
+
+    if (confirm(confirmMessage)) {
+        fetch('{{ url_for("dashboard.toggle_pause_appointments") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || 'Error al ' + action + ' el sistema');
             }
         })
         .catch(error => {

@@ -49,14 +49,29 @@
                         </div>
 
                         <div class="mb-3">
-                            {{ form.patient_phone.label(class="form-label required") }}
-                            {{ form.patient_phone() }}
+                            <label class="form-label required">Teléfono</label>
+                            <div class="row">
+                                <div class="col-3">
+                                    {{ form.patient_phone_country() }}
+                                </div>
+                                <div class="col-9">
+                                    {{ form.patient_phone() }}
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Ingresa tu número de teléfono</small>
                         </div>
 
-                        <div class="mb-4">
-                            {{ form.patient_email.label(class="form-label") }}
+                        <div class="mb-3">
+                            {{ form.patient_email.label(class="form-label" + (" required" if system.require_patient_email else "")) }}
                             {{ form.patient_email() }}
                         </div>
+
+                        {% if system.collect_patient_birthdate %}
+                        <div class="mb-4">
+                            {{ form.patient_birthdate.label(class="form-label") }}
+                            {{ form.patient_birthdate() }}
+                        </div>
+                        {% endif %}
 
                         {{ form.submit() }}
 

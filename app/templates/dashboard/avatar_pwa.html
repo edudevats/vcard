@@ -1,0 +1,278 @@
+{% extends "base_pwa.html" %}
+
+{% block title %}Avatar - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark">
+  <!-- Header -->
+  <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-background-light px-4 dark:border-slate-800/80 dark:bg-background-dark">
+    <button class="flex items-center justify-center" onclick="history.back()">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">close</span>
+    </button>
+    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Avatar</h1>
+    <div class="w-8"></div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    <div class="space-y-6">
+      <!-- Current Avatar Section -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <span class="material-symbols-outlined mr-2">image</span>
+          Avatar Actual
+        </h2>
+
+        <div class="text-center">
+          {% if card.avatar_path %}
+            <div class="mb-4">
+              <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}"
+                   class="w-32 h-32 rounded-full mx-auto object-cover border-4 border-white shadow-lg"
+                   alt="Avatar de {{ card.name }}">
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              Avatar personalizado
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-500">
+              Forma: {{ 'Circular' if card.theme.avatar_shape == 'circle'
+                       else 'Redondeado' if card.theme.avatar_shape == 'rounded'
+                       else 'Rectangular' if card.theme.avatar_shape == 'rectangle'
+                       else 'Cuadrado' }}
+            </p>
+          {% else %}
+            <div class="w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center border-4 border-white shadow-lg"
+                 style="background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});">
+              <span class="material-symbols-outlined text-4xl text-white">person</span>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              Avatar por defecto
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-500">
+              Forma: {{ 'Circular' if card.theme.avatar_shape == 'circle'
+                       else 'Redondeado' if card.theme.avatar_shape == 'rounded'
+                       else 'Rectangular' if card.theme.avatar_shape == 'rectangle'
+                       else 'Cuadrado' }}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Preview Section -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <span class="material-symbols-outlined mr-2">visibility</span>
+          Vista Previa
+        </h3>
+
+        <div class="text-center" style="background: linear-gradient(135deg, {{ card.theme.primary_color }}20, {{ card.theme.secondary_color }}20); padding: 2rem; border-radius: 12px;">
+          <div class="inline-block mb-4">
+            <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg mx-auto"
+                 style="{% if card.theme.avatar_shape == 'circle' %}
+                         border-radius: 50%;
+                         {% elif card.theme.avatar_shape == 'rounded' %}
+                         border-radius: 25px;
+                         {% else %}
+                         border-radius: 10px;
+                         {% endif %}">
+              {% if card.avatar_path %}
+                <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}"
+                     class="w-full h-full object-cover"
+                     alt="Avatar">
+              {% else %}
+                <div class="w-full h-full flex items-center justify-center"
+                     style="background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }});">
+                  <span class="material-symbols-outlined text-2xl text-white">person</span>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          <h4 class="text-lg font-semibold mb-2" style="color: {{ card.theme.primary_color }};">{{ card.name }}</h4>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Como se ve en tu tarjeta</p>
+        </div>
+      </div>
+
+      <!-- Upload Form -->
+      <form method="POST" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        {{ form.hidden_tag() }}
+
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <span class="material-symbols-outlined mr-2">cloud_upload</span>
+          Cambiar Avatar
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Seleccionar imagen
+            </label>
+            <div class="relative">
+              <input type="file" id="avatar" name="avatar" accept="image/*"
+                     class="block w-full text-sm text-gray-500 dark:text-gray-400
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-primary file:text-white
+                            hover:file:bg-primary/90
+                            file:cursor-pointer">
+              {% if form.avatar.errors %}
+                <div class="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {% for error in form.avatar.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- File preview -->
+          <div id="preview-container" class="hidden">
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vista Previa:</h4>
+            <img id="preview-image" class="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 mx-auto" alt="Vista previa">
+          </div>
+
+          <div class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <p><strong>Recomendaciones:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+              <li>Imagen cuadrada (1:1)</li>
+              <li>Mínimo 300x300 píxeles</li>
+              <li>Formatos: JPG, PNG, WEBP</li>
+              <li>Máximo 5MB</li>
+              <li>La imagen se recortará automáticamente</li>
+            </ul>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center">
+              <span class="material-symbols-outlined mr-2">save</span>
+              Guardar Avatar
+            </button>
+            {% if card.avatar_path %}
+              <button type="button" onclick="removeAvatar()" class="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+
+      <!-- Tips Section -->
+      <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-6">
+        <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
+          <span class="material-symbols-outlined mr-2">lightbulb</span>
+          Consejos
+        </h3>
+
+        <div class="space-y-3">
+          <div class="flex items-start">
+            <span class="material-symbols-outlined text-green-600 mr-3 mt-0.5">check_circle</span>
+            <p class="text-sm text-blue-800 dark:text-blue-200">Usa una foto profesional y reciente</p>
+          </div>
+          <div class="flex items-start">
+            <span class="material-symbols-outlined text-green-600 mr-3 mt-0.5">check_circle</span>
+            <p class="text-sm text-blue-800 dark:text-blue-200">Asegúrate de que tu rostro sea claramente visible</p>
+          </div>
+          <div class="flex items-start">
+            <span class="material-symbols-outlined text-green-600 mr-3 mt-0.5">check_circle</span>
+            <p class="text-sm text-blue-800 dark:text-blue-200">Evita fondos muy ocupados o distractores</p>
+          </div>
+          <div class="flex items-start">
+            <span class="material-symbols-outlined text-green-600 mr-3 mt-0.5">check_circle</span>
+            <p class="text-sm text-blue-800 dark:text-blue-200">La imagen se adaptará automáticamente a la forma seleccionada en tu tema</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="flex h-20 shrink-0 items-center justify-around border-t border-slate-200/80 bg-background-light px-2 pt-1 dark:border-slate-800/80 dark:bg-background-dark">
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.index') }}">
+      <span class="material-symbols-outlined">home</span>
+      <span class="text-xs font-medium">Inicio</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 rounded-full bg-primary/10 px-4 py-2 text-primary dark:bg-primary/20" href="{{ url_for('dashboard.cards_list') }}">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">badge</span>
+      <span class="text-xs font-medium">Tarjetas</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.analytics') }}">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="text-xs font-medium">Analytics</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.profile') }}">
+      <span class="material-symbols-outlined">person</span>
+      <span class="text-xs font-medium">Perfil</span>
+    </a>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Preview uploaded file
+document.getElementById('avatar').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('preview-container').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        document.getElementById('preview-container').classList.add('hidden');
+    }
+});
+
+// Function to force reload all avatar images
+function forceAvatarReload() {
+    const avatarImages = document.querySelectorAll('img[src*="avatar_"], img[src*="uploads/"]');
+    avatarImages.forEach(img => {
+        const src = img.src;
+        const separator = src.includes('?') ? '&' : '?';
+        const newSrc = src.split('?')[0] + separator + 'v=' + Date.now();
+        img.src = newSrc;
+    });
+
+    // Also reload preview images
+    const previewImages = document.querySelectorAll('#preview-avatar-img, .avatar img');
+    previewImages.forEach(img => {
+        if (img.src && img.src.includes('uploads/')) {
+            const src = img.src;
+            const separator = src.includes('?') ? '&' : '?';
+            const newSrc = src.split('?')[0] + separator + 'v=' + Date.now();
+            img.src = newSrc;
+        }
+    });
+}
+
+// Check for successful avatar upload and force reload
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we just uploaded an avatar (look for success message)
+    const alerts = document.querySelectorAll('.alert-success');
+    alerts.forEach(alert => {
+        if (alert.textContent.includes('Avatar actualizado') || alert.textContent.includes('exitosamente')) {
+            // Force reload after a short delay to ensure file is saved
+            setTimeout(forceAvatarReload, 500);
+        }
+    });
+});
+
+function removeAvatar() {
+    if (confirm('¿Estás seguro de que quieres eliminar tu avatar?')) {
+        fetch(`{{ url_for('dashboard.card_avatar', id=card.id) }}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Force reload before page refresh
+                forceAvatarReload();
+                setTimeout(() => location.reload(), 500);
+            } else {
+                alert('Error al eliminar el avatar');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

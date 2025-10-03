@@ -233,6 +233,10 @@ def appointments_public(username):
 
     system = user.appointment_system
 
+    # Verificar si el sistema está aceptando turnos
+    if not system.is_accepting_appointments:
+        return render_template('public/appointments/paused.html', system=system, username=username)
+
     # Obtener tipos de citas activos
     appointment_types = system.get_active_types()
 
@@ -243,15 +247,21 @@ def appointments_public(username):
     patient_cookie_name = f'patient_info_{system.id}'
     patient_info = request.cookies.get(patient_cookie_name)
 
-    # Preparar formulario para tomar turno
+    # Preparar formulario para tomar turno con configuración del sistema
     from ..dashboard.forms import TakeAppointmentForm
-    form = TakeAppointmentForm(appointment_types=appointment_types)
+    form = TakeAppointmentForm(
+        appointment_types=appointment_types,
+        phone_prefix=system.phone_country_prefix or '+52',
+        require_email=system.require_patient_email,
+        collect_birthdate=system.collect_patient_birthdate
+    )
 
     # Pre-llenar formulario con datos de cookies si existen
     if patient_info and request.method == 'GET':
         try:
             patient_data = json.loads(patient_info)
             form.patient_name.data = patient_data.get('name', '')
+            form.patient_phone_country.data = patient_data.get('phone_country', system.phone_country_prefix or '+52')
             form.patient_phone.data = patient_data.get('phone', '')
             form.patient_email.data = patient_data.get('email', '')
         except:
@@ -269,13 +279,24 @@ def appointments_public(username):
         # Generar número de ticket
         ticket_number = appointment_type.get_next_ticket_number()
 
+        # Procesar fecha de nacimiento si existe
+        patient_birthdate = None
+        if system.collect_patient_birthdate and form.patient_birthdate.data:
+            from datetime import datetime
+            try:
+                patient_birthdate = datetime.strptime(form.patient_birthdate.data, '%Y-%m-%d').date()
+            except:
+                pass  # Si hay error al parsear, dejar como None
+
         # Crear nuevo turno
         appointment = Appointment(
             appointment_system_id=system.id,
             appointment_type_id=appointment_type.id,
             patient_name=form.patient_name.data,
+            patient_phone_country=form.patient_phone_country.data,
             patient_phone=form.patient_phone.data,
             patient_email=form.patient_email.data,
+            patient_birthdate=patient_birthdate,
             ticket_number=ticket_number,
             status='waiting',
             ip_address=request.remote_addr,
@@ -284,9 +305,18 @@ def appointments_public(username):
         db.session.add(appointment)
         db.session.commit()
 
+        # Send push notification to the user (clinic owner)
+        try:
+            from ..push_notifications import send_appointment_notification
+            send_appointment_notification(user.id, appointment)
+        except Exception as e:
+            # Don't fail the appointment creation if notification fails
+            print(f"Failed to send appointment notification: {e}")
+
         # Guardar información del paciente en cookies (30 días)
         patient_data = {
             'name': form.patient_name.data,
+            'phone_country': form.patient_phone_country.data or '+52',
             'phone': form.patient_phone.data or '',
             'email': form.patient_email.data or '',
             'last_ticket': ticket_number

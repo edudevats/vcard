@@ -66,7 +66,10 @@ def create_app(config_name=None):
     
     from .public import bp as public_bp
     app.register_blueprint(public_bp)
-    
+
+    from .api import bp as api_bp
+    app.register_blueprint(api_bp)
+
     # Main route
     @app.route('/')
     def index():

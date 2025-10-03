@@ -330,6 +330,24 @@ class AppointmentSystemForm(FlaskForm):
                                   ('detailed', 'Detallado - Con nombres y tiempos')
                               ],
                               render_kw={'class': 'form-select'})
+
+    # Configuración de pausa
+    pause_message = TextAreaField('Mensaje de Pausa', validators=[Optional(), Length(max=500)],
+                                 render_kw={'class': 'form-control', 'rows': 2,
+                                           'placeholder': 'Mensaje cuando no se aceptan turnos (ej: Regresamos a las 14:00)'})
+    resume_time = StringField('Hora de Reanudación', validators=[Optional()],
+                             render_kw={'class': 'form-control', 'placeholder': 'ej: 14:00 o Mañana a las 9:00'})
+
+    # Configuración de teléfono
+    phone_country_prefix = StringField('Prefijo Telefónico por Defecto', validators=[DataRequired()],
+                                      render_kw={'class': 'form-control', 'placeholder': '+52'})
+
+    # Configuración de campos del formulario
+    require_patient_email = BooleanField('Email Obligatorio',
+                                        render_kw={'class': 'form-check-input'})
+    collect_patient_birthdate = BooleanField('Recolectar Fecha de Nacimiento',
+                                            render_kw={'class': 'form-check-input'})
+
     submit = SubmitField('Guardar Configuración', render_kw={'class': 'btn btn-primary'})
 
 class AppointmentTypeForm(FlaskForm):
@@ -363,13 +381,33 @@ class TakeAppointmentForm(FlaskForm):
                                      render_kw={'class': 'form-select'})
     patient_name = StringField('Nombre Completo', validators=[DataRequired(), Length(max=200)],
                               render_kw={'class': 'form-control', 'placeholder': 'Tu nombre completo'})
+    patient_phone_country = StringField('Prefijo', validators=[DataRequired()],
+                                       render_kw={'class': 'form-control', 'placeholder': '+52', 'style': 'width: 80px;'})
     patient_phone = StringField('Teléfono', validators=[DataRequired(), Length(max=20)],
-                               render_kw={'class': 'form-control', 'placeholder': '+54 123 456 789'})
-    patient_email = StringField('Email (opcional)', validators=[Optional(), Email()],
+                               render_kw={'class': 'form-control', 'placeholder': '1234567890'})
+    patient_email = StringField('Email', validators=[Optional(), Email()],
                                render_kw={'class': 'form-control', 'placeholder': 'tu@email.com'})
+    patient_birthdate = StringField('Fecha de Nacimiento', validators=[Optional()],
+                                   render_kw={'type': 'date', 'class': 'form-control'})
     submit = SubmitField('Tomar Turno', render_kw={'class': 'btn btn-success btn-lg w-100'})
 
-    def __init__(self, appointment_types=None, *args, **kwargs):
+    def __init__(self, appointment_types=None, phone_prefix='+52', require_email=False, collect_birthdate=False, *args, **kwargs):
         super(TakeAppointmentForm, self).__init__(*args, **kwargs)
         if appointment_types:
             self.appointment_type_id.choices = [(t.id, t.name) for t in appointment_types]
+
+        # Configurar validadores dinámicamente
+        if require_email:
+            self.patient_email.validators = [DataRequired(), Email()]
+            self.patient_email.label.text = 'Email'
+        else:
+            self.patient_email.validators = [Optional(), Email()]
+            self.patient_email.label.text = 'Email (opcional)'
+
+        # Ocultar fecha de nacimiento si no se solicita
+        if not collect_birthdate:
+            self.patient_birthdate.validators = []
+
+        # Establecer prefijo por defecto
+        if not self.patient_phone_country.data:
+            self.patient_phone_country.data = phone_prefix

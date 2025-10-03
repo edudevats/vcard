@@ -43,6 +43,16 @@
                 <span class="material-symbols-outlined">analytics</span>
                 <span class="text-sm font-medium">Analíticas</span>
             </button>
+            {% if current_user.appointment_system and current_user.appointment_system.is_enabled %}
+            <button onclick="window.location.href='{{ url_for('dashboard.appointments') }}'"
+                    class="flex w-full items-center justify-center gap-2 rounded-lg bg-green-50 p-3 text-green-600 shadow-sm dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors col-span-2">
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span class="text-sm font-medium">Sistema de Turnos</span>
+                {% if current_user.appointment_system.get_waiting_count() > 0 %}
+                <span class="ml-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">{{ current_user.appointment_system.get_waiting_count() }}</span>
+                {% endif %}
+            </button>
+            {% endif %}
         </div>
     </div>
 
@@ -163,6 +173,16 @@
             <span class="material-symbols-outlined text-primary">add_box</span>
             <span class="font-medium">Nueva Tarjeta</span>
         </a>
+        {% if current_user.appointment_system and current_user.appointment_system.is_enabled %}
+        <a href="{{ url_for('dashboard.appointments') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-green-600">calendar_today</span>
+            <span class="font-medium">Sistema de Turnos</span>
+            {% if current_user.appointment_system.get_waiting_count() > 0 %}
+            <span class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded-full">{{ current_user.appointment_system.get_waiting_count() }}</span>
+            {% endif %}
+        </a>
+        {% endif %}
         <a href="{{ url_for('dashboard.advanced_features') }}"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-primary">settings</span>

@@ -468,43 +468,78 @@ def delete_gallery_item(card_id, item_id):
     flash('Imagen eliminada exitosamente.', 'success')
     return redirect(url_for('dashboard.card_gallery', id=card.id))
 
-@bp.route('/cards/<int:id>/avatar', methods=['GET', 'POST'])
+@bp.route('/cards/<int:id>/avatar', methods=['GET', 'POST', 'DELETE'])
 @login_required
 def card_avatar(id):
     card = get_user_card_or_404(id)
-    
+
+    if request.method == 'DELETE':
+        # Handle avatar deletion
+        if card.avatar_path:
+            # Delete avatar files
+            old_files = [card.avatar_path, card.avatar_square_path, card.avatar_rect_path]
+            for old_file in old_files:
+                cleanup_files([old_file])
+
+            # Clear avatar paths
+            card.avatar_path = None
+            card.avatar_square_path = None
+            card.avatar_rect_path = None
+
+            # Update the updated_at timestamp for cache busting
+            card.updated_at = now_utc_for_db()
+
+            db.session.commit()
+
+            # Clear cache for this card
+            CacheManager.invalidate_card(card.id)
+
+            return jsonify({'success': True, 'message': 'Avatar eliminado exitosamente'})
+        else:
+            return jsonify({'success': False, 'message': 'No hay avatar para eliminar'}), 400
+
     form = AvatarUploadForm()
     if form.validate_on_submit():
         # Save both versions (square and rectangular)
         square_filename, rect_filename = save_avatar(form.avatar.data)
-        
+
         if square_filename and rect_filename:
             # Delete old avatars
             old_files = [card.avatar_path, card.avatar_square_path, card.avatar_rect_path]
             for old_file in old_files:
                 cleanup_files([old_file])
-            
+
             # Update card with both versions
             card.avatar_square_path = square_filename
             card.avatar_rect_path = rect_filename
             card.avatar_path = square_filename  # Keep legacy field for backward compatibility
-            
+
             # Update the updated_at timestamp for cache busting
             from datetime import datetime
             card.updated_at = now_utc_for_db()
-            
+
             db.session.commit()
-            
+
             # Clear cache for this card
             CacheManager.invalidate_card(card.id)
-            
+
             flash('¡Avatar actualizado exitosamente! Se crearon versiones optimizadas para todas las formas.', 'success')
         else:
             flash('Error al subir el avatar. Intenta de nuevo.', 'error')
-        
+
         return redirect(url_for('dashboard.card_avatar', id=card.id))
-    
-    return render_template('dashboard/avatar.html', card=card, form=form)
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/avatar_pwa.html', card=card, form=form)
+    else:
+        return render_template('dashboard/avatar.html', card=card, form=form)
 
 @bp.route('/cards/<int:id>/theme', methods=['GET', 'POST'])
 @login_required  
@@ -1622,6 +1657,11 @@ def appointments_settings():
         system.welcome_message = system_form.welcome_message.data
         system.business_hours = system_form.business_hours.data
         system.display_mode = system_form.display_mode.data
+        system.pause_message = system_form.pause_message.data
+        system.resume_time = system_form.resume_time.data
+        system.phone_country_prefix = system_form.phone_country_prefix.data
+        system.require_patient_email = system_form.require_patient_email.data
+        system.collect_patient_birthdate = system_form.collect_patient_birthdate.data
         db.session.commit()
         flash('Configuración actualizada exitosamente', 'success')
         return redirect(url_for('dashboard.appointments_settings'))
@@ -1960,4 +2000,30 @@ def reset_daily_queue():
         })
     else:
         flash(f'Cola diaria reiniciada exitosamente. {cancelled_count} turnos antiguos fueron cancelados.', 'success')
+        return redirect(url_for('dashboard.appointments'))
+
+@bp.route('/appointments/toggle-pause', methods=['POST'])
+@login_required
+def toggle_pause_appointments():
+    """Pausar o reanudar la toma de turnos"""
+    if not current_user.appointment_system or not current_user.appointment_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    system = current_user.appointment_system
+
+    # Alternar el estado
+    system.is_accepting_appointments = not system.is_accepting_appointments
+    db.session.commit()
+
+    status = 'reanudado' if system.is_accepting_appointments else 'pausado'
+    message = f'Sistema {status}. {"Ahora se pueden tomar turnos." if system.is_accepting_appointments else "No se aceptarán nuevos turnos."}'
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': message,
+            'is_accepting': system.is_accepting_appointments
+        })
+    else:
+        flash(message, 'success')
         return redirect(url_for('dashboard.appointments'))

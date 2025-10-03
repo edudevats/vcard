@@ -734,6 +734,20 @@ class AppointmentSystem(db.Model):
     business_hours = db.Column(db.String(500))  # Horario de atención
     max_appointment_types = db.Column(db.Integer, default=10)  # Límite de tipos de citas
     display_mode = db.Column(Enum('simple', 'detailed', name='display_modes'), default='simple')
+
+    # Sistema de pausa
+    is_accepting_appointments = db.Column(db.Boolean, default=True, nullable=False)  # Si está aceptando turnos
+    pause_message = db.Column(db.Text)  # Mensaje cuando está pausado
+    resume_time = db.Column(db.String(100))  # Hora de reanudación (ej: "14:00" o "Mañana a las 9:00")
+
+    # Configuración de teléfono
+    phone_country_prefix = db.Column(db.String(10), default='+52')  # Prefijo telefónico por defecto
+
+    # Configuración de campos del formulario
+    require_patient_phone = db.Column(db.Boolean, default=True, nullable=False)  # Siempre obligatorio
+    require_patient_email = db.Column(db.Boolean, default=False, nullable=False)  # Email obligatorio
+    collect_patient_birthdate = db.Column(db.Boolean, default=False, nullable=False)  # Recolectar fecha de nacimiento
+
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
 
@@ -866,8 +880,10 @@ class Appointment(db.Model):
 
     # Información del paciente
     patient_name = db.Column(db.String(200), nullable=False)
-    patient_phone = db.Column(db.String(20))
+    patient_phone_country = db.Column(db.String(10))  # Prefijo del país (ej: +52)
+    patient_phone = db.Column(db.String(20))  # Número sin prefijo
     patient_email = db.Column(db.String(120))
+    patient_birthdate = db.Column(db.Date)  # Fecha de nacimiento
 
     # Control de turno
     ticket_number = db.Column(db.String(20), nullable=False, index=True)  # Ej: "A001", "B042"
@@ -942,5 +958,62 @@ class Appointment(db.Model):
         from .timezone_utils import format_local_datetime
         return format_local_datetime(self.created_at, '%d/%m/%Y %H:%M')
 
+    def get_full_phone(self):
+        """Obtener número de teléfono completo con prefijo"""
+        if not self.patient_phone:
+            return None
+        if self.patient_phone_country:
+            return f"{self.patient_phone_country}{self.patient_phone}"
+        return self.patient_phone
+
+    def get_whatsapp_url(self, message=None):
+        """Generar URL de WhatsApp para contactar al paciente"""
+        phone = self.get_full_phone()
+        if not phone:
+            return None
+
+        # Limpiar el número (remover espacios, guiones, etc.)
+        clean_phone = ''.join(filter(str.isdigit, phone.replace('+', '')))
+
+        # Mensaje predeterminado
+        if not message:
+            message = f"Hola {self.patient_name}, es tu turno. Por favor pasa a consulta."
+
+        # URL encode del mensaje
+        import urllib.parse
+        encoded_message = urllib.parse.quote(message)
+
+        return f"https://wa.me/{clean_phone}?text={encoded_message}"
+
     def __repr__(self):
         return f'<Appointment {self.ticket_number} - {self.status}>'
+
+class PushSubscription(db.Model):
+    """Push notification subscriptions for PWA users"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    endpoint = db.Column(db.String(500), nullable=False)
+    p256dh = db.Column(db.String(200), nullable=False)
+    auth = db.Column(db.String(200), nullable=False)
+    user_agent = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
+
+    # Relationship
+    user = db.relationship('User', backref=db.backref('push_subscriptions', lazy='dynamic', cascade='all, delete-orphan'))
+
+    # Unique constraint to prevent duplicate subscriptions
+    __table_args__ = (db.UniqueConstraint('user_id', 'endpoint', name='unique_user_endpoint'),)
+
+    def to_dict(self):
+        """Convert subscription to dictionary for push sending"""
+        return {
+            'endpoint': self.endpoint,
+            'keys': {
+                'p256dh': self.p256dh,
+                'auth': self.auth
+            }
+        }
+
+    def __repr__(self):
+        return f'<PushSubscription user_id={self.user_id} endpoint={self.endpoint[:50]}...>'

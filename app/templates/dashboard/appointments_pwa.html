@@ -15,6 +15,17 @@
             Sistema de Turnos
         </h1>
         <p class="text-gray-600 dark:text-gray-400">{{ system.business_name }}</p>
+
+        <!-- Pause/Resume Button -->
+        <div class="mt-4">
+            <button class="{% if system.is_accepting_appointments %}bg-yellow-500 hover:bg-yellow-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white px-4 py-2 rounded-lg font-semibold transition-colors inline-flex items-center"
+                    onclick="togglePause()">
+                <span class="material-symbols-outlined mr-2">
+                    {% if system.is_accepting_appointments %}pause{% else %}play_arrow{% endif %}
+                </span>
+                {% if system.is_accepting_appointments %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
+            </button>
+        </div>
     </div>
 
     <!-- Stats Cards -->
@@ -62,7 +73,14 @@
             </div>
             <div class="flex items-center justify-between">
                 <span class="text-gray-600 dark:text-gray-400">Teléfono:</span>
-                <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.patient_phone }}</span>
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.get_full_phone() or current_appointment.patient_phone }}</span>
+                    {% if current_appointment.get_full_phone() %}
+                        <a href="{{ current_appointment.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
+                            <span class="material-symbols-outlined text-sm">send</span>
+                        </a>
+                    {% endif %}
+                </div>
             </div>
             {% if current_appointment.patient_email %}
             <div class="flex items-center justify-between">
@@ -139,7 +157,14 @@
                     </div>
                     <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                         <div>{{ appointment.patient_name }}</div>
-                        <div>{{ appointment.patient_phone }}</div>
+                        <div class="flex items-center gap-1">
+                            <span>{{ appointment.get_full_phone() or appointment.patient_phone }}</span>
+                            {% if appointment.get_full_phone() %}
+                                <a href="{{ appointment.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
+                                    <span class="material-symbols-outlined text-xs">send</span>
+                                </a>
+                            {% endif %}
+                        </div>
                         <div>{{ appointment.get_waiting_time() }} min esperando</div>
                     </div>
                 </div>
@@ -321,6 +346,37 @@ function resetDailyQueue() {
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showNotification(data.message || 'Error al reiniciar la cola diaria', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al procesar la solicitud', 'error');
+        });
+    }
+}
+
+function togglePause() {
+    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_appointments else 'false' }};
+    const action = isCurrentlyAccepting ? 'pausar' : 'reanudar';
+    const confirmMessage = isCurrentlyAccepting
+        ? '¿Pausar la toma de turnos? Los pacientes no podrán tomar nuevos turnos.'
+        : '¿Reanudar la toma de turnos? Los pacientes podrán volver a tomar turnos.';
+
+    if (confirm(confirmMessage)) {
+        fetch('{{ url_for("dashboard.toggle_pause_appointments") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Error al ' + action + ' el sistema', 'error');
             }
         })
         .catch(error => {

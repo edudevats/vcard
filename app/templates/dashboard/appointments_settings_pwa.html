@@ -58,6 +58,41 @@
                     {{ system_form.display_mode(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.pause_message.label }}
+                    </label>
+                    {{ system_form.pause_message(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white", rows=2) }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.resume_time.label }}
+                    </label>
+                    {{ system_form.resume_time(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.phone_country_prefix.label }}
+                    </label>
+                    {{ system_form.phone_country_prefix(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div class="flex items-center">
+                    {{ system_form.require_patient_email(class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary") }}
+                    <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                        {{ system_form.require_patient_email.label }}
+                    </label>
+                </div>
+
+                <div class="flex items-center">
+                    {{ system_form.collect_patient_birthdate(class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary") }}
+                    <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                        {{ system_form.collect_patient_birthdate.label }}
+                    </label>
+                </div>
+
                 <button type="submit"
                         class="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-semibold transition-colors">
                     <span class="material-symbols-outlined mr-2 align-middle">save</span>

@@ -45,6 +45,11 @@ class Config:
     COMPRESS_LEVEL = 6
     COMPRESS_MIN_SIZE = 500
 
+    # VAPID keys for push notifications
+    VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY')
+    VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY')
+    VAPID_SUBJECT = os.environ.get('VAPID_SUBJECT', 'mailto:admin@atscard.app')
+
 class DevelopmentConfig(Config):
     DEBUG = True
 

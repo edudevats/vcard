@@ -55,6 +55,45 @@
                         {{ system_form.display_mode() }}
                     </div>
 
+                    <hr class="my-4">
+                    <h6 class="mb-3">Configuración de Pausa</h6>
+
+                    <div class="mb-3">
+                        {{ system_form.pause_message.label(class="form-label") }}
+                        {{ system_form.pause_message() }}
+                        <small class="form-text text-muted">Mensaje que se mostrará cuando el sistema esté pausado</small>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ system_form.resume_time.label(class="form-label") }}
+                        {{ system_form.resume_time() }}
+                        <small class="form-text text-muted">Hora aproximada de reanudación (ej: "14:00" o "Mañana a las 9:00")</small>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3">Configuración de Teléfono</h6>
+
+                    <div class="mb-3">
+                        {{ system_form.phone_country_prefix.label(class="form-label") }}
+                        {{ system_form.phone_country_prefix() }}
+                        <small class="form-text text-muted">Prefijo telefónico que se mostrará por defecto (ej: +52 para México)</small>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3">Configuración de Campos del Formulario</h6>
+
+                    <div class="form-check mb-3">
+                        {{ system_form.require_patient_email() }}
+                        {{ system_form.require_patient_email.label(class="form-check-label") }}
+                        <br><small class="form-text text-muted">Si está activado, el email será obligatorio para tomar turno</small>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ system_form.collect_patient_birthdate() }}
+                        {{ system_form.collect_patient_birthdate.label(class="form-check-label") }}
+                        <br><small class="form-text text-muted">Si está activado, se pedirá la fecha de nacimiento al tomar turno</small>
+                    </div>
+
                     {{ system_form.submit(class="btn btn-primary") }}
                 </form>
             </div>

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema Pausado - {{ system.business_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-pause-circle me-2"></i>{{ system.business_name }}
+                    </h3>
+                    {% if system.business_hours %}
+                        <small>{{ system.business_hours }}</small>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-hand-paper fa-5x text-warning mb-3"></i>
+                        <h4 class="text-warning">Sistema Temporalmente Pausado</h4>
+                    </div>
+
+                    {% if system.pause_message %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            {{ system.pause_message }}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-3">
+                            Lo sentimos, actualmente no estamos tomando turnos.
+                        </p>
+                    {% endif %}
+
+                    {% if system.resume_time %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>Reanudaremos a las:</strong> {{ system.resume_time }}
+                        </div>
+                    {% endif %}
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('public.appointments_queue', username=username) }}"
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-list me-2"></i>Ver Cola de Espera
+                        </a>
+
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info adicional -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Información</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <i class="fas fa-clock me-2 text-primary"></i>
+                        <strong>Horario de atención:</strong> {{ system.business_hours or 'Consultar con el consultorio' }}
+                    </p>
+                    <p class="mb-0 text-muted">
+                        Por favor, vuelve más tarde o consulta el horario de atención.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
