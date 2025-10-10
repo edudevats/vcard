@@ -1,7 +1,7 @@
 {% extends "base_pwa.html" %}
 
 {% set show_header = true %}
-{% set show_bottom_nav = false %}
+{% set show_bottom_nav = true %}
 
 {% block title %}Citas - ATScard Digital{% endblock %}
 
@@ -207,6 +207,11 @@
 <div class="py-4">
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Opciones de Citas</h3>
     <div class="space-y-2">
+        <a href="{{ url_for('dashboard.index') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">home</span>
+            <span class="font-medium">Volver al Inicio</span>
+        </a>
         <a href="{{ url_for('dashboard.appointments') }}"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-primary">calendar_today</span>
