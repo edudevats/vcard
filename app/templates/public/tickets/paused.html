@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Pausado - {{ system.business_name }}</title>
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') if card and card.theme else 'Roboto' }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '{{ card.theme.font_family if card and card.theme else 'Roboto' }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 650px;
+            width: 100%;
+        }
+
+        .paused-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f39c12, #f8b500);
+            color: #333;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .card-header small {
+            display: block;
+            margin-top: 8px;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .card-body {
+            padding: 45px 40px;
+            text-align: center;
+        }
+
+        .pause-icon {
+            font-size: 5rem;
+            color: #f39c12;
+            margin-bottom: 25px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pause-title {
+            color: #f39c12;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        .alert {
+            padding: 20px 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #f39c1215, #f8b50015);
+            border: 2px solid #f39c1250;
+            color: #333;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #3498db15, #2980b915);
+            border: 2px solid #3498db50;
+            color: #333;
+        }
+
+        .alert i {
+            margin-right: 10px;
+            color: inherit;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+        }
+
+        .info-section p {
+            margin: 10px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-section i {
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 16px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card and card.theme else '#667eea' }}, {{ card.theme.secondary_color if card and card.theme else '#764ba2' }});
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            color: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-outline:hover {
+            background: {{ card.theme.primary_color if card and card.theme else '#667eea' }};
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .card-header {
+                padding: 20px 25px;
+            }
+
+            .card-header h3 {
+                font-size: 1.4rem;
+            }
+
+            .card-body {
+                padding: 35px 25px;
+            }
+
+            .pause-icon {
+                font-size: 4rem;
+            }
+
+            .pause-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .card-header {
+                padding: 18px 20px;
+            }
+
+            .card-header h3 {
+                font-size: 1.2rem;
+            }
+
+            .card-body {
+                padding: 30px 20px;
+            }
+
+            .pause-icon {
+                font-size: 3.5rem;
+            }
+
+            .pause-title {
+                font-size: 1.3rem;
+            }
+
+            .btn {
+                padding: 14px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="paused-card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-pause-circle"></i>
+                    <span>{{ system.business_name }}</span>
+                </h3>
+                {% if system.business_hours %}
+                    <small>{{ system.business_hours }}</small>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <i class="fas fa-hand-paper pause-icon"></i>
+                <h4 class="pause-title">Sistema Temporalmente Pausado</h4>
+
+                {% if system.pause_message %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        {{ system.pause_message }}
+                    </div>
+                {% else %}
+                    <p style="color: #666; margin-bottom: 20px;">
+                        Lo sentimos, actualmente no estamos tomando turnos.
+                    </p>
+                {% endif %}
+
+                {% if system.resume_time %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-clock"></i>
+                        <strong>Reanudaremos a las:</strong> {{ system.resume_time }}
+                    </div>
+                {% endif %}
+
+                <div class="info-section">
+                    <p>
+                        <i class="fas fa-clock"></i>
+                        <strong>Horario de atención:</strong> {{ system.business_hours or 'Consultar con el consultorio' }}
+                    </p>
+                    <p style="color: #999; font-size: 0.9rem; margin-top: 10px;">
+                        Por favor, vuelve más tarde o consulta el horario de atención.
+                    </p>
+                </div>
+
+                <div class="btn-group">
+                    <a href="{{ url_for('public.tickets_queue', username=username) }}" class="btn btn-primary">
+                        <i class="fas fa-list"></i>
+                        <span>Ver Cola de Espera</span>
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Volver</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

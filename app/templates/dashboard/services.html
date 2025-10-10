@@ -210,6 +210,19 @@
                                     </div>
                                     <div class="form-hint">Aparecerá destacado</div>
                                 </div>
+                                <div class="switch-group">
+                                    <div class="custom-switch">
+                                        {{ form.accepts_appointments(class="switch-input") }}
+                                        <label for="accepts_appointments" class="switch-label">
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                        <span class="switch-text">
+                                            <i class="fas fa-calendar-check"></i>
+                                            {{ form.accepts_appointments.label.text }}
+                                        </span>
+                                    </div>
+                                    <div class="form-hint">Los clientes podrán reservar citas</div>
+                                </div>
                             </div>
                             <div class="submit-group">
                                 {{ form.submit(class="submit-btn") }}

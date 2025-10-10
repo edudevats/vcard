@@ -1,192 +1,226 @@
 {% extends "base_pwa.html" %}
 
-{% set active_tab = 'appointments' %}
 {% set show_header = true %}
-{% set show_bottom_nav = true %}
+{% set show_bottom_nav = false %}
 
-{% block title %}Sistema de Turnos - ATScard Digital{% endblock %}
+{% block title %}Citas - ATScard Digital{% endblock %}
 
 {% block content %}
-<div class="p-4 space-y-6">
-    <!-- Header Section -->
-    <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            <span class="material-symbols-outlined text-primary align-middle mr-2">calendar_today</span>
-            Sistema de Turnos
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400">{{ system.business_name }}</p>
-
-        <!-- Pause/Resume Button -->
-        <div class="mt-4">
-            <button class="{% if system.is_accepting_appointments %}bg-yellow-500 hover:bg-yellow-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white px-4 py-2 rounded-lg font-semibold transition-colors inline-flex items-center"
-                    onclick="togglePause()">
-                <span class="material-symbols-outlined mr-2">
-                    {% if system.is_accepting_appointments %}pause{% else %}play_arrow{% endif %}
-                </span>
-                {% if system.is_accepting_appointments %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
-            </button>
-        </div>
+<div class="p-4">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Gestión de Citas</h1>
+        <p class="text-sm text-gray-600 dark:text-gray-400">Administra las reservas de tus clientes</p>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 gap-4">
-        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ today_stats.completed }}</div>
-            <div class="text-sm text-green-700 dark:text-green-300">Completados</div>
+    <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-primary text-lg">calendar_today</span>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Total</span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
         </div>
-        <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center border border-yellow-200 dark:border-yellow-800">
-            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ today_stats.waiting }}</div>
-            <div class="text-sm text-yellow-700 dark:text-yellow-300">En Espera</div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-orange-500 text-lg">schedule</span>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Pendientes</span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.pending }}</p>
         </div>
-        <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center border border-red-200 dark:border-red-800">
-            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ today_stats.cancelled }}</div>
-            <div class="text-sm text-red-700 dark:text-red-300">Cancelados</div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-green-500 text-lg">check_circle</span>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Confirmadas</span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.confirmed }}</p>
         </div>
-        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center border border-blue-200 dark:border-blue-800">
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ today_stats.no_show }}</div>
-            <div class="text-sm text-blue-700 dark:text-blue-300">Ausentes</div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-blue-500 text-lg">today</span>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Hoy</span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.today }}</p>
         </div>
     </div>
 
-    <!-- Current Appointment -->
-    {% if current_appointment %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <span class="material-symbols-outlined text-primary mr-2">person</span>
-            Turno Actual
-        </h2>
-
-        <div class="text-center mb-4">
-            <div class="text-6xl font-bold mb-2" style="color: {{ current_appointment.type.color }};">
-                {{ current_appointment.ticket_number }}
-            </div>
-            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                 style="background-color: {{ current_appointment.type.color }}20; color: {{ current_appointment.type.color }};">
-                {{ current_appointment.type.name }}
-            </div>
+    <!-- Filters -->
+    <div class="mb-6">
+        <div class="flex gap-2 mb-3">
+            <select id="status-filter" class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Todos los estados</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendientes</option>
+                <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmadas</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completadas</option>
+                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No asistió</option>
+            </select>
         </div>
 
-        <div class="space-y-3 mb-6">
-            <div class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-400">Paciente:</span>
-                <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.patient_name }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-400">Teléfono:</span>
-                <div class="flex items-center gap-2">
-                    <span class="font-semibold text-gray-900 dark:text-white">{{ current_appointment.get_full_phone() or current_appointment.patient_phone }}</span>
-                    {% if current_appointment.get_full_phone() %}
-                        <a href="{{ current_appointment.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-                    {% endif %}
+        <div class="flex gap-2">
+            <select id="date-filter" class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                <option value="all" {% if date_filter == 'all' %}selected{% endif %}>Todas las fechas</option>
+                <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Hoy</option>
+                <option value="upcoming" {% if date_filter == 'upcoming' %}selected{% endif %}>Próximas</option>
+                <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Esta semana</option>
+                <option value="past" {% if date_filter == 'past' %}selected{% endif %}>Pasadas</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Appointments List -->
+    {% if appointments %}
+    <div class="space-y-4">
+        {% for appointment in appointments %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 {% if appointment.status == 'cancelled' or appointment.status == 'no_show' %}opacity-60{% endif %}">
+            <!-- Header -->
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="material-symbols-outlined text-primary text-sm">work</span>
+                        <span class="font-medium text-gray-900 dark:text-white text-sm">{{ appointment.service.name }}</span>
+                    </div>
+                    <div class="text-xs text-gray-600 dark:text-gray-400">{{ appointment.customer_name }}</div>
+                </div>
+                <div class="flex flex-col items-end gap-1">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                        {% if appointment.status == 'pending' %}bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400{% endif %}
+                        {% if appointment.status == 'confirmed' %}bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400{% endif %}
+                        {% if appointment.status == 'completed' %}bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400{% endif %}
+                        {% if appointment.status == 'cancelled' %}bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400{% endif %}
+                        {% if appointment.status == 'no_show' %}bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400{% endif %}">
+                        {% if appointment.status == 'pending' %}<span class="material-symbols-outlined text-xs mr-1">schedule</span>Pendiente{% endif %}
+                        {% if appointment.status == 'confirmed' %}<span class="material-symbols-outlined text-xs mr-1">check_circle</span>Confirmada{% endif %}
+                        {% if appointment.status == 'completed' %}<span class="material-symbols-outlined text-xs mr-1">check</span>Completada{% endif %}
+                        {% if appointment.status == 'cancelled' %}<span class="material-symbols-outlined text-xs mr-1">cancel</span>Cancelada{% endif %}
+                        {% if appointment.status == 'no_show' %}<span class="material-symbols-outlined text-xs mr-1">person_off</span>No asistió{% endif %}
+                    </span>
                 </div>
             </div>
-            {% if current_appointment.patient_email %}
-            <div class="flex items-center justify-between">
-                <span class="text-gray-600 dark:text-gray-400">Email:</span>
-                <span class="font-semibold text-gray-900 dark:text-white text-sm">{{ current_appointment.patient_email }}</span>
+
+            <!-- Date & Time -->
+            <div class="flex items-center gap-4 mb-3 text-sm text-gray-600 dark:text-gray-400">
+                <div class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">calendar_today</span>
+                    <span>{{ appointment.appointment_date.strftime('%d/%m/%Y') }}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">schedule</span>
+                    <span>{{ appointment.appointment_time }}</span>
+                </div>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="flex items-center gap-2 mb-3">
+                <a href="tel:{{ appointment.customer_phone_country }}{{ appointment.customer_phone }}"
+                   class="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors">
+                    <span class="material-symbols-outlined text-sm">call</span>
+                </a>
+                <a href="{{ appointment.get_whatsapp_url() }}"
+                   target="_blank"
+                   class="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors">
+                    <span class="material-symbols-outlined text-sm">chat</span>
+                </a>
+                {% if appointment.customer_address %}
+                <div class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                    <span class="material-symbols-outlined text-xs">location_on</span>
+                    <span class="truncate">{{ appointment.customer_address }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Notes -->
+            {% if appointment.notes %}
+            <div class="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex items-start gap-2">
+                    <span class="material-symbols-outlined text-xs text-gray-500 mt-0.5">sticky_note</span>
+                    <span class="text-xs text-gray-600 dark:text-gray-400">{{ appointment.notes }}</span>
+                </div>
             </div>
             {% endif %}
-        </div>
 
-        <div class="grid grid-cols-3 gap-3">
-            <button onclick="completeAppointment({{ current_appointment.id }})"
-                    class="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg font-semibold transition-colors flex flex-col items-center">
-                <span class="material-symbols-outlined mb-1">check_circle</span>
-                <span class="text-xs">Completar</span>
-            </button>
-            <button onclick="markNoShow({{ current_appointment.id }})"
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-lg font-semibold transition-colors flex flex-col items-center">
-                <span class="material-symbols-outlined mb-1">person_off</span>
-                <span class="text-xs">Ausente</span>
-            </button>
-            <button onclick="cancelAppointment({{ current_appointment.id }})"
-                    class="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg font-semibold transition-colors flex flex-col items-center">
-                <span class="material-symbols-outlined mb-1">cancel</span>
-                <span class="text-xs">Cancelar</span>
-            </button>
+            <!-- Actions -->
+            <div class="flex gap-2">
+                {% if appointment.status == 'pending' %}
+                <button onclick="confirmAppointment({{ appointment.id }})"
+                        class="flex-1 flex items-center justify-center gap-1 py-2 px-3 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+                    <span class="material-symbols-outlined text-sm">check</span>
+                    Confirmar
+                </button>
+                {% endif %}
+
+                {% if appointment.status in ['confirmed', 'pending'] %}
+                <button onclick="completeAppointment({{ appointment.id }})"
+                        class="flex-1 flex items-center justify-center gap-1 py-2 px-3 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    Completar
+                </button>
+                <button onclick="cancelAppointment({{ appointment.id }})"
+                        class="flex-1 flex items-center justify-center gap-1 py-2 px-3 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors">
+                    <span class="material-symbols-outlined text-sm">cancel</span>
+                    Cancelar
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                    Reservada el {{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}
+                </div>
+            </div>
         </div>
+        {% endfor %}
     </div>
     {% else %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
-        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-            <span class="material-symbols-outlined text-2xl text-gray-400 dark:text-gray-500">person</span>
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <span class="material-symbols-outlined text-3xl text-gray-400 dark:text-gray-500">calendar_today</span>
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay turno en atención</h3>
-        {% if waiting_appointments %}
-        <button onclick="callNext()"
-                class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center">
-            <span class="material-symbols-outlined mr-2">notifications_active</span>
-            Llamar Siguiente
-        </button>
-        {% else %}
-        <p class="text-gray-600 dark:text-gray-400 mb-4">No hay turnos en espera</p>
-        <a href="{{ url_for('public.appointments_public', username=current_user.email.split('@')[0]) }}"
-           class="text-primary hover:text-primary/80 font-semibold inline-flex items-center" target="_blank">
-            <span class="material-symbols-outlined mr-1">open_in_new</span>
-            Ver página pública
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay citas registradas</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm">
+            {% if status_filter != 'all' or date_filter != 'all' %}
+            No se encontraron citas con los filtros seleccionados.
+            {% else %}
+            Cuando tus clientes reserven citas para tus servicios, aparecerán aquí.
+            {% endif %}
+        </p>
+        {% if status_filter != 'all' or date_filter != 'all' %}
+        <a href="{{ url_for('dashboard.appointments') }}"
+           class="inline-flex items-center gap-2 mt-4 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            <span class="material-symbols-outlined text-sm">clear</span>
+            Ver todas
         </a>
         {% endif %}
     </div>
     {% endif %}
+</div>
+{% endblock %}
 
-    <!-- Waiting Queue -->
-    {% if waiting_appointments %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                <span class="material-symbols-outlined text-primary mr-2">queue</span>
-                Cola de Espera
-                <span class="ml-auto bg-primary text-white text-sm px-2 py-1 rounded-full">{{ waiting_appointments|length }}</span>
-            </h2>
-        </div>
-
-        <div class="divide-y divide-gray-200 dark:divide-gray-700">
-            {% for appointment in waiting_appointments %}
-            <div class="p-4 flex items-center justify-between">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="text-xl font-bold" style="color: {{ appointment.type.color }};">
-                            {{ appointment.ticket_number }}
-                        </span>
-                        <span class="px-2 py-1 rounded-full text-xs font-medium"
-                              style="background-color: {{ appointment.type.color }}20; color: {{ appointment.type.color }};">
-                            {{ appointment.type.name }}
-                        </span>
-                    </div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <div>{{ appointment.patient_name }}</div>
-                        <div class="flex items-center gap-1">
-                            <span>{{ appointment.get_full_phone() or appointment.patient_phone }}</span>
-                            {% if appointment.get_full_phone() %}
-                                <a href="{{ appointment.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
-                                    <i class="fab fa-whatsapp"></i>
-                                </a>
-                            {% endif %}
-                        </div>
-                        <div>{{ appointment.get_waiting_time() }} min esperando</div>
-                    </div>
-                </div>
-                <button onclick="cancelAppointment({{ appointment.id }})"
-                        class="text-red-500 hover:text-red-600 p-2">
-                    <span class="material-symbols-outlined">delete</span>
-                </button>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Action Buttons -->
-    <div class="fixed bottom-20 right-4 space-y-3">
-        <button onclick="resetDailyQueue()"
-                class="bg-yellow-500 hover:bg-yellow-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors">
-            <span class="material-symbols-outlined">refresh</span>
-        </button>
-        <a href="{{ url_for('dashboard.appointments_settings') }}"
-           class="bg-primary hover:bg-primary/90 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors">
-            <span class="material-symbols-outlined">settings</span>
+{% block slide_menu_content %}
+<!-- Slide menu content for appointments -->
+<div class="py-4">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Opciones de Citas</h3>
+    <div class="space-y-2">
+        <a href="{{ url_for('dashboard.appointments') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-primary">calendar_today</span>
+            <span class="font-medium">Ver Todas las Citas</span>
+        </a>
+        <a href="{{ url_for('dashboard.appointments', status='pending') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-orange-500">schedule</span>
+            <span class="font-medium">Citas Pendientes</span>
+        </a>
+        <a href="{{ url_for('dashboard.appointments', date='today') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-blue-500">today</span>
+            <span class="font-medium">Citas de Hoy</span>
         </a>
     </div>
 </div>
@@ -194,26 +228,34 @@
 
 {% block scripts %}
 <script>
-// Get CSRF token from the page
-function getCSRFToken() {
-    // Try to get from meta tag
-    let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    if (token) return token;
+// Filter functionality
+document.getElementById('status-filter').addEventListener('change', function() {
+    const status = this.value;
+    const date = document.getElementById('date-filter').value;
+    const url = new URL(window.location);
+    url.searchParams.set('status', status);
+    if (date !== 'all') url.searchParams.set('date', date);
+    window.location.href = url.toString();
+});
 
-    // Try to get from hidden input
-    token = document.querySelector('input[name="csrf_token"]')?.value;
-    if (token) return token;
+document.getElementById('date-filter').addEventListener('change', function() {
+    const date = this.value;
+    const status = document.getElementById('status-filter').value;
+    const url = new URL(window.location);
+    if (status !== 'all') url.searchParams.set('status', status);
+    url.searchParams.set('date', date);
+    window.location.href = url.toString();
+});
 
-    // Fallback to template variable
-    return '{{ csrf_token() }}';
-}
+// Appointment actions
+function confirmAppointment(id) {
+    if (!confirm('¿Confirmar esta cita?')) return;
 
-function callNext() {
-    fetch('{{ url_for("dashboard.call_next_appointment") }}', {
+    fetch(`/dashboard/appointments/${id}/confirm`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
+            'X-CSRFToken': '{{ csrf_token() }}'
         }
     })
     .then(response => response.json())
@@ -221,169 +263,85 @@ function callNext() {
         if (data.success) {
             location.reload();
         } else {
-            showNotification(data.message || 'Error al llamar siguiente turno', 'error');
+            alert(data.message || 'Error al confirmar la cita');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showNotification('Error al procesar la solicitud', 'error');
+        alert('Error al confirmar la cita');
     });
 }
 
 function completeAppointment(id) {
-    if (confirm('¿Marcar este turno como completado?')) {
-        fetch(`/dashboard/appointments/${id}/complete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                showNotification(data.message || 'Error al completar turno', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al procesar la solicitud', 'error');
-        });
-    }
-}
+    if (!confirm('¿Marcar esta cita como completada?')) return;
 
-function markNoShow(id) {
-    if (confirm('¿Marcar este paciente como ausente?')) {
-        fetch(`/dashboard/appointments/${id}/no-show`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                showNotification(data.message || 'Error', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al procesar la solicitud', 'error');
-        });
-    }
+    fetch(`/dashboard/appointments/${id}/complete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error al completar la cita');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al completar la cita');
+    });
 }
 
 function cancelAppointment(id) {
-    const reason = prompt('Razón de cancelación (opcional):');
-    if (reason !== null) {
-        fetch(`/dashboard/appointments/${id}/cancel`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({ reason: reason })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                showNotification(data.message || 'Error al cancelar', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al procesar la solicitud', 'error');
-        });
-    }
+    if (!confirm('¿Cancelar esta cita?')) return;
+
+    fetch(`/dashboard/appointments/${id}/cancel`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error al cancelar la cita');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cancelar la cita');
+    });
 }
 
-// Auto-refresh every 30 seconds
-setInterval(() => {
-    location.reload();
-}, 30000);
+function markNoShow(id) {
+    if (!confirm('¿Marcar esta cita como "No asistió"?')) return;
 
-// Notification helper
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
-        type === 'error' ? 'bg-red-500 text-white' :
-        type === 'success' ? 'bg-green-500 text-white' :
-        'bg-blue-500 text-white'
-    }`;
-    notification.innerHTML = `
-        <div class="flex items-center">
-            <span class="flex-1">${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-2">
-                <span class="material-symbols-outlined text-sm">close</span>
-            </button>
-        </div>
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
-}
-
-function resetDailyQueue() {
-    if (confirm('¿Estás seguro de que quieres reiniciar la cola diaria? Esto cancelará todos los turnos en espera del día anterior.')) {
-        fetch('{{ url_for("dashboard.reset_daily_queue") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showNotification(data.message || 'Error al reiniciar la cola diaria', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al procesar la solicitud', 'error');
-        });
-    }
-}
-
-function togglePause() {
-    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_appointments else 'false' }};
-    const action = isCurrentlyAccepting ? 'pausar' : 'reanudar';
-    const confirmMessage = isCurrentlyAccepting
-        ? '¿Pausar la toma de turnos? Los pacientes no podrán tomar nuevos turnos.'
-        : '¿Reanudar la toma de turnos? Los pacientes podrán volver a tomar turnos.';
-
-    if (confirm(confirmMessage)) {
-        fetch('{{ url_for("dashboard.toggle_pause_appointments") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showNotification(data.message || 'Error al ' + action + ' el sistema', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al procesar la solicitud', 'error');
-        });
-    }
+    fetch(`/dashboard/appointments/${id}/no-show`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error al actualizar la cita');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al actualizar la cita');
+    });
 }
 </script>
 {% endblock %}

@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema de Turnos - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        {% include 'dashboard/_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Header Section -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-calendar-check me-2"></i>Sistema de Turnos
+                    </h1>
+                    <div class="dashboard-subtitle">
+                        {{ system.business_name }}
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button class="btn {% if system.is_accepting_appointments %}btn-warning{% else %}btn-success{% endif %} me-2"
+                            onclick="togglePause()">
+                        <i class="fas {% if system.is_accepting_appointments %}fa-pause{% else %}fa-play{% endif %} me-2"></i>
+                        {% if system.is_accepting_appointments %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
+                    </button>
+                    <button class="btn btn-outline-warning me-2" onclick="resetDailyQueue()">
+                        <i class="fas fa-refresh me-2"></i>Reiniciar Cola
+                    </button>
+                    <a href="{{ url_for('dashboard.tickets_settings') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-cog me-2"></i>Configuración
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card stat-success">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ today_stats.completed }}</div>
+                    <div class="stat-label">Completados Hoy</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-warning">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ today_stats.waiting }}</div>
+                    <div class="stat-label">En Espera</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-danger">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ today_stats.cancelled }}</div>
+                    <div class="stat-label">Cancelados</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-info">
+                <div class="stat-icon">
+                    <i class="fas fa-user-times"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ today_stats.no_show }}</div>
+                    <div class="stat-label">Ausentes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Appointment -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-md me-2"></i>Turno Actual
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if current_ticket %}
+                    <div class="current-appointment-display">
+                        <div class="ticket-number-large" style="color: {{ current_ticket.type.color }};">
+                            {{ current_ticket.ticket_number }}
+                        </div>
+                        <div class="appointment-details">
+                            <h4>{{ current_ticket.patient_name }}</h4>
+                            <p class="mb-1">
+                                <span class="badge" style="background-color: {{ current_ticket.type.color }};">
+                                    {{ current_ticket.type.name }}
+                                </span>
+                            </p>
+                            <p class="text-muted mb-2">
+                                <i class="fas fa-phone me-2"></i>{{ current_ticket.get_full_phone() or current_ticket.patient_phone }}
+                                {% if current_ticket.get_full_phone() %}
+                                    <a href="{{ current_ticket.get_whatsapp_url() }}" target="_blank" class="btn btn-sm btn-success ms-2">
+                                        <i class="fab fa-whatsapp"></i> Enviar Mensaje
+                                    </a>
+                                {% endif %}
+                                {% if current_ticket.patient_email %}
+                                    <br><i class="fas fa-envelope me-2"></i>{{ current_ticket.patient_email }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="appointment-actions">
+                            <button class="btn btn-success btn-lg" onclick="completeTicket({{ current_ticket.id }})">
+                                <i class="fas fa-check me-2"></i>Completar
+                            </button>
+                            <button class="btn btn-warning" onclick="markNoShow({{ current_ticket.id }})">
+                                <i class="fas fa-user-times me-2"></i>Ausente
+                            </button>
+                            <button class="btn btn-danger" onclick="cancelTicket({{ current_ticket.id }})">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-clock fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay turno en atención</p>
+                        {% if waiting_tickets %}
+                            <button class="btn btn-primary btn-lg" onclick="callNext()">
+                                <i class="fas fa-bell me-2"></i>Llamar Siguiente
+                            </button>
+                        {% else %}
+                            <p class="text-muted mt-3">No hay turnos en espera</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Waiting Queue -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Cola de Espera
+                    <span class="badge bg-primary ms-2">{{ waiting_tickets|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if waiting_tickets %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ticket</th>
+                                    <th>Tipo</th>
+                                    <th>Paciente</th>
+                                    <th>Teléfono</th>
+                                    <th>Tiempo Espera</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in waiting_tickets %}
+                                <tr>
+                                    <td>
+                                        <strong style="color: {{ ticket.type.color }};">
+                                            {{ ticket.ticket_number }}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background-color: {{ ticket.type.color }};">
+                                            {{ ticket.type.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ ticket.patient_name }}</td>
+                                    <td>
+                                        {{ ticket.get_full_phone() or ticket.patient_phone }}
+                                        {% if ticket.get_full_phone() %}
+                                            <a href="{{ ticket.get_whatsapp_url() }}" target="_blank" class="btn btn-sm btn-success">
+                                                <i class="fab fa-whatsapp"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ ticket.get_waiting_time() }} min</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" onclick="cancelTicket({{ ticket.id }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No hay turnos en espera</p>
+                        <a href="{{ url_for('public.tickets_public', username=current_user.email.split('@')[0]) }}"
+                           class="btn btn-outline-primary" target="_blank">
+                            <i class="fas fa-external-link-alt me-2"></i>Ver página pública
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Stats Grid - Same as Appointments */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+}
+
+.stat-success::before { background: #10b981; }
+.stat-warning::before { background: #f59e0b; }
+.stat-danger::before { background: #ef4444; }
+.stat-info::before { background: #3b82f6; }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: white;
+}
+
+.stat-success .stat-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-warning .stat-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stat-danger .stat-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.stat-info .stat-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Current Appointment Display */
+.current-appointment-display {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 20px;
+}
+
+.ticket-number-large {
+    font-size: 4rem;
+    font-weight: bold;
+    min-width: 150px;
+    text-align: center;
+}
+
+.appointment-details {
+    flex: 1;
+}
+
+.appointment-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .current-appointment-display {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .appointment-actions {
+        width: 100%;
+    }
+
+    .appointment-actions button {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Get CSRF token from the page
+function getCSRFToken() {
+    // Try to get from meta tag
+    let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (token) return token;
+
+    // Try to get from hidden input
+    token = document.querySelector('input[name="csrf_token"]')?.value;
+    if (token) return token;
+
+    // Fallback to template variable
+    return '{{ csrf_token() }}';
+}
+
+function callNext() {
+    fetch('{{ url_for("dashboard.call_next_ticket") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error al llamar siguiente turno');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al procesar la solicitud');
+    });
+}
+
+function completeTicket(id) {
+    console.log('Intentando completar turno ID:', id);
+    if (confirm('¿Marcar este turno como completado?')) {
+        fetch(`/dashboard/tickets/${id}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json().then(data => ({
+                status: response.status,
+                ok: response.ok,
+                data: data
+            }));
+        })
+        .then(result => {
+            console.log('Response:', result);
+            if (result.ok) {
+                location.reload();
+            } else {
+                alert(result.data.message || 'Error al completar turno');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud: ' + error.message);
+        });
+    }
+}
+
+function markNoShow(id) {
+    if (confirm('¿Marcar este paciente como ausente?')) {
+        fetch(`/dashboard/tickets/${id}/no-show`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud: ' + error.message);
+        });
+    }
+}
+
+function cancelTicket(id) {
+    const reason = prompt('Razón de cancelación (opcional):');
+    if (reason !== null) {
+        fetch(`/dashboard/tickets/${id}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error al cancelar');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud: ' + error.message);
+        });
+    }
+}
+
+function resetDailyQueue() {
+    if (confirm('¿Estás seguro de que quieres reiniciar la cola diaria? Esto cancelará todos los turnos en espera del día anterior.')) {
+        fetch('{{ url_for("dashboard.reset_daily_queue") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || 'Error al reiniciar la cola diaria');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+function togglePause() {
+    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_appointments else 'false' }};
+    const action = isCurrentlyAccepting ? 'pausar' : 'reanudar';
+    const confirmMessage = isCurrentlyAccepting
+        ? '¿Pausar la toma de turnos? Los pacientes no podrán tomar nuevos turnos.'
+        : '¿Reanudar la toma de turnos? Los pacientes podrán volver a tomar turnos.';
+
+    if (confirm(confirmMessage)) {
+        fetch('{{ url_for("dashboard.toggle_pause_tickets") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || 'Error al ' + action + ' el sistema');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

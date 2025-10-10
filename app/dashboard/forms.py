@@ -144,7 +144,9 @@ class ServiceForm(FlaskForm):
                               render_kw={'class': 'form-check-input'})
     is_visible = BooleanField('Visible', default=True,
                              render_kw={'class': 'form-check-input'})
-    
+    accepts_appointments = BooleanField('Aceptar reservas de citas', default=False,
+                                       render_kw={'class': 'form-check-input'})
+
     submit = SubmitField('Guardar Servicio', render_kw={'class': 'btn btn-primary'})
     
     def __init__(self, *args, **kwargs):
@@ -315,7 +317,7 @@ class ChangePasswordForm(FlaskForm):
     submit = SubmitField('Cambiar Contraseña', render_kw={'class': 'btn btn-primary'})
 
 # Formularios para Sistema de Turnos
-class AppointmentSystemForm(FlaskForm):
+class TicketSystemForm(FlaskForm):
     """Formulario de configuración del sistema de turnos"""
     business_name = StringField('Nombre del Consultorio/Negocio', validators=[DataRequired()],
                                render_kw={'class': 'form-control', 'placeholder': 'ej: Consultorio Médico Dr. García'})
@@ -350,7 +352,7 @@ class AppointmentSystemForm(FlaskForm):
 
     submit = SubmitField('Guardar Configuración', render_kw={'class': 'btn btn-primary'})
 
-class AppointmentTypeForm(FlaskForm):
+class TicketTypeForm(FlaskForm):
     """Formulario para crear/editar tipos de citas"""
     name = StringField('Nombre del Tipo de Cita', validators=[DataRequired(), Length(max=100)],
                       render_kw={'class': 'form-control', 'placeholder': 'ej: Consulta General, Inyecciones, etc.'})
@@ -375,9 +377,9 @@ class AppointmentTypeForm(FlaskForm):
                             render_kw={'class': 'form-check-input'})
     submit = SubmitField('Guardar Tipo de Cita', render_kw={'class': 'btn btn-primary'})
 
-class TakeAppointmentForm(FlaskForm):
+class TakeTicketForm(FlaskForm):
     """Formulario público para que pacientes tomen turnos"""
-    appointment_type_id = SelectField('Tipo de Cita', validators=[DataRequired()], coerce=int,
+    ticket_type_id = SelectField('Tipo de Cita', validators=[DataRequired()], coerce=int,
                                      render_kw={'class': 'form-select'})
     patient_name = StringField('Nombre Completo', validators=[DataRequired(), Length(max=200)],
                               render_kw={'class': 'form-control', 'placeholder': 'Tu nombre completo'})
@@ -391,10 +393,10 @@ class TakeAppointmentForm(FlaskForm):
                                    render_kw={'type': 'date', 'class': 'form-control'})
     submit = SubmitField('Tomar Turno', render_kw={'class': 'btn btn-success btn-lg w-100'})
 
-    def __init__(self, appointment_types=None, phone_prefix='+52', require_email=False, collect_birthdate=False, *args, **kwargs):
-        super(TakeAppointmentForm, self).__init__(*args, **kwargs)
-        if appointment_types:
-            self.appointment_type_id.choices = [(t.id, t.name) for t in appointment_types]
+    def __init__(self, ticket_types=None, phone_prefix='+52', require_email=False, collect_birthdate=False, *args, **kwargs):
+        super(TakeTicketForm, self).__init__(*args, **kwargs)
+        if ticket_types:
+            self.ticket_type_id.choices = [(t.id, t.name) for t in ticket_types]
 
         # Configurar validadores dinámicamente
         if require_email:
@@ -411,3 +413,68 @@ class TakeAppointmentForm(FlaskForm):
         # Establecer prefijo por defecto
         if not self.patient_phone_country.data:
             self.patient_phone_country.data = phone_prefix
+
+class AppointmentBookingForm(FlaskForm):
+    """Formulario público para que clientes reserven citas para servicios"""
+    customer_name = StringField('Nombre Completo', validators=[DataRequired(), Length(max=200)],
+                               render_kw={'class': 'form-control', 'placeholder': 'Tu nombre completo'})
+    customer_phone_country = SelectField('País', validators=[DataRequired()],
+                                        choices=[
+                                            ('', 'Seleccionar'),
+                                            ('+1', '🇺🇸 Estados Unidos (+1)'),
+                                            ('+1', '🇨🇦 Canadá (+1)'),
+                                            ('+34', '🇪🇸 España (+34)'),
+                                            ('+52', '🇲🇽 México (+52)'),
+                                            ('+54', '🇦🇷 Argentina (+54)'),
+                                            ('+55', '🇧🇷 Brasil (+55)'),
+                                            ('+56', '🇨🇱 Chile (+56)'),
+                                            ('+57', '🇨🇴 Colombia (+57)'),
+                                            ('+58', '🇻🇪 Venezuela (+58)'),
+                                            ('+51', '🇵🇪 Perú (+51)'),
+                                            ('+593', '🇪🇨 Ecuador (+593)'),
+                                        ],
+                                        render_kw={'class': 'form-select'})
+    customer_phone = StringField('Número de Teléfono', validators=[DataRequired(), Length(max=20)],
+                                render_kw={'class': 'form-control', 'placeholder': '1234567890'})
+    customer_address = TextAreaField('Dirección', validators=[Optional()],
+                                    render_kw={'class': 'form-control', 'rows': 2,
+                                              'placeholder': 'Tu dirección completa'})
+    appointment_date = StringField('Fecha de la Cita', validators=[DataRequired()],
+                                  render_kw={'type': 'date', 'class': 'form-control'})
+    appointment_time = SelectField('Hora de la Cita', validators=[DataRequired()],
+                                  choices=[
+                                      ('', 'Seleccionar hora'),
+                                      ('08:00', '8:00 AM'), ('08:30', '8:30 AM'),
+                                      ('09:00', '9:00 AM'), ('09:30', '9:30 AM'),
+                                      ('10:00', '10:00 AM'), ('10:30', '10:30 AM'),
+                                      ('11:00', '11:00 AM'), ('11:30', '11:30 AM'),
+                                      ('12:00', '12:00 PM'), ('12:30', '12:30 PM'),
+                                      ('13:00', '1:00 PM'), ('13:30', '1:30 PM'),
+                                      ('14:00', '2:00 PM'), ('14:30', '2:30 PM'),
+                                      ('15:00', '3:00 PM'), ('15:30', '3:30 PM'),
+                                      ('16:00', '4:00 PM'), ('16:30', '4:30 PM'),
+                                      ('17:00', '5:00 PM'), ('17:30', '5:30 PM'),
+                                      ('18:00', '6:00 PM'), ('18:30', '6:30 PM'),
+                                      ('19:00', '7:00 PM'), ('19:30', '7:30 PM'),
+                                      ('20:00', '8:00 PM'), ('20:30', '8:30 PM'),
+                                  ],
+                                  render_kw={'class': 'form-select'})
+    notes = TextAreaField('Notas adicionales (opcional)', validators=[Optional()],
+                         render_kw={'class': 'form-control', 'rows': 3,
+                                   'placeholder': 'Información adicional sobre tu cita...'})
+    submit = SubmitField('Reservar Cita', render_kw={'class': 'btn btn-success btn-lg w-100'})
+
+    def __init__(self, phone_prefix='+52', require_address=False, *args, **kwargs):
+        super(AppointmentBookingForm, self).__init__(*args, **kwargs)
+
+        # Configurar validadores dinámicamente
+        if require_address:
+            self.customer_address.validators = [DataRequired()]
+            self.customer_address.label.text = 'Dirección'
+        else:
+            self.customer_address.validators = [Optional()]
+            self.customer_address.label.text = 'Dirección (opcional)'
+
+        # Establecer prefijo por defecto
+        if not self.customer_phone_country.data:
+            self.customer_phone_country.data = phone_prefix

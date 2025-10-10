@@ -1,0 +1,187 @@
+{% extends "base_pwa.html" %}
+
+{% set active_tab = 'tickets' %}
+{% set show_header = true %}
+{% set show_bottom_nav = true %}
+
+{% block title %}Configuración de Turnos - ATScard Digital{% endblock %}
+
+{% block content %}
+<div class="p-4 space-y-6">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <span class="material-symbols-outlined text-primary align-middle mr-2">settings</span>
+            Configuración de Turnos
+        </h1>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <span class="material-symbols-outlined text-primary mr-2">tune</span>
+                Configuración General
+            </h2>
+        </div>
+
+        <form method="POST" class="p-4 space-y-4">
+            {{ system_form.hidden_tag() }}
+            <input type="hidden" name="form_type" value="system">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.business_name.label }}
+                    </label>
+                    {{ system_form.business_name(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.business_hours.label }}
+                    </label>
+                    {{ system_form.business_hours(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.welcome_message.label }}
+                    </label>
+                    {{ system_form.welcome_message(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white", rows=3) }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.display_mode.label }}
+                    </label>
+                    {{ system_form.display_mode(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.pause_message.label }}
+                    </label>
+                    {{ system_form.pause_message(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white", rows=2) }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.resume_time.label }}
+                    </label>
+                    {{ system_form.resume_time(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ system_form.phone_country_prefix.label }}
+                    </label>
+                    {{ system_form.phone_country_prefix(class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white") }}
+                </div>
+
+                <div class="flex items-center">
+                    {{ system_form.require_patient_email(class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary") }}
+                    <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                        {{ system_form.require_patient_email.label }}
+                    </label>
+                </div>
+
+                <div class="flex items-center">
+                    {{ system_form.collect_patient_birthdate(class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary") }}
+                    <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                        {{ system_form.collect_patient_birthdate.label }}
+                    </label>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-semibold transition-colors">
+                    <span class="material-symbols-outlined mr-2 align-middle">save</span>
+                    Guardar Configuración
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Ticket Types -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <span class="material-symbols-outlined text-primary mr-2">list</span>
+                Tipos de Citas
+            </h2>
+            <a href="{{ url_for('dashboard.new_ticket_type') }}"
+               class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors inline-flex items-center">
+                <span class="material-symbols-outlined mr-1">add</span>
+                Nuevo
+            </a>
+        </div>
+
+        {% if ticket_types %}
+        <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for ticket_type in ticket_types %}
+            <div class="p-4 flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ ticket_type.name }}</h3>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium"
+                              style="background-color: {{ ticket_type.color }}20; color: {{ ticket_type.color }};">
+                            {{ ticket_type.prefix }}
+                        </span>
+                        {% if ticket_type.is_active %}
+                        <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">Activo</span>
+                        {% else %}
+                        <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs rounded-full">Inactivo</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        Duración: {{ ticket_type.estimated_duration }} min
+                    </div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600"
+                             style="background-color: {{ ticket_type.color }};"></div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ ticket_type.color }}</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{{ url_for('dashboard.edit_ticket_type', id=ticket_type.id) }}"
+                       class="text-blue-500 hover:text-blue-600 p-2">
+                        <span class="material-symbols-outlined">edit</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('dashboard.delete_ticket_type', id=ticket_type.id) }}"
+                          style="display: inline;"
+                          onsubmit="return confirm('¿Eliminar este tipo de cita?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="text-red-500 hover:text-red-600 p-2">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-8 text-center">
+            <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl text-gray-400 dark:text-gray-500">list</span>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay tipos de citas</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Crea tu primer tipo de cita para empezar</p>
+            <a href="{{ url_for('dashboard.new_ticket_type') }}"
+               class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center">
+                <span class="material-symbols-outlined mr-2">add</span>
+                Crear Primer Tipo
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Back Button -->
+    <div class="flex justify-center">
+        <a href="{{ url_for('dashboard.tickets') }}"
+           class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center">
+            <span class="material-symbols-outlined mr-2">arrow_back</span>
+            Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

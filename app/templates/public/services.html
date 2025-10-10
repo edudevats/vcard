@@ -554,6 +554,31 @@
                                 Desde ${{ service.price_from }}
                             </div>
                         {% endif %}
+
+                        {% if service.accepts_appointments %}
+                            <a href="{{ url_for('public.book_appointment', slug=card.slug, service_id=service.id) }}"
+                               class="btn-book-appointment"
+                               style="
+                                   margin-top: 15px;
+                                   padding: 12px 24px;
+                                   background: linear-gradient(135deg, {{ card.theme.secondary_color }}, {{ card.theme.accent_color }});
+                                   color: white;
+                                   text-decoration: none;
+                                   border-radius: 25px;
+                                   display: inline-flex;
+                                   align-items: center;
+                                   gap: 8px;
+                                   font-weight: 600;
+                                   font-size: 0.95rem;
+                                   transition: all 0.3s ease;
+                                   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+                               "
+                               onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.25)'"
+                               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.15)'">
+                                <i class="fas fa-calendar-check"></i>
+                                Reservar Cita
+                            </a>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>

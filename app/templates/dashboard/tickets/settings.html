@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de Turnos - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        {% include 'dashboard/_sidebar.html' %}
+    </div>
+
+    <div class="col-md-9">
+        <div class="dashboard-header mb-4">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-cog me-2"></i>Configuración del Sistema de Turnos
+                    </h1>
+                </div>
+                <div class="header-right">
+                    <a href="{{ url_for('dashboard.tickets') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Configuration -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Configuración General</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ system_form.hidden_tag() }}
+                    <input type="hidden" name="form_type" value="system">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ system_form.business_name.label(class="form-label") }}
+                            {{ system_form.business_name() }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ system_form.business_hours.label(class="form-label") }}
+                            {{ system_form.business_hours() }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ system_form.welcome_message.label(class="form-label") }}
+                        {{ system_form.welcome_message() }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ system_form.display_mode.label(class="form-label") }}
+                        {{ system_form.display_mode() }}
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3">Configuración de Pausa</h6>
+
+                    <div class="mb-3">
+                        {{ system_form.pause_message.label(class="form-label") }}
+                        {{ system_form.pause_message() }}
+                        <small class="form-text text-muted">Mensaje que se mostrará cuando el sistema esté pausado</small>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ system_form.resume_time.label(class="form-label") }}
+                        {{ system_form.resume_time() }}
+                        <small class="form-text text-muted">Hora aproximada de reanudación (ej: "14:00" o "Mañana a las 9:00")</small>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3">Configuración de Teléfono</h6>
+
+                    <div class="mb-3">
+                        {{ system_form.phone_country_prefix.label(class="form-label") }}
+                        {{ system_form.phone_country_prefix() }}
+                        <small class="form-text text-muted">Prefijo telefónico que se mostrará por defecto (ej: +52 para México)</small>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3">Configuración de Campos del Formulario</h6>
+
+                    <div class="form-check mb-3">
+                        {{ system_form.require_patient_email() }}
+                        {{ system_form.require_patient_email.label(class="form-check-label") }}
+                        <br><small class="form-text text-muted">Si está activado, el email será obligatorio para tomar turno</small>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ system_form.collect_patient_birthdate() }}
+                        {{ system_form.collect_patient_birthdate.label(class="form-check-label") }}
+                        <br><small class="form-text text-muted">Si está activado, se pedirá la fecha de nacimiento al tomar turno</small>
+                    </div>
+
+                    {{ system_form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+
+        <!-- Ticket Types -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Tipos de Citas</h5>
+                <a href="{{ url_for('dashboard.new_ticket_type') }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-2"></i>Nuevo Tipo
+                </a>
+            </div>
+            <div class="card-body">
+                {% if ticket_types %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Prefijo</th>
+                                    <th>Color</th>
+                                    <th>Duración</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket_type in ticket_types %}
+                                <tr>
+                                    <td><strong>{{ ticket_type.name }}</strong></td>
+                                    <td><span class="badge bg-secondary">{{ ticket_type.prefix }}</span></td>
+                                    <td><span class="badge" style="background-color: {{ ticket_type.color }};">Color</span></td>
+                                    <td>{{ ticket_type.estimated_duration }} min</td>
+                                    <td>
+                                        {% if ticket_type.is_active %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('dashboard.edit_ticket_type', id=ticket_type.id) }}"
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('dashboard.delete_ticket_type', id=ticket_type.id) }}"
+                                              style="display: inline;"
+                                              onsubmit="return confirm('¿Eliminar este tipo de cita?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">No hay tipos de citas configurados</p>
+                        <a href="{{ url_for('dashboard.new_ticket_type') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Crear Primer Tipo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -208,10 +208,10 @@
                                     <hr>
 
                                     <!-- Sistema de Turnos -->
-                                    <form method="POST" action="{{ url_for('admin.toggle_appointments', id=user.id) }}"
+                                    <form method="POST" action="{{ url_for('admin.toggle_tickets', id=user.id) }}"
                                           onsubmit="return confirm('¿Estás seguro de que quieres cambiar el estado del sistema de turnos?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                        {% if user.ticket_system and user.ticket_system.is_enabled %}
                                             <button type="submit" class="btn btn-outline-danger btn-sm w-100">
                                                 <i class="fas fa-calendar-times me-2"></i>Desactivar Sistema de Turnos
                                             </button>
@@ -221,7 +221,7 @@
                                             </button>
                                         {% endif %}
                                     </form>
-                                    {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                    {% if user.ticket_system and user.ticket_system.is_enabled %}
                                         <small class="text-muted d-block mt-1">
                                             <i class="fas fa-check-circle text-success me-1"></i>Sistema activo
                                         </small>

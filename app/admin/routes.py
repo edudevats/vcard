@@ -370,36 +370,36 @@ def reject_user(user_id):
     return redirect(url_for('admin.pending_approvals'))
 
 # ============================================================================
-# SISTEMA DE TURNOS - Administración
+# SISTEMA DE TICKETS - Administración
 # ============================================================================
 
-@bp.route('/users/<int:id>/toggle-appointments', methods=['POST'])
+@bp.route('/users/<int:id>/toggle-tickets', methods=['POST'])
 @login_required
 @admin_required
-def toggle_appointments(id):
+def toggle_tickets(id):
     """Activar/desactivar sistema de turnos para un usuario"""
-    from ..models import AppointmentSystem
+    from ..models import TicketSystem
 
     user = User.query.get_or_404(id)
 
     # Verificar si el usuario ya tiene un sistema de turnos
-    if not user.appointment_system:
+    if not user.ticket_system:
         # Crear nuevo sistema de turnos
-        appointment_system = AppointmentSystem(
+        ticket_system = TicketSystem(
             user_id=user.id,
             is_enabled=True,
             business_name=f"Consultorio de {user.email}",
-            max_appointment_types=10,
+            max_ticket_types=10,
             display_mode='simple'
         )
-        db.session.add(appointment_system)
+        db.session.add(ticket_system)
         db.session.commit()
         flash(f'Sistema de turnos activado para {user.email}', 'success')
     else:
         # Toggle del estado
-        user.appointment_system.is_enabled = not user.appointment_system.is_enabled
+        user.ticket_system.is_enabled = not user.ticket_system.is_enabled
         db.session.commit()
-        status = 'activado' if user.appointment_system.is_enabled else 'desactivado'
+        status = 'activado' if user.ticket_system.is_enabled else 'desactivado'
         flash(f'Sistema de turnos {status} para {user.email}', 'success')
 
     return redirect(url_for('admin.edit_user', id=user.id))

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cita Confirmada - {{ card.business_name }}</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Tu cita ha sido reservada exitosamente con {{ card.business_name }}">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family={{ card.theme.font_family.replace(' ', '+') if card.theme else 'Roboto' }}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: '{{ card.theme.font_family if card.theme else 'Roboto' }}', sans-serif;
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card.theme else '#667eea' }}, {{ card.theme.secondary_color if card.theme else '#764ba2' }});
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 650px;
+            width: 100%;
+        }
+
+        .confirmation-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2ed573, #1dd1a1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .success-icon i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            color: #2ed573;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+        .appointment-details {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card.theme else '#667eea' }}10, {{ card.theme.secondary_color if card.theme else '#764ba2' }}10);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .detail-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .detail-title i {
+            color: {{ card.theme.primary_color if card.theme else '#667eea' }};
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .detail-icon i {
+            color: {{ card.theme.primary_color if card.theme else '#667eea' }};
+            font-size: 1.1rem;
+        }
+
+        .detail-content {
+            flex: 1;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #999;
+            margin-bottom: 3px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .info-box {
+            background: #fff8e1;
+            border: 1px solid #ffd54f;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .info-box i {
+            color: #f9a825;
+            font-size: 1.2rem;
+            margin-top: 2px;
+        }
+
+        .info-box p {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, {{ card.theme.primary_color if card.theme else '#667eea' }}, {{ card.theme.secondary_color if card.theme else '#764ba2' }});
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: {{ card.theme.primary_color if card.theme else '#667eea' }};
+            border-color: {{ card.theme.primary_color if card.theme else '#667eea' }};
+        }
+
+        .btn-outline:hover {
+            background: {{ card.theme.primary_color if card.theme else '#667eea' }};
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .confirmation-card {
+                padding: 30px 25px;
+            }
+
+            h1 {
+                font-size: 1.7rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .appointment-details {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .confirmation-card {
+                padding: 25px 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .success-icon {
+                width: 70px;
+                height: 70px;
+            }
+
+            .success-icon i {
+                font-size: 2rem;
+            }
+
+            .btn {
+                padding: 14px 20px;
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="confirmation-card">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+
+            <h1>¡Cita Reservada!</h1>
+            <p class="subtitle">
+                Tu solicitud de cita ha sido recibida exitosamente.
+                Nos pondremos en contacto contigo pronto para confirmar los detalles.
+            </p>
+
+            <div class="appointment-details">
+                <div class="detail-title">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Detalles de la Cita</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Servicio</div>
+                        <div class="detail-value">{{ appointment.service.name }}</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Fecha</div>
+                        <div class="detail-value">{{ appointment.appointment_date.strftime('%d de %B, %Y') }}</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Hora</div>
+                        <div class="detail-value">{{ appointment.appointment_time }}</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Cliente</div>
+                        <div class="detail-value">{{ appointment.customer_name }}</div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Teléfono</div>
+                        <div class="detail-value">{{ appointment.customer_phone_country }} {{ appointment.customer_phone }}</div>
+                    </div>
+                </div>
+
+                {% if appointment.customer_address %}
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Dirección</div>
+                        <div class="detail-value">{{ appointment.customer_address }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if appointment.notes %}
+                <div class="detail-row">
+                    <div class="detail-icon">
+                        <i class="fas fa-sticky-note"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Notas</div>
+                        <div class="detail-value">{{ appointment.notes }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <p>
+                    <strong>Estado:</strong> Pendiente de confirmación<br>
+                    Recibirás una notificación cuando tu cita sea confirmada.
+                    Si tienes alguna pregunta, no dudes en contactarnos.
+                </p>
+            </div>
+
+            <a href="{{ url_for('public.card_view', slug=card.slug) }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i>
+                Volver a {{ card.business_name }}
+            </a>
+
+            <a href="{{ url_for('public.book_appointment', slug=card.slug, service_id=appointment.service_id) }}" class="btn btn-outline">
+                <i class="fas fa-plus"></i>
+                Reservar Otra Cita
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -35,7 +35,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     cards = db.relationship('Card', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
-    appointment_system = db.relationship('AppointmentSystem', backref='owner', uselist=False, cascade='all, delete-orphan')
+    ticket_system = db.relationship('TicketSystem', backref='owner', uselist=False, cascade='all, delete-orphan')
     
     def normalize_email(self, email):
         """Normalize email to lowercase for case-insensitive comparison"""
@@ -208,6 +208,7 @@ class Card(db.Model):
     avatar_path = db.Column(db.String(255))  # Legacy - kept for backward compatibility
     avatar_square_path = db.Column(db.String(255))  # Square version for circle/rounded/square
     avatar_rect_path = db.Column(db.String(255))   # Rectangular version for rectangle shape
+    require_customer_address = db.Column(db.Boolean, default=False, nullable=False)  # solicitar dirección en citas
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
@@ -584,6 +585,7 @@ class Service(db.Model):
     availability = db.Column(db.String(200))  # availability description
     order_index = db.Column(db.Integer, default=0)
     is_visible = db.Column(db.Boolean, default=True)
+    accepts_appointments = db.Column(db.Boolean, default=False)  # habilitar reserva de citas
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     
     def get_duration_display(self):
@@ -724,19 +726,21 @@ class CardView(db.Model):
     def __repr__(self):
         return f'<CardView {self.card_id} at {self.viewed_at}>'
 
-class AppointmentSystem(db.Model):
-    """Sistema de turnos/citas para consultorios - Un sistema por usuario"""
+class TicketSystem(db.Model):
+    """Sistema de turnos/tickets para consultorios - Un sistema por usuario"""
+    __tablename__ = 'ticket_system'
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
     is_enabled = db.Column(db.Boolean, default=False, nullable=False)  # Controlado por admin
     business_name = db.Column(db.String(200))  # Nombre del consultorio
     welcome_message = db.Column(db.Text)  # Mensaje de bienvenida para pacientes
     business_hours = db.Column(db.String(500))  # Horario de atención
-    max_appointment_types = db.Column(db.Integer, default=10)  # Límite de tipos de citas
+    max_ticket_types = db.Column(db.Integer, default=10)  # Límite de tipos de tickets
     display_mode = db.Column(Enum('simple', 'detailed', name='display_modes'), default='simple')
 
     # Sistema de pausa
-    is_accepting_appointments = db.Column(db.Boolean, default=True, nullable=False)  # Si está aceptando turnos
+    is_accepting_tickets = db.Column(db.Boolean, default=True, nullable=False)  # Si está aceptando turnos
     pause_message = db.Column(db.Text)  # Mensaje cuando está pausado
     resume_time = db.Column(db.String(100))  # Hora de reanudación (ej: "14:00" o "Mañana a las 9:00")
 
@@ -748,42 +752,53 @@ class AppointmentSystem(db.Model):
     require_patient_email = db.Column(db.Boolean, default=False, nullable=False)  # Email obligatorio
     collect_patient_birthdate = db.Column(db.Boolean, default=False, nullable=False)  # Recolectar fecha de nacimiento
 
+    # NEW: Configuración de notificaciones
+    notify_new_ticket = db.Column(db.Boolean, default=True, nullable=False)  # Notificar nuevos turnos
+    notify_long_wait = db.Column(db.Boolean, default=True, nullable=False)  # Notificar tiempos largos
+    long_wait_threshold = db.Column(db.Integer, default=60, nullable=False)  # Minutos para alerta
+    send_whatsapp_reminders = db.Column(db.Boolean, default=False, nullable=False)  # Enviar recordatorios WhatsApp
+    reminder_threshold = db.Column(db.Integer, default=3, nullable=False)  # Turnos antes para enviar recordatorio
+
+    # NEW: Configuración de métricas
+    target_service_time = db.Column(db.Integer, default=20, nullable=False)  # Tiempo objetivo por paciente (min)
+    enable_sound_alerts = db.Column(db.Boolean, default=True, nullable=False)  # Sonido en pantalla pública
+
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
 
     # Relationships
-    appointment_types = db.relationship('AppointmentType', backref='system', lazy='dynamic', cascade='all, delete-orphan')
-    appointments = db.relationship('Appointment', backref='system', lazy='dynamic', cascade='all, delete-orphan')
+    ticket_types = db.relationship('TicketType', backref='system', lazy='dynamic', cascade='all, delete-orphan')
+    tickets = db.relationship('Ticket', backref='system', lazy='dynamic', cascade='all, delete-orphan')
 
     def can_add_type(self):
-        """Verificar si puede agregar más tipos de citas"""
-        return self.appointment_types.filter_by(is_active=True).count() < self.max_appointment_types
+        """Verificar si puede agregar más tipos de tickets"""
+        return self.ticket_types.filter_by(is_active=True).count() < self.max_ticket_types
 
     def get_active_types(self):
-        """Obtener tipos de citas activos ordenados"""
-        return self.appointment_types.filter_by(is_active=True).order_by(AppointmentType.order_index).all()
+        """Obtener tipos de tickets activos ordenados"""
+        return self.ticket_types.filter_by(is_active=True).order_by(TicketType.order_index).all()
 
     def get_waiting_count(self):
         """Obtener cantidad de turnos en espera"""
-        return self.appointments.filter_by(status='waiting').count()
+        return self.tickets.filter_by(status='waiting').count()
 
-    def get_current_appointment(self):
+    def get_current_ticket(self):
         """Obtener turno actualmente en atención"""
-        return self.appointments.filter_by(status='in_progress').first()
+        return self.tickets.filter_by(status='in_progress').first()
 
-    def cleanup_old_appointments(self, days_old=7):
+    def cleanup_old_tickets(self, days_old=7):
         """Limpiar turnos completados, cancelados y ausentes de hace X días"""
         from datetime import timedelta
         cutoff_date = now_utc_for_db() - timedelta(days=days_old)
 
-        old_appointments = self.appointments.filter(
-            Appointment.status.in_(['completed', 'cancelled', 'no_show']),
-            Appointment.created_at < cutoff_date
+        old_tickets = self.tickets.filter(
+            Ticket.status.in_(['completed', 'cancelled', 'no_show']),
+            Ticket.created_at < cutoff_date
         ).all()
 
-        count = len(old_appointments)
-        for appointment in old_appointments:
-            db.session.delete(appointment)
+        count = len(old_tickets)
+        for ticket in old_tickets:
+            db.session.delete(ticket)
 
         return count
 
@@ -791,14 +806,14 @@ class AppointmentSystem(db.Model):
         """Resetear cola diaria - cancelar todos los turnos en espera del día anterior"""
         today_start = today_start_utc()
 
-        old_waiting = self.appointments.filter(
-            Appointment.status == 'waiting',
-            Appointment.created_at < today_start
+        old_waiting = self.tickets.filter(
+            Ticket.status == 'waiting',
+            Ticket.created_at < today_start
         ).all()
 
         count = 0
-        for appointment in old_waiting:
-            appointment.cancel('Turno expirado - nuevo día')
+        for ticket in old_waiting:
+            ticket.cancel('Turno expirado - nuevo día')
             count += 1
 
         return count
@@ -808,30 +823,121 @@ class AppointmentSystem(db.Model):
         today_start = today_start_utc()
 
         return {
-            'total': self.appointments.filter(Appointment.created_at >= today_start).count(),
-            'completed': self.appointments.filter(
-                Appointment.status == 'completed',
-                Appointment.created_at >= today_start
+            'total': self.tickets.filter(Ticket.created_at >= today_start).count(),
+            'completed': self.tickets.filter(
+                Ticket.status == 'completed',
+                Ticket.created_at >= today_start
             ).count(),
-            'waiting': self.appointments.filter_by(status='waiting').count(),
-            'in_progress': self.appointments.filter_by(status='in_progress').count(),
-            'cancelled': self.appointments.filter(
-                Appointment.status == 'cancelled',
-                Appointment.created_at >= today_start
+            'waiting': self.tickets.filter_by(status='waiting').count(),
+            'in_progress': self.tickets.filter_by(status='in_progress').count(),
+            'cancelled': self.tickets.filter(
+                Ticket.status == 'cancelled',
+                Ticket.created_at >= today_start
             ).count(),
-            'no_show': self.appointments.filter(
-                Appointment.status == 'no_show',
-                Appointment.created_at >= today_start
+            'no_show': self.tickets.filter(
+                Ticket.status == 'no_show',
+                Ticket.created_at >= today_start
             ).count(),
         }
 
-    def __repr__(self):
-        return f'<AppointmentSystem user_id={self.user_id}>'
+    def get_advanced_metrics(self, days=7):
+        """Obtener métricas avanzadas para análisis"""
+        from sqlalchemy import func
+        from datetime import timedelta
 
-class AppointmentType(db.Model):
-    """Tipos de citas configurables (1-10 por sistema)"""
+        start_date = now_utc_for_db() - timedelta(days=days)
+
+        # Tickets completados en el período
+        completed_tickets = self.tickets.filter(
+            Ticket.status == 'completed',
+            Ticket.completed_at >= start_date
+        ).all()
+
+        # Calcular tiempo promedio de atención
+        if completed_tickets:
+            service_times = [
+                (ticket.completed_at - ticket.called_at).total_seconds() / 60
+                for ticket in completed_tickets
+                if ticket.called_at and ticket.completed_at
+            ]
+            avg_service_time = sum(service_times) / len(service_times) if service_times else 0
+        else:
+            avg_service_time = 0
+
+        # Calcular tiempo promedio de espera
+        wait_times = [
+            (ticket.called_at - ticket.created_at).total_seconds() / 60
+            for ticket in completed_tickets
+            if ticket.called_at
+        ]
+        avg_wait_time = sum(wait_times) / len(wait_times) if wait_times else 0
+
+        # Tasa de no-show
+        total_period = self.tickets.filter(Ticket.created_at >= start_date).count()
+        no_show_count = self.tickets.filter(
+            Ticket.status == 'no_show',
+            Ticket.created_at >= start_date
+        ).count()
+        no_show_rate = (no_show_count / total_period * 100) if total_period > 0 else 0
+
+        # Estadísticas por tipo de cita
+        stats_by_type = {}
+        for ticket_type in self.get_active_types():
+            type_count = self.tickets.filter(
+                Ticket.ticket_type_id == ticket_type.id,
+                Ticket.created_at >= start_date
+            ).count()
+            stats_by_type[ticket_type.name] = type_count
+
+        return {
+            'avg_service_time': round(avg_service_time, 1),
+            'avg_wait_time': round(avg_wait_time, 1),
+            'total_served': len(completed_tickets),
+            'no_show_rate': round(no_show_rate, 1),
+            'stats_by_type': stats_by_type,
+            'efficiency_score': self._calculate_efficiency(avg_service_time),
+        }
+
+    def _calculate_efficiency(self, avg_service_time):
+        """Calcular score de eficiencia (0-100)"""
+        if avg_service_time == 0:
+            return 100
+        # Score basado en qué tan cerca está del tiempo objetivo
+        ratio = avg_service_time / self.target_service_time
+        if ratio <= 1:
+            return 100
+        elif ratio <= 1.5:
+            return int(100 - (ratio - 1) * 100)
+        else:
+            return max(0, int(50 - (ratio - 1.5) * 25))
+
+    def get_peak_hours(self, days=7):
+        """Obtener horas pico de demanda"""
+        from sqlalchemy import func, extract
+        from datetime import timedelta
+
+        start_date = now_utc_for_db() - timedelta(days=days)
+
+        # Query para contar tickets por hora
+        hour_counts = db.session.query(
+            extract('hour', Ticket.created_at).label('hour'),
+            func.count(Ticket.id).label('count')
+        ).filter(
+            Ticket.ticket_system_id == self.id,
+            Ticket.created_at >= start_date
+        ).group_by(extract('hour', Ticket.created_at)).all()
+
+        return [{'hour': int(h), 'count': c} for h, c in hour_counts]
+
+    def __repr__(self):
+        return f'<TicketSystem user_id={self.user_id}>'
+
+class TicketType(db.Model):
+    """Tipos de tickets configurables (1-10 por sistema)"""
+    __tablename__ = 'ticket_type'
+
     id = db.Column(db.Integer, primary_key=True)
-    appointment_system_id = db.Column(db.Integer, db.ForeignKey('appointment_system.id'), nullable=False)
+    ticket_system_id = db.Column(db.Integer, db.ForeignKey('ticket_system.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)  # "Consulta General", "Inyecciones", etc.
     description = db.Column(db.String(500))
     color = db.Column(db.String(7), default='#6366f1')  # Color hex para identificación visual
@@ -842,20 +948,20 @@ class AppointmentType(db.Model):
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
 
     # Relationships
-    appointments = db.relationship('Appointment', backref='type', lazy='dynamic', cascade='all, delete-orphan')
+    tickets = db.relationship('Ticket', backref='type', lazy='dynamic', cascade='all, delete-orphan')
 
     def get_next_ticket_number(self):
         """Generar siguiente número de ticket para este tipo"""
         # Obtener el último ticket del día
         today_start = today_start_utc()
-        last_appointment = self.appointments.filter(
-            Appointment.created_at >= today_start
-        ).order_by(Appointment.created_at.desc()).first()
+        last_ticket = self.tickets.filter(
+            Ticket.created_at >= today_start
+        ).order_by(Ticket.created_at.desc()).first()
 
-        if last_appointment and last_appointment.ticket_number:
+        if last_ticket and last_ticket.ticket_number:
             # Extraer número del ticket (ej: "A005" -> 5)
             try:
-                last_num = int(last_appointment.ticket_number[len(self.prefix):])
+                last_num = int(last_ticket.ticket_number[len(self.prefix):])
                 next_num = last_num + 1
             except (ValueError, IndexError):
                 next_num = 1
@@ -867,16 +973,18 @@ class AppointmentType(db.Model):
 
     def get_waiting_count(self):
         """Cantidad de turnos en espera para este tipo"""
-        return self.appointments.filter_by(status='waiting').count()
+        return self.tickets.filter_by(status='waiting').count()
 
     def __repr__(self):
-        return f'<AppointmentType {self.name}>'
+        return f'<TicketType {self.name}>'
 
-class Appointment(db.Model):
-    """Turno/Cita individual"""
+class Ticket(db.Model):
+    """Turno/Ticket individual"""
+    __tablename__ = 'ticket'
+
     id = db.Column(db.Integer, primary_key=True)
-    appointment_system_id = db.Column(db.Integer, db.ForeignKey('appointment_system.id'), nullable=False)
-    appointment_type_id = db.Column(db.Integer, db.ForeignKey('appointment_type.id'), nullable=False)
+    ticket_system_id = db.Column(db.Integer, db.ForeignKey('ticket_system.id'), nullable=False)
+    ticket_type_id = db.Column(db.Integer, db.ForeignKey('ticket_type.id'), nullable=False)
 
     # Información del paciente
     patient_name = db.Column(db.String(200), nullable=False)
@@ -888,37 +996,46 @@ class Appointment(db.Model):
     # Control de turno
     ticket_number = db.Column(db.String(20), nullable=False, index=True)  # Ej: "A001", "B042"
     status = db.Column(
-        Enum('waiting', 'in_progress', 'completed', 'cancelled', 'no_show', name='appointment_statuses'),
+        Enum('waiting', 'in_progress', 'completed', 'cancelled', 'no_show', name='ticket_statuses'),
         default='waiting',
         nullable=False,
         index=True
     )
+
+    # NEW: Sistema de prioridades
+    priority = db.Column(db.Integer, default=0, nullable=False)  # 0=normal, 1=urgente
+    is_checked_in = db.Column(db.Boolean, default=False, nullable=False)  # Check-in en consultorio
 
     # Timestamps
     created_at = db.Column(db.DateTime, default=now_utc_for_db, index=True)
     called_at = db.Column(db.DateTime)  # Cuando se llamó al paciente
     completed_at = db.Column(db.DateTime)  # Cuando se completó la atención
     cancelled_at = db.Column(db.DateTime)
+    checked_in_at = db.Column(db.DateTime)  # Cuando hizo check-in
 
     # Notas adicionales
     notes = db.Column(db.Text)
+    medical_notes = db.Column(db.Text)  # NEW: Notas médicas (solo doctor)
     cancellation_reason = db.Column(db.String(500))
 
     # Metadata
     ip_address = db.Column(db.String(45))  # IP del paciente al tomar turno
     user_agent = db.Column(db.String(500))
+    cancellation_token = db.Column(db.String(255))  # NEW: Token para cancelar sin login
 
     def call(self):
         """Llamar al paciente (pasar a 'in_progress')"""
         self.status = 'in_progress'
         self.called_at = now_utc_for_db()
 
-    def complete(self, notes=None):
+    def complete(self, notes=None, medical_notes=None):
         """Completar la atención"""
         self.status = 'completed'
         self.completed_at = now_utc_for_db()
         if notes:
             self.notes = notes
+        if medical_notes:
+            self.medical_notes = medical_notes
 
     def cancel(self, reason=None):
         """Cancelar el turno"""
@@ -932,6 +1049,15 @@ class Appointment(db.Model):
         self.status = 'no_show'
         self.completed_at = now_utc_for_db()
 
+    def check_in(self):
+        """Registrar llegada del paciente al consultorio"""
+        self.is_checked_in = True
+        self.checked_in_at = now_utc_for_db()
+
+    def mark_urgent(self):
+        """Marcar turno como urgente (prioridad alta)"""
+        self.priority = 1
+
     def get_waiting_time(self):
         """Obtener tiempo de espera en minutos"""
         if self.status == 'waiting':
@@ -940,18 +1066,54 @@ class Appointment(db.Model):
         return 0
 
     def get_position_in_queue(self):
-        """Obtener posición en la cola (considerando intercalado)"""
+        """Obtener posición en la cola (considerando prioridades e intercalado)"""
         if self.status != 'waiting':
             return 0
 
-        # Contar turnos en espera creados antes de este
-        waiting_before = Appointment.query.filter(
-            Appointment.appointment_system_id == self.appointment_system_id,
-            Appointment.status == 'waiting',
-            Appointment.created_at < self.created_at
-        ).count()
+        # Si es urgente, contar solo urgentes antes
+        if self.priority == 1:
+            waiting_before = Ticket.query.filter(
+                Ticket.ticket_system_id == self.ticket_system_id,
+                Ticket.status == 'waiting',
+                Ticket.priority == 1,
+                Ticket.created_at < self.created_at
+            ).count()
+        else:
+            # Si es normal, contar urgentes + normales antes
+            urgent_count = Ticket.query.filter(
+                Ticket.ticket_system_id == self.ticket_system_id,
+                Ticket.status == 'waiting',
+                Ticket.priority == 1
+            ).count()
+
+            normal_before = Ticket.query.filter(
+                Ticket.ticket_system_id == self.ticket_system_id,
+                Ticket.status == 'waiting',
+                Ticket.priority == 0,
+                Ticket.created_at < self.created_at
+            ).count()
+
+            waiting_before = urgent_count + normal_before
 
         return waiting_before + 1
+
+    def generate_cancellation_token(self):
+        """Generar token único para cancelación sin login"""
+        self.cancellation_token = secrets.token_urlsafe(32)
+        return self.cancellation_token
+
+    def get_cancellation_url(self):
+        """Obtener URL para cancelar turno"""
+        from flask import url_for
+        if not self.cancellation_token:
+            self.generate_cancellation_token()
+        # Note: username should be extracted from system owner
+        username = self.system.owner.email.split('@')[0]
+        return url_for('public.cancel_ticket_public',
+                      username=username,
+                      ticket_number=self.ticket_number,
+                      token=self.cancellation_token,
+                      _external=True)
 
     def get_local_created_at(self):
         """Obtener fecha de creación en hora local formateada"""
@@ -986,7 +1148,7 @@ class Appointment(db.Model):
         return f"https://wa.me/{clean_phone}?text={encoded_message}"
 
     def __repr__(self):
-        return f'<Appointment {self.ticket_number} - {self.status}>'
+        return f'<Ticket {self.ticket_number} - {self.status}>'
 
 class PushSubscription(db.Model):
     """Push notification subscriptions for PWA users"""
@@ -1017,3 +1179,106 @@ class PushSubscription(db.Model):
 
     def __repr__(self):
         return f'<PushSubscription user_id={self.user_id} endpoint={self.endpoint[:50]}...>'
+
+class Appointment(db.Model):
+    """Citas/Reservas para servicios"""
+    __tablename__ = 'appointment'
+
+    id = db.Column(db.Integer, primary_key=True)
+    service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
+    card_id = db.Column(db.Integer, db.ForeignKey('card.id'), nullable=False)
+
+    # Información del cliente
+    customer_name = db.Column(db.String(200), nullable=False)
+    customer_phone_country = db.Column(db.String(10))  # Prefijo del país (ej: +52)
+    customer_phone = db.Column(db.String(20), nullable=False)
+    customer_address = db.Column(db.Text)  # Opcional
+
+    # Fecha y hora de la cita
+    appointment_date = db.Column(db.Date, nullable=False, index=True)
+    appointment_time = db.Column(db.String(5), nullable=False)  # Formato "HH:MM" (ej: "14:30")
+
+    # Estado de la cita
+    status = db.Column(
+        Enum('pending', 'confirmed', 'cancelled', 'completed', 'no_show', name='appointment_statuses'),
+        default='pending',
+        nullable=False,
+        index=True
+    )
+
+    # Notas y timestamps
+    notes = db.Column(db.Text)
+    cancellation_reason = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=now_utc_for_db, index=True)
+    updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
+    confirmed_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    cancelled_at = db.Column(db.DateTime)
+
+    # Metadata
+    ip_address = db.Column(db.String(45))  # IP del cliente al reservar
+    user_agent = db.Column(db.String(500))
+
+    # Relationships
+    service = db.relationship('Service', backref=db.backref('appointments', lazy='dynamic', cascade='all, delete-orphan'))
+    card = db.relationship('Card', backref=db.backref('appointments', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def confirm(self):
+        """Confirmar la cita"""
+        self.status = 'confirmed'
+        self.confirmed_at = now_utc_for_db()
+
+    def complete(self, notes=None):
+        """Completar la cita"""
+        self.status = 'completed'
+        self.completed_at = now_utc_for_db()
+        if notes:
+            self.notes = notes
+
+    def cancel(self, reason=None):
+        """Cancelar la cita"""
+        self.status = 'cancelled'
+        self.cancelled_at = now_utc_for_db()
+        if reason:
+            self.cancellation_reason = reason
+
+    def mark_no_show(self):
+        """Marcar como ausente"""
+        self.status = 'no_show'
+        self.completed_at = now_utc_for_db()
+
+    def get_full_phone(self):
+        """Obtener número de teléfono completo con prefijo"""
+        if not self.customer_phone:
+            return None
+        if self.customer_phone_country:
+            return f"{self.customer_phone_country}{self.customer_phone}"
+        return self.customer_phone
+
+    def get_whatsapp_url(self, message=None):
+        """Generar URL de WhatsApp para contactar al cliente"""
+        phone = self.get_full_phone()
+        if not phone:
+            return None
+
+        # Limpiar el número (remover espacios, guiones, etc.)
+        clean_phone = ''.join(filter(str.isdigit, phone.replace('+', '')))
+
+        # Mensaje predeterminado
+        if not message:
+            message = f"Hola {self.customer_name}, confirmando tu cita para {self.service.title} el {self.appointment_date.strftime('%d/%m/%Y')} a las {self.appointment_time}."
+
+        # URL encode del mensaje
+        import urllib.parse
+        encoded_message = urllib.parse.quote(message)
+
+        return f"https://wa.me/{clean_phone}?text={encoded_message}"
+
+    def get_local_datetime(self):
+        """Obtener fecha y hora formateada"""
+        from .timezone_utils import format_local_datetime
+        # Combinar fecha y hora para mostrar
+        return f"{self.appointment_date.strftime('%d/%m/%Y')} a las {self.appointment_time}"
+
+    def __repr__(self):
+        return f'<Appointment {self.id} - {self.customer_name} - {self.status}>'

@@ -159,7 +159,20 @@
                                 </div>
                             </div>
                         </div>
-                        
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-check">
+                                    {{ form.accepts_appointments() }}
+                                    {{ form.accepts_appointments.label(class="form-check-label") }}
+                                    <div class="form-text">
+                                        <i class="fas fa-calendar-check me-1"></i>
+                                        Si está marcado, los clientes podrán reservar citas para este servicio
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-2">
                             {{ form.submit() }}
                             <a href="{{ url_for('dashboard.card_services', id=card.id) }}" class="btn btn-secondary">

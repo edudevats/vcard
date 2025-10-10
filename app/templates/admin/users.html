@@ -130,13 +130,13 @@
                                                 {% endif %}
                                             </td>
                                             <td class="text-center">
-                                                {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                                {% if user.ticket_system and user.ticket_system.is_enabled %}
                                                     <span class="badge bg-success" title="Sistema de turnos activo">
                                                         <i class="fas fa-calendar-check"></i>
                                                     </span>
-                                                    {% if user.appointment_system.get_waiting_count() > 0 %}
+                                                    {% if user.ticket_system.get_waiting_count() > 0 %}
                                                         <div class="mt-1">
-                                                            <small class="text-muted">{{ user.appointment_system.get_waiting_count() }} en espera</small>
+                                                            <small class="text-muted">{{ user.ticket_system.get_waiting_count() }} en espera</small>
                                                         </div>
                                                     {% endif %}
                                                 {% else %}
@@ -233,9 +233,9 @@
                                                                 <li><hr class="dropdown-divider"></li>
 
                                                                 <li>
-                                                                    <form method="POST" action="{{ url_for('admin.toggle_appointments', id=user.id) }}" class="d-inline">
+                                                                    <form method="POST" action="{{ url_for('admin.toggle_tickets', id=user.id) }}" class="d-inline">
                                                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                                                        {% if user.appointment_system and user.appointment_system.is_enabled %}
+                                                                        {% if user.ticket_system and user.ticket_system.is_enabled %}
                                                                             <button type="submit" class="dropdown-item text-warning">
                                                                                 <i class="fas fa-calendar-times me-2"></i>Desactivar Turnos
                                                                             </button>

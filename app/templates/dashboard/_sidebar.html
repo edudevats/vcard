@@ -15,15 +15,20 @@
             <i class="fas fa-chart-line me-2"></i>Analytics
         </a>
 
-        <!-- Appointment System (if enabled) -->
-        {% if current_user.appointment_system and current_user.appointment_system.is_enabled %}
-        <a class="nav-link {{ 'active' if 'appointments' in request.endpoint }}" href="{{ url_for('dashboard.appointments') }}">
-            <i class="fas fa-calendar-check me-2"></i>Sistema de Turnos
-            {% if current_user.appointment_system.get_waiting_count() > 0 %}
-                <span class="badge bg-warning text-dark ms-2">{{ current_user.appointment_system.get_waiting_count() }}</span>
+        <!-- Ticket System (if enabled) -->
+        {% if current_user.ticket_system and current_user.ticket_system.is_enabled %}
+        <a class="nav-link {{ 'active' if 'tickets' in request.endpoint }}" href="{{ url_for('dashboard.tickets') }}">
+            <i class="fas fa-ticket-alt me-2"></i>Sistema de Turnos
+            {% if current_user.ticket_system.get_waiting_count() > 0 %}
+                <span class="badge bg-warning text-dark ms-2">{{ current_user.ticket_system.get_waiting_count() }}</span>
             {% endif %}
         </a>
         {% endif %}
+
+        <!-- Appointments System -->
+        <a class="nav-link {{ 'active' if 'appointments' in request.endpoint }}" href="{{ url_for('dashboard.appointments') }}">
+            <i class="fas fa-calendar-check me-2"></i>Citas
+        </a>
 
         <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.advanced_features' }}" href="{{ url_for('dashboard.advanced_features') }}">
             <i class="fas fa-rocket me-2"></i>Funciones Avanzadas
