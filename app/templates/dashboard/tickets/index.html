@@ -23,10 +23,13 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <button class="btn {% if system.is_accepting_appointments %}btn-warning{% else %}btn-success{% endif %} me-2"
+                    <a href="{{ url_for('dashboard.tickets_metrics') }}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-chart-line me-2"></i>Métricas
+                    </a>
+                    <button class="btn {% if system.is_accepting_tickets %}btn-warning{% else %}btn-success{% endif %} me-2"
                             onclick="togglePause()">
-                        <i class="fas {% if system.is_accepting_appointments %}fa-pause{% else %}fa-play{% endif %} me-2"></i>
-                        {% if system.is_accepting_appointments %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
+                        <i class="fas {% if system.is_accepting_tickets %}fa-pause{% else %}fa-play{% endif %} me-2"></i>
+                        {% if system.is_accepting_tickets %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
                     </button>
                     <button class="btn btn-outline-warning me-2" onclick="resetDailyQueue()">
                         <i class="fas fa-refresh me-2"></i>Reiniciar Cola
@@ -159,6 +162,7 @@
                                     <th>Tipo</th>
                                     <th>Paciente</th>
                                     <th>Teléfono</th>
+                                    <th>Estado</th>
                                     <th>Tiempo Espera</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -185,11 +189,32 @@
                                             </a>
                                         {% endif %}
                                     </td>
+                                    <td>
+                                        {% if ticket.priority == 1 %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-exclamation-circle me-1"></i>URGENTE
+                                            </span>
+                                        {% endif %}
+                                        {% if ticket.is_checked_in %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Check-in
+                                            </span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ ticket.get_waiting_time() }} min</td>
                                     <td>
-                                        <button class="btn btn-sm btn-danger" onclick="cancelTicket({{ ticket.id }})">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            {% if ticket.priority == 0 %}
+                                                <button class="btn btn-sm btn-warning" onclick="markUrgent({{ ticket.id }})"
+                                                        title="Marcar como urgente">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </button>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-danger" onclick="cancelTicket({{ ticket.id }})"
+                                                    title="Cancelar turno">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -482,8 +507,38 @@ function resetDailyQueue() {
     }
 }
 
+function markUrgent(id) {
+    if (confirm('¿Marcar este turno como URGENTE? Se moverá al inicio de la cola.')) {
+        fetch(`/dashboard/tickets/${id}/mark-urgent`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || 'Error al marcar como urgente');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud: ' + error.message);
+        });
+    }
+}
+
 function togglePause() {
-    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_appointments else 'false' }};
+    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_tickets else 'false' }};
     const action = isCurrentlyAccepting ? 'pausar' : 'reanudar';
     const confirmMessage = isCurrentlyAccepting
         ? '¿Pausar la toma de turnos? Los pacientes no podrán tomar nuevos turnos.'

@@ -747,7 +747,8 @@ function confirmAppointment(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        }
+        },
+        body: JSON.stringify({})
     })
     .then(response => response.json())
     .then(data => {
@@ -771,7 +772,8 @@ function completeAppointment(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        }
+        },
+        body: JSON.stringify({})
     })
     .then(response => response.json())
     .then(data => {
@@ -795,7 +797,8 @@ function cancelAppointment(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        }
+        },
+        body: JSON.stringify({})
     })
     .then(response => response.json())
     .then(data => {
@@ -819,7 +822,8 @@ function markNoShow(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        }
+        },
+        body: JSON.stringify({})
     })
     .then(response => response.json())
     .then(data => {

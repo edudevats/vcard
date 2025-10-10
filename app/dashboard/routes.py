@@ -1910,8 +1910,9 @@ def complete_ticket(id):
     elif ticket.status != 'in_progress':
         return jsonify({'success': False, 'message': f'Estado inválido: {ticket.status}'}), 400
 
-    notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
-    ticket.complete(notes)
+    # Obtener notas médicas (pueden venir en JSON o form data)
+    medical_notes = request.json.get('medical_notes', '') if request.is_json else request.form.get('medical_notes', '')
+    ticket.complete(medical_notes)
     db.session.commit()
 
     # Llamar automáticamente al siguiente en la cola si existe
@@ -2050,6 +2051,130 @@ def toggle_pause_tickets():
         flash(message, 'success')
         return redirect(url_for('dashboard.tickets'))
 
+@bp.route('/tickets/<int:id>/mark-urgent', methods=['POST'])
+@login_required
+def mark_ticket_urgent(id):
+    """Marcar turno como urgente (prioridad alta)"""
+    from ..models import Ticket
+
+    if not current_user.ticket_system or not current_user.ticket_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    ticket = Ticket.query.filter_by(
+        id=id,
+        ticket_system_id=current_user.ticket_system.id
+    ).first_or_404()
+
+    if ticket.status != 'waiting':
+        return jsonify({'success': False, 'message': 'Solo se pueden marcar como urgentes los turnos en espera'}), 400
+
+    if ticket.priority == 1:
+        return jsonify({'success': False, 'message': 'Este turno ya está marcado como urgente'}), 400
+
+    # Marcar como urgente
+    ticket.mark_urgent()
+    db.session.commit()
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': f'Turno {ticket.ticket_number} marcado como urgente',
+            'new_position': ticket.get_position_in_queue()
+        })
+    else:
+        flash(f'Turno {ticket.ticket_number} marcado como urgente', 'success')
+        return redirect(url_for('dashboard.tickets'))
+
+@bp.route('/tickets/metrics')
+@login_required
+def tickets_metrics():
+    """Panel de métricas avanzadas del sistema de turnos"""
+    if not current_user.ticket_system or not current_user.ticket_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    system = current_user.ticket_system
+
+    # Obtener días de análisis (por defecto 7 días)
+    days = request.args.get('days', 7, type=int)
+
+    # Obtener métricas avanzadas
+    metrics = system.get_advanced_metrics(days=days)
+
+    # Obtener horas pico
+    peak_hours = system.get_peak_hours(days=days)
+
+    # Obtener estadísticas por tipo de cita
+    from sqlalchemy import func
+    from datetime import timedelta
+
+    start_date = now_utc_for_db() - timedelta(days=days)
+
+    # Tickets por tipo en el período
+    type_stats = db.session.query(
+        TicketType.name,
+        TicketType.color,
+        func.count(Ticket.id).label('count'),
+        func.avg(
+            func.julianday(Ticket.completed_at) - func.julianday(Ticket.called_at)
+        ).label('avg_service_minutes')
+    ).join(Ticket).filter(
+        Ticket.ticket_system_id == system.id,
+        Ticket.created_at >= start_date,
+        Ticket.status == 'completed'
+    ).group_by(TicketType.id).all()
+
+    type_statistics = []
+    for stat in type_stats:
+        avg_minutes = (stat.avg_service_minutes * 24 * 60) if stat.avg_service_minutes else 0
+        type_statistics.append({
+            'name': stat.name,
+            'color': stat.color,
+            'count': stat.count,
+            'avg_service_time': round(avg_minutes, 1)
+        })
+
+    # Tendencias diarias (tickets por día)
+    daily_tickets = db.session.query(
+        func.date(Ticket.created_at).label('date'),
+        func.count(Ticket.id).label('count')
+    ).filter(
+        Ticket.ticket_system_id == system.id,
+        Ticket.created_at >= start_date
+    ).group_by(func.date(Ticket.created_at)).order_by(func.date(Ticket.created_at)).all()
+
+    daily_trend = [
+        {
+            'date': str(day.date),
+            'count': day.count
+        }
+        for day in daily_tickets
+    ]
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/tickets_metrics_pwa.html',
+                              system=system,
+                              metrics=metrics,
+                              peak_hours=peak_hours,
+                              type_statistics=type_statistics,
+                              daily_trend=daily_trend,
+                              days=days)
+    else:
+        return render_template('dashboard/tickets/metrics.html',
+                              system=system,
+                              metrics=metrics,
+                              peak_hours=peak_hours,
+                              type_statistics=type_statistics,
+                              daily_trend=daily_trend,
+                              days=days)
+
 # ============================================================================
 # SISTEMA DE CITAS - Rutas Dashboard para Gestión
 # ============================================================================
@@ -2149,49 +2274,67 @@ def confirm_appointment(id):
 @login_required
 def complete_appointment(id):
     """Completar cita (AJAX)"""
-    from ..models import Appointment
+    try:
+        from ..models import Appointment
 
-    appointment = Appointment.query.join(Card).filter(
-        Appointment.id == id,
-        Card.owner_id == current_user.id
-    ).first_or_404()
+        appointment = Appointment.query.join(Card).filter(
+            Appointment.id == id,
+            Card.owner_id == current_user.id
+        ).first_or_404()
 
-    if appointment.status not in ['pending', 'confirmed']:
-        return jsonify({'success': False, 'message': f'Esta cita no se puede completar (estado: {appointment.status})'}), 400
+        if appointment.status not in ['pending', 'confirmed']:
+            return jsonify({'success': False, 'message': f'Esta cita no se puede completar (estado: {appointment.status})'}), 400
 
-    notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
-    appointment.complete(notes)
-    db.session.commit()
+        notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
+        appointment.complete(notes)
+        db.session.commit()
 
-    if request.is_json:
-        return jsonify({'success': True, 'message': f'Cita #{appointment.id} completada'})
-    else:
-        flash(f'Cita completada exitosamente', 'success')
-        return redirect(url_for('dashboard.appointments'))
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'Cita #{appointment.id} completada'})
+        else:
+            flash(f'Cita completada exitosamente', 'success')
+            return redirect(url_for('dashboard.appointments'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error completing appointment {id}: {str(e)}')
+        if request.is_json:
+            return jsonify({'success': False, 'message': f'Error al completar la cita: {str(e)}'}), 500
+        else:
+            flash(f'Error al completar la cita: {str(e)}', 'error')
+            return redirect(url_for('dashboard.appointments'))
 
 @bp.route('/appointments/<int:id>/cancel', methods=['POST'])
 @login_required
 def cancel_appointment(id):
     """Cancelar cita (AJAX)"""
-    from ..models import Appointment
+    try:
+        from ..models import Appointment
 
-    appointment = Appointment.query.join(Card).filter(
-        Appointment.id == id,
-        Card.owner_id == current_user.id
-    ).first_or_404()
+        appointment = Appointment.query.join(Card).filter(
+            Appointment.id == id,
+            Card.owner_id == current_user.id
+        ).first_or_404()
 
-    if appointment.status not in ['pending', 'confirmed']:
-        return jsonify({'success': False, 'message': f'Esta cita no se puede cancelar (estado: {appointment.status})'}), 400
+        if appointment.status not in ['pending', 'confirmed']:
+            return jsonify({'success': False, 'message': f'Esta cita no se puede cancelar (estado: {appointment.status})'}), 400
 
-    reason = request.json.get('reason', '') if request.is_json else request.form.get('reason', '')
-    appointment.cancel(reason)
-    db.session.commit()
+        reason = request.json.get('reason', '') if request.is_json else request.form.get('reason', '')
+        appointment.cancel(reason)
+        db.session.commit()
 
-    if request.is_json:
-        return jsonify({'success': True, 'message': f'Cita #{appointment.id} cancelada'})
-    else:
-        flash(f'Cita cancelada', 'info')
-        return redirect(url_for('dashboard.appointments'))
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'Cita #{appointment.id} cancelada'})
+        else:
+            flash(f'Cita cancelada', 'info')
+            return redirect(url_for('dashboard.appointments'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error canceling appointment {id}: {str(e)}')
+        if request.is_json:
+            return jsonify({'success': False, 'message': f'Error al cancelar la cita: {str(e)}'}), 500
+        else:
+            flash(f'Error al cancelar la cita: {str(e)}', 'error')
+            return redirect(url_for('dashboard.appointments'))
 
 @bp.route('/appointments/<int:id>/no-show', methods=['POST'])
 @login_required

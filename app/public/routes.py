@@ -624,6 +624,90 @@ def ticket_status_json(username, ticket_number):
         'current_ticket': ticket_system.get_current_ticket().ticket_number if ticket_system.get_current_ticket() else None
     })
 
+@bp.route('/turnos/<username>/ticket/<ticket_number>/cancelar/<token>', methods=['GET', 'POST'])
+def cancel_ticket_public(username, ticket_number, token):
+    """Cancelar turno públicamente con token de seguridad"""
+    from ..models import User, Ticket
+
+    user = User.query.filter(
+        db.or_(
+            User.email == username.lower(),
+            User.email.contains(username.lower())
+        )
+    ).first()
+
+    if not user or not user.ticket_system or not user.ticket_system.is_enabled:
+        abort(404)
+
+    ticket_system = user.ticket_system
+    ticket = ticket_system.tickets.filter_by(ticket_number=ticket_number.upper()).first()
+
+    if not ticket:
+        flash('Turno no encontrado', 'error')
+        return redirect(url_for('public.tickets_public', username=username))
+
+    # Verificar token de cancelación
+    if not ticket.cancellation_token or ticket.cancellation_token != token:
+        flash('Token de cancelación inválido', 'error')
+        return redirect(url_for('public.ticket_status', username=username, ticket_number=ticket_number))
+
+    # Verificar que el turno pueda ser cancelado
+    if ticket.status not in ['waiting', 'in_progress']:
+        flash(f'No se puede cancelar un turno con estado: {ticket.status}', 'warning')
+        return redirect(url_for('public.ticket_status', username=username, ticket_number=ticket_number))
+
+    if request.method == 'POST':
+        reason = request.form.get('reason', 'Cancelado por el paciente')
+        ticket.cancel(reason)
+        db.session.commit()
+
+        flash(f'Turno {ticket_number} cancelado exitosamente', 'success')
+        return redirect(url_for('public.my_tickets', username=username))
+
+    card = user.cards.first()
+    return render_template('public/tickets/cancel_ticket.html',
+                         system=ticket_system,
+                         ticket=ticket,
+                         username=username,
+                         card=card)
+
+@bp.route('/turnos/<username>/check-in/<ticket_number>', methods=['POST'])
+def check_in_ticket(username, ticket_number):
+    """Registrar llegada del paciente al consultorio"""
+    from ..models import User, Ticket
+
+    user = User.query.filter(
+        db.or_(
+            User.email == username.lower(),
+            User.email.contains(username.lower())
+        )
+    ).first()
+
+    if not user or not user.ticket_system or not user.ticket_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema no encontrado'}), 404
+
+    ticket_system = user.ticket_system
+    ticket = ticket_system.tickets.filter_by(ticket_number=ticket_number.upper()).first()
+
+    if not ticket:
+        return jsonify({'success': False, 'message': 'Turno no encontrado'}), 404
+
+    if ticket.status != 'waiting':
+        return jsonify({'success': False, 'message': 'Solo se puede hacer check-in de turnos en espera'}), 400
+
+    if ticket.is_checked_in:
+        return jsonify({'success': False, 'message': 'Ya has hecho check-in'}), 400
+
+    # Registrar check-in
+    ticket.check_in()
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Check-in registrado exitosamente',
+        'checked_in_at': ticket.checked_in_at.isoformat() if ticket.checked_in_at else None
+    })
+
 # ============================================================================
 # SISTEMA DE CITAS - Rutas Públicas para Clientes
 # ============================================================================

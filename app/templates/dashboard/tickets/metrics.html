@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Métricas del Sistema de Turnos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-line me-2"></i>Métricas Avanzadas
+                    </h2>
+                    <p class="text-muted mb-0">{{ system.business_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('dashboard.tickets') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver a Turnos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Selector -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('dashboard.tickets_metrics', days=1) }}"
+                   class="btn btn-sm {{ 'btn-primary' if days == 1 else 'btn-outline-primary' }}">
+                    Hoy
+                </a>
+                <a href="{{ url_for('dashboard.tickets_metrics', days=7) }}"
+                   class="btn btn-sm {{ 'btn-primary' if days == 7 else 'btn-outline-primary' }}">
+                    7 días
+                </a>
+                <a href="{{ url_for('dashboard.tickets_metrics', days=30) }}"
+                   class="btn btn-sm {{ 'btn-primary' if days == 30 else 'btn-outline-primary' }}">
+                    30 días
+                </a>
+                <a href="{{ url_for('dashboard.tickets_metrics', days=90) }}"
+                   class="btn btn-sm {{ 'btn-primary' if days == 90 else 'btn-outline-primary' }}">
+                    90 días
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <!-- Total Atendidos -->
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                                <i class="fas fa-check-circle text-primary fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-muted mb-1 small">Total Atendidos</p>
+                            <h3 class="mb-0">{{ metrics.total_served }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiempo Promedio de Atención -->
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                                <i class="fas fa-clock text-info fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-muted mb-1 small">Tiempo de Atención</p>
+                            <h3 class="mb-0">{{ metrics.avg_service_time }} <small class="text-muted">min</small></h3>
+                            <small class="text-muted">Meta: {{ system.target_service_time }} min</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tiempo Promedio de Espera -->
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                                <i class="fas fa-hourglass-half text-warning fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-muted mb-1 small">Tiempo de Espera</p>
+                            <h3 class="mb-0">{{ metrics.avg_wait_time }} <small class="text-muted">min</small></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasa de Ausencias -->
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                                <i class="fas fa-user-times text-danger fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-muted mb-1 small">Tasa de Ausencias</p>
+                            <h3 class="mb-0">{{ metrics.no_show_rate }}%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Efficiency Score -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="fas fa-tachometer-alt me-2"></i>Índice de Eficiencia
+                    </h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="progress" style="height: 40px;">
+                                {% set efficiency = metrics.efficiency_score %}
+                                {% if efficiency >= 90 %}
+                                    {% set color_class = 'bg-success' %}
+                                    {% set label = 'Excelente' %}
+                                {% elif efficiency >= 70 %}
+                                    {% set color_class = 'bg-primary' %}
+                                    {% set label = 'Muy Bueno' %}
+                                {% elif efficiency >= 50 %}
+                                    {% set color_class = 'bg-info' %}
+                                    {% set label = 'Bueno' %}
+                                {% elif efficiency >= 30 %}
+                                    {% set color_class = 'bg-warning' %}
+                                    {% set label = 'Regular' %}
+                                {% else %}
+                                    {% set color_class = 'bg-danger' %}
+                                    {% set label = 'Necesita Mejorar' %}
+                                {% endif %}
+
+                                <div class="progress-bar {{ color_class }}" role="progressbar"
+                                     style="width: {{ efficiency }}%;"
+                                     aria-valuenow="{{ efficiency }}" aria-valuemin="0" aria-valuemax="100">
+                                    <strong>{{ efficiency }}/100 - {{ label }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="mt-3 mt-md-0">
+                                <p class="mb-1 text-muted small">Score de Eficiencia</p>
+                                <h2 class="mb-0 {{ color_class.replace('bg-', 'text-') }}">{{ efficiency }}/100</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            El índice de eficiencia se calcula basándose en el tiempo de atención comparado con tu meta de {{ system.target_service_time }} minutos.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Daily Trend Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-chart-area me-2"></i>Tendencia Diaria
+                    </h5>
+                    <canvas id="dailyTrendChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Type Statistics -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-chart-pie me-2"></i>Por Tipo de Cita
+                    </h5>
+                    <canvas id="typeStatsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Peak Hours Chart -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-chart-bar me-2"></i>Horas Pico
+                    </h5>
+                    <canvas id="peakHoursChart" height="60"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Type Statistics Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        <i class="fas fa-table me-2"></i>Detalles por Tipo de Cita
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th class="text-center">Total</th>
+                                    <th class="text-center">Tiempo Promedio</th>
+                                    <th class="text-center">% del Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total_count = type_statistics | sum(attribute='count') %}
+                                {% for stat in type_statistics %}
+                                <tr>
+                                    <td>
+                                        <span class="badge rounded-pill" style="background-color: {{ stat.color }};">
+                                            {{ stat.name }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">{{ stat.count }}</td>
+                                    <td class="text-center">{{ stat.avg_service_time }} min</td>
+                                    <td class="text-center">
+                                        {% if total_count > 0 %}
+                                            {{ (stat.count / total_count * 100) | round(1) }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <p class="mb-0">No hay datos suficientes para este período</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Daily Trend Chart
+    const dailyTrendCtx = document.getElementById('dailyTrendChart').getContext('2d');
+    const dailyTrendData = {{ daily_trend | tojson }};
+
+    new Chart(dailyTrendCtx, {
+        type: 'line',
+        data: {
+            labels: dailyTrendData.map(d => d.date),
+            datasets: [{
+                label: 'Turnos por Día',
+                data: dailyTrendData.map(d => d.count),
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Type Statistics Pie Chart
+    const typeStatsCtx = document.getElementById('typeStatsChart').getContext('2d');
+    const typeStats = {{ type_statistics | tojson }};
+
+    new Chart(typeStatsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: typeStats.map(s => s.name),
+            datasets: [{
+                data: typeStats.map(s => s.count),
+                backgroundColor: typeStats.map(s => s.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Peak Hours Chart
+    const peakHoursCtx = document.getElementById('peakHoursChart').getContext('2d');
+    const peakHours = {{ peak_hours | tojson }};
+
+    new Chart(peakHoursCtx, {
+        type: 'bar',
+        data: {
+            labels: peakHours.map(h => {
+                const hour = h.hour;
+                return `${hour}:00 - ${hour}:59`;
+            }),
+            datasets: [{
+                label: 'Turnos por Hora',
+                data: peakHours.map(h => h.count),
+                backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

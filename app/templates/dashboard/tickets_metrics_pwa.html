@@ -1,0 +1,290 @@
+{% extends "base_pwa.html" %}
+
+{% set active_tab = 'tickets' %}
+{% set show_header = true %}
+{% set show_bottom_nav = true %}
+
+{% block title %}Métricas - ATScard Digital{% endblock %}
+
+{% block content %}
+<div class="p-4 space-y-6 pb-24">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                <span class="material-symbols-outlined text-primary mr-2">analytics</span>
+                Métricas
+            </h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ system.business_name }}</p>
+        </div>
+        <a href="{{ url_for('dashboard.tickets') }}"
+           class="text-primary hover:text-primary/80 p-2">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+    </div>
+
+    <!-- Period Selector -->
+    <div class="flex gap-2 overflow-x-auto pb-2">
+        <a href="{{ url_for('dashboard.tickets_metrics', days=1) }}"
+           class="px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap {{ 'bg-primary text-white' if days == 1 else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }}">
+            Hoy
+        </a>
+        <a href="{{ url_for('dashboard.tickets_metrics', days=7) }}"
+           class="px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap {{ 'bg-primary text-white' if days == 7 else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }}">
+            7 días
+        </a>
+        <a href="{{ url_for('dashboard.tickets_metrics', days=30) }}"
+           class="px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap {{ 'bg-primary text-white' if days == 30 else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }}">
+            30 días
+        </a>
+        <a href="{{ url_for('dashboard.tickets_metrics', days=90) }}"
+           class="px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap {{ 'bg-primary text-white' if days == 90 else 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }}">
+            90 días
+        </a>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 mb-2 mx-auto">
+                <span class="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white text-center">{{ metrics.total_served }}</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400 text-center">Atendidos</div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-2 mx-auto">
+                <span class="material-symbols-outlined text-blue-600 dark:text-blue-400">schedule</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white text-center">{{ metrics.avg_service_time }}</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400 text-center">min promedio</div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 mb-2 mx-auto">
+                <span class="material-symbols-outlined text-yellow-600 dark:text-yellow-400">hourglass_empty</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white text-center">{{ metrics.avg_wait_time }}</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400 text-center">min espera</div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 mb-2 mx-auto">
+                <span class="material-symbols-outlined text-red-600 dark:text-red-400">person_off</span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white text-center">{{ metrics.no_show_rate }}%</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400 text-center">Ausencias</div>
+        </div>
+    </div>
+
+    <!-- Efficiency Score -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <span class="material-symbols-outlined text-primary mr-2">speed</span>
+            Índice de Eficiencia
+        </h3>
+
+        {% set efficiency = metrics.efficiency_score %}
+        {% if efficiency >= 90 %}
+            {% set color_class = 'bg-green-500' %}
+            {% set label = 'Excelente' %}
+        {% elif efficiency >= 70 %}
+            {% set color_class = 'bg-blue-500' %}
+            {% set label = 'Muy Bueno' %}
+        {% elif efficiency >= 50 %}
+            {% set color_class = 'bg-cyan-500' %}
+            {% set label = 'Bueno' %}
+        {% elif efficiency >= 30 %}
+            {% set color_class = 'bg-yellow-500' %}
+            {% set label = 'Regular' %}
+        {% else %}
+            {% set color_class = 'bg-red-500' %}
+            {% set label = 'Necesita Mejorar' %}
+        {% endif %}
+
+        <div class="relative w-full h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
+            <div class="{{ color_class }} h-full flex items-center justify-center text-white font-bold text-sm transition-all duration-500"
+                 style="width: {{ efficiency }}%;">
+                {{ efficiency }}/100
+            </div>
+        </div>
+        <div class="text-center">
+            <span class="text-sm font-semibold {{ color_class.replace('bg-', 'text-') }}">{{ label }}</span>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Meta: {{ system.target_service_time }} min por turno</p>
+        </div>
+    </div>
+
+    <!-- Daily Trend Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <span class="material-symbols-outlined text-primary mr-2">trending_up</span>
+            Tendencia Diaria
+        </h3>
+        <canvas id="dailyTrendChart" class="w-full" height="200"></canvas>
+    </div>
+
+    <!-- Type Statistics -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <span class="material-symbols-outlined text-primary mr-2">pie_chart</span>
+            Por Tipo de Cita
+        </h3>
+        <canvas id="typeStatsChart" class="w-full" height="200"></canvas>
+    </div>
+
+    <!-- Peak Hours Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <span class="material-symbols-outlined text-primary mr-2">bar_chart</span>
+            Horas Pico
+        </h3>
+        <canvas id="peakHoursChart" class="w-full" height="200"></canvas>
+    </div>
+
+    <!-- Type Details Table -->
+    {% if type_statistics %}
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <span class="material-symbols-outlined text-primary mr-2">list</span>
+                Detalles por Tipo
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">Tipo</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Total</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Tiempo</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for stat in type_statistics %}
+                    <tr>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white"
+                                  style="background-color: {{ stat.color }};">
+                                {{ stat.name }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">{{ stat.count }}</td>
+                        <td class="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-400">{{ stat.avg_service_time }} min</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Daily Trend Chart
+    const dailyTrendCtx = document.getElementById('dailyTrendChart').getContext('2d');
+    const dailyTrendData = {{ daily_trend | tojson }};
+
+    new Chart(dailyTrendCtx, {
+        type: 'line',
+        data: {
+            labels: dailyTrendData.map(d => d.date),
+            datasets: [{
+                label: 'Turnos',
+                data: dailyTrendData.map(d => d.count),
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    // Type Statistics Pie Chart
+    const typeStatsCtx = document.getElementById('typeStatsChart').getContext('2d');
+    const typeStats = {{ type_statistics | tojson }};
+
+    new Chart(typeStatsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: typeStats.map(s => s.name),
+            datasets: [{
+                data: typeStats.map(s => s.count),
+                backgroundColor: typeStats.map(s => s.color),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Peak Hours Chart
+    const peakHoursCtx = document.getElementById('peakHoursChart').getContext('2d');
+    const peakHours = {{ peak_hours | tojson }};
+
+    new Chart(peakHoursCtx, {
+        type: 'bar',
+        data: {
+            labels: peakHours.map(h => {
+                const hour = h.hour;
+                return `${hour}:00`;
+            }),
+            datasets: [{
+                label: 'Turnos',
+                data: peakHours.map(h => h.count),
+                backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
