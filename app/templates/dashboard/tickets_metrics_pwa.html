@@ -59,6 +59,7 @@
             </div>
             <div class="text-2xl font-bold text-gray-900 dark:text-white text-center">{{ metrics.avg_service_time }}</div>
             <div class="text-xs text-gray-600 dark:text-gray-400 text-center">min promedio</div>
+            <div class="text-xs text-gray-500 dark:text-gray-500 text-center mt-1">Meta: {{ system.target_service_time }} min</div>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
@@ -112,6 +113,10 @@
         <div class="text-center">
             <span class="text-sm font-semibold {{ color_class.replace('bg-', 'text-') }}">{{ label }}</span>
             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Meta: {{ system.target_service_time }} min por turno</p>
+            <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                <span class="material-symbols-outlined text-xs mr-1">info</span>
+                El índice se calcula basándose en el tiempo de atención comparado con tu meta.
+            </p>
         </div>
     </div>
 
@@ -158,9 +163,11 @@
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">Tipo</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Total</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Tiempo</th>
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">% Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% set total_count = type_statistics | sum(attribute='count') %}
                     {% for stat in type_statistics %}
                     <tr>
                         <td class="px-4 py-3">
@@ -171,6 +178,13 @@
                         </td>
                         <td class="px-4 py-3 text-center text-sm font-semibold text-gray-900 dark:text-white">{{ stat.count }}</td>
                         <td class="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-400">{{ stat.avg_service_time }} min</td>
+                        <td class="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-400">
+                            {% if total_count > 0 %}
+                                {{ (stat.count / total_count * 100) | round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

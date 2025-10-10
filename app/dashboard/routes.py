@@ -84,22 +84,6 @@ def index():
         'public_cards': len([c for c in cards if c.is_public])
     }
 
-    # Get recent appointments for all user's cards
-    from app.models import Appointment
-    from datetime import datetime, timedelta
-
-    card_ids = [card.id for card in cards]
-    recent_appointments = Appointment.query.filter(
-        Appointment.card_id.in_(card_ids),
-        Appointment.appointment_date >= datetime.now().date()
-    ).order_by(Appointment.appointment_date.asc(), Appointment.appointment_time.asc()).limit(5).all()
-
-    # Count pending appointments
-    pending_appointments_count = Appointment.query.filter(
-        Appointment.card_id.in_(card_ids),
-        Appointment.status == 'pending'
-    ).count()
-
     # Detect device type from User-Agent
     user_agent = request.headers.get('User-Agent', '').lower()
     is_mobile = any(keyword in user_agent for keyword in [
@@ -108,13 +92,9 @@ def index():
 
     # Use PWA template for mobile devices, traditional template for desktop
     if is_mobile:
-        return render_template('dashboard/index_pwa.html', cards=cards, stats=stats,
-                             recent_appointments=recent_appointments,
-                             pending_appointments_count=pending_appointments_count)
+        return render_template('dashboard/index_pwa.html', cards=cards, stats=stats)
     else:
-        return render_template('dashboard/index.html', cards=cards, stats=stats,
-                             recent_appointments=recent_appointments,
-                             pending_appointments_count=pending_appointments_count)
+        return render_template('dashboard/index.html', cards=cards, stats=stats)
 
 @bp.route('/cards/new', methods=['GET', 'POST'])
 @login_required
@@ -2187,44 +2167,57 @@ def appointments():
     from sqlalchemy import or_
     from datetime import date, timedelta
 
-    # Obtener filtros de la URL
-    status_filter = request.args.get('status', 'all')
-    date_filter = request.args.get('date', 'all')
+    # Obtener parámetro de vista (activas o historial)
+    view = request.args.get('view', 'active')  # 'active' o 'history'
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    status_filter = request.args.get('status', '')
 
     # Base query - todas las citas de las cards del usuario
-    query = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
+    base_query = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
 
-    # Filtrar por estado
-    if status_filter != 'all':
-        query = query.filter(Appointment.status == status_filter)
+    # Separar entre vista activa e historial
+    if view == 'history':
+        # Vista de historial: citas completadas, canceladas o no show
+        query = base_query.filter(Appointment.status.in_(['completed', 'cancelled', 'no_show']))
 
-    # Filtrar por fecha
+        # Filtros de historial
+        if status_filter:
+            query = query.filter(Appointment.status == status_filter)
+        if date_from:
+            query = query.filter(Appointment.appointment_date >= date_from)
+        if date_to:
+            query = query.filter(Appointment.appointment_date <= date_to)
+
+        # Ordenar por fecha descendente (más recientes primero)
+        appointments_list = query.order_by(Appointment.appointment_date.desc(), Appointment.appointment_time.desc()).all()
+
+    else:
+        # Vista activa: solo citas pendientes y confirmadas
+        query = base_query.filter(Appointment.status.in_(['pending', 'confirmed']))
+
+        # Filtros de vista activa
+        if status_filter:
+            query = query.filter(Appointment.status == status_filter)
+        if date_from:
+            query = query.filter(Appointment.appointment_date >= date_from)
+        if date_to:
+            query = query.filter(Appointment.appointment_date <= date_to)
+
+        # Ordenar por fecha ascendente (próximas primero)
+        appointments_list = query.order_by(Appointment.appointment_date.asc(), Appointment.appointment_time.asc()).all()
+
+    # Estadísticas globales
     today = date.today()
-    if date_filter == 'today':
-        query = query.filter(Appointment.appointment_date == today)
-    elif date_filter == 'upcoming':
-        query = query.filter(Appointment.appointment_date >= today)
-    elif date_filter == 'past':
-        query = query.filter(Appointment.appointment_date < today)
-    elif date_filter == 'week':
-        week_from_now = today + timedelta(days=7)
-        query = query.filter(Appointment.appointment_date.between(today, week_from_now))
-
-    # Ordenar por fecha y hora (más recientes primero)
-    appointments_list = query.order_by(Appointment.appointment_date.desc(), Appointment.appointment_time.desc()).all()
-
-    # Estadísticas
-    all_appointments_query = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
+    all_appointments = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
 
     stats = {
-        'total': all_appointments_query.count(),
-        'pending': all_appointments_query.filter(Appointment.status == 'pending').count(),
-        'confirmed': all_appointments_query.filter(Appointment.status == 'confirmed').count(),
-        'today': all_appointments_query.filter(Appointment.appointment_date == today).count(),
-        'upcoming': all_appointments_query.filter(
-            Appointment.appointment_date >= today,
-            Appointment.status.in_(['pending', 'confirmed'])
-        ).count(),
+        'total': all_appointments.count(),
+        'pending': all_appointments.filter(Appointment.status == 'pending').count(),
+        'confirmed': all_appointments.filter(Appointment.status == 'confirmed').count(),
+        'today': all_appointments.filter(Appointment.appointment_date == today).count(),
+        'active_count': all_appointments.filter(Appointment.status.in_(['pending', 'confirmed'])).count(),
+        'history_count': all_appointments.filter(Appointment.status.in_(['completed', 'cancelled', 'no_show'])).count(),
     }
 
     # Detect device type from User-Agent
@@ -2238,14 +2231,18 @@ def appointments():
         return render_template('dashboard/appointments_pwa.html',
                               appointments=appointments_list,
                               stats=stats,
+                              view=view,
                               status_filter=status_filter,
-                              date_filter=date_filter)
+                              date_from=date_from,
+                              date_to=date_to)
     else:
         return render_template('dashboard/appointments/index.html',
                               appointments=appointments_list,
                               stats=stats,
+                              view=view,
                               status_filter=status_filter,
-                              date_filter=date_filter)
+                              date_from=date_from,
+                              date_to=date_to)
 
 @bp.route('/appointments/<int:id>/confirm', methods=['POST'])
 @login_required
@@ -2263,6 +2260,14 @@ def confirm_appointment(id):
 
     appointment.confirm()
     db.session.commit()
+
+    # Enviar notificación push
+    try:
+        from ..push_notifications import send_appointment_notification
+        send_appointment_notification(current_user.id, appointment, notification_type='confirmed')
+    except Exception as e:
+        # No fallar la confirmación si la notificación falla
+        print(f"Failed to send confirmation notification: {e}")
 
     if request.is_json:
         return jsonify({'success': True, 'message': f'Cita #{appointment.id} confirmada'})

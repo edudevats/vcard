@@ -68,29 +68,60 @@
             </div>
         </div>
 
+        <!-- View Tabs -->
+        <div class="view-tabs">
+            <a href="{{ url_for('dashboard.appointments', view='active') }}"
+               class="tab-button {{ 'active' if view == 'active' else '' }}">
+                <i class="fas fa-calendar-check me-2"></i>Citas Activas
+                {% if stats.active_count > 0 %}
+                    <span class="tab-badge">{{ stats.active_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('dashboard.appointments', view='history') }}"
+               class="tab-button {{ 'active' if view == 'history' else '' }}">
+                <i class="fas fa-history me-2"></i>Historial
+                {% if stats.history_count > 0 %}
+                    <span class="tab-badge tab-badge-secondary">{{ stats.history_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+
         <!-- Filters Section -->
         <div class="filters-card">
             <form method="GET" class="filters-form">
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-filter"></i> Estado
-                    </label>
-                    <select name="status" class="filter-select" onchange="this.form.submit()">
-                        <option value="">Todos</option>
-                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pendientes</option>
-                        <option value="confirmed" {% if request.args.get('status') == 'confirmed' %}selected{% endif %}>Confirmadas</option>
-                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completadas</option>
-                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Canceladas</option>
-                        <option value="no_show" {% if request.args.get('status') == 'no_show' %}selected{% endif %}>No asistió</option>
-                    </select>
-                </div>
+                <input type="hidden" name="view" value="{{ view }}">
+
+                {% if view == 'history' %}
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-filter"></i> Estado
+                        </label>
+                        <select name="status" class="filter-select" onchange="this.form.submit()">
+                            <option value="">Todos</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completadas</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                            <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No asistió</option>
+                        </select>
+                    </div>
+                {% else %}
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-filter"></i> Estado
+                        </label>
+                        <select name="status" class="filter-select" onchange="this.form.submit()">
+                            <option value="">Todas</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendientes</option>
+                            <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmadas</option>
+                        </select>
+                    </div>
+                {% endif %}
 
                 <div class="filter-group">
                     <label class="filter-label">
                         <i class="fas fa-calendar"></i> Desde
                     </label>
                     <input type="date" name="date_from" class="filter-input"
-                           value="{{ request.args.get('date_from', '') }}"
+                           value="{{ date_from }}"
                            onchange="this.form.submit()">
                 </div>
 
@@ -99,13 +130,13 @@
                         <i class="fas fa-calendar"></i> Hasta
                     </label>
                     <input type="date" name="date_to" class="filter-input"
-                           value="{{ request.args.get('date_to', '') }}"
+                           value="{{ date_to }}"
                            onchange="this.form.submit()">
                 </div>
 
-                {% if request.args.get('status') or request.args.get('date_from') or request.args.get('date_to') %}
+                {% if status_filter or date_from or date_to %}
                 <div class="filter-group">
-                    <a href="{{ url_for('dashboard.appointments') }}" class="btn-clear-filters">
+                    <a href="{{ url_for('dashboard.appointments', view=view) }}" class="btn-clear-filters">
                         <i class="fas fa-times"></i> Limpiar
                     </a>
                 </div>
@@ -117,7 +148,7 @@
         {% if appointments %}
         <div class="appointments-section">
             {% for appointment in appointments %}
-            <div class="appointment-card {% if appointment.status == 'cancelled' or appointment.status == 'no_show' %}appointment-inactive{% endif %}"
+            <div class="appointment-card {% if appointment.status in ['cancelled', 'no_show'] %}appointment-inactive{% endif %}"
                  data-appointment-id="{{ appointment.id }}">
                 <div class="appointment-header">
                     <div class="appointment-service">
@@ -195,7 +226,8 @@
                             </a>
                         </div>
 
-                        <!-- Action Buttons -->
+                        <!-- Action Buttons (solo para citas activas) -->
+                        {% if view == 'active' %}
                         <div class="action-buttons">
                             {% if appointment.status == 'pending' %}
                                 <button onclick="confirmAppointment({{ appointment.id }})"
@@ -219,12 +251,18 @@
                                 </button>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 
                 <div class="appointment-footer">
                     <small class="text-muted">
                         Reservada el {{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        {% if appointment.completed_at %}
+                            - Completada el {{ appointment.completed_at.strftime('%d/%m/%Y %H:%M') }}
+                        {% elif appointment.cancelled_at %}
+                            - Cancelada el {{ appointment.cancelled_at.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
                     </small>
                 </div>
             </div>
@@ -236,18 +274,33 @@
             <div class="empty-icon">
                 <i class="fas fa-calendar-alt"></i>
             </div>
-            <h2 class="empty-title">No hay citas registradas</h2>
-            <p class="empty-description">
-                {% if request.args.get('status') or request.args.get('date_from') or request.args.get('date_to') %}
-                    No se encontraron citas con los filtros seleccionados.
-                    <br>
-                    <a href="{{ url_for('dashboard.appointments') }}" class="link-primary">
-                        Ver todas las citas
-                    </a>
-                {% else %}
-                    Cuando tus clientes reserven citas para tus servicios, aparecerán aquí.
-                {% endif %}
-            </p>
+            {% if view == 'active' %}
+                <h2 class="empty-title">No hay citas activas</h2>
+                <p class="empty-description">
+                    {% if status_filter or date_from or date_to %}
+                        No se encontraron citas con los filtros seleccionados.
+                        <br>
+                        <a href="{{ url_for('dashboard.appointments', view='active') }}" class="link-primary">
+                            Ver todas las citas activas
+                        </a>
+                    {% else %}
+                        Cuando tus clientes reserven citas para tus servicios, aparecerán aquí.
+                    {% endif %}
+                </p>
+            {% else %}
+                <h2 class="empty-title">No hay citas en el historial</h2>
+                <p class="empty-description">
+                    {% if status_filter or date_from or date_to %}
+                        No se encontraron citas con los filtros seleccionados.
+                        <br>
+                        <a href="{{ url_for('dashboard.appointments', view='history') }}" class="link-primary">
+                            Ver todo el historial
+                        </a>
+                    {% else %}
+                        Las citas completadas, canceladas o ausentes aparecerán aquí.
+                    {% endif %}
+                </p>
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -348,6 +401,71 @@
     color: #64748b;
     font-size: 0.875rem;
     font-weight: 500;
+}
+
+/* View Tabs */
+.view-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.tab-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tab-button:hover {
+    color: #3b82f6;
+    background: #f8fafc;
+    text-decoration: none;
+}
+
+.tab-button.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.tab-button.active:hover {
+    color: white;
+}
+
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.tab-button:not(.active) .tab-badge {
+    background: #3b82f6;
+    color: white;
+}
+
+.tab-badge-secondary {
+    background: #94a3b8;
 }
 
 /* Filters Card */
@@ -734,6 +852,14 @@
 
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .view-tabs {
+        flex-direction: column;
+    }
+
+    .tab-button {
+        justify-content: flex-start;
     }
 }
 </style>

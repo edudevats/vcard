@@ -783,6 +783,14 @@ def book_appointment(slug, service_id):
         db.session.add(appointment)
         db.session.commit()
 
+        # Enviar notificación push al dueño del negocio
+        try:
+            from ..push_notifications import send_appointment_notification
+            send_appointment_notification(card.owner_id, appointment, notification_type='new')
+        except Exception as e:
+            # No fallar la reserva si la notificación falla
+            print(f"Failed to send appointment notification: {e}")
+
         flash('¡Cita reservada exitosamente!', 'success')
         return redirect(url_for('public.appointment_confirmation', slug=slug, appointment_id=appointment.id))
 

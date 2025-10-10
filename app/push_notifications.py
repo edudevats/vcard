@@ -194,16 +194,45 @@ class PushNotificationService:
 # Global instance
 push_service = PushNotificationService()
 
-def send_appointment_notification(user_id, appointment):
-    """Send notification for new appointment"""
-    title = f"Nuevo turno: {appointment.ticket_number}"
-    body = f"Paciente: {appointment.patient_name} - Tipo: {appointment.type.name}"
+def send_ticket_notification(user_id, ticket):
+    """Send notification for new ticket in queue system"""
+    title = f"Nuevo turno: {ticket.ticket_number}"
+    body = f"Paciente: {ticket.patient_name} - Tipo: {ticket.type.name}"
 
     data = {
-        'type': 'new_appointment',
+        'type': 'new_ticket',
+        'ticket_id': ticket.id,
+        'ticket_number': ticket.ticket_number,
+        'url': f'/dashboard/tickets'
+    }
+
+    return push_service.send_notification_to_user(user_id, title, body, data)
+
+def send_appointment_notification(user_id, appointment, notification_type='new'):
+    """Send notification for appointment events"""
+
+    # Customize title and body based on notification type
+    if notification_type == 'new':
+        title = "Nueva Cita Reservada"
+        body = f"{appointment.customer_name} reservó {appointment.service.name} para el {appointment.appointment_date.strftime('%d/%m/%Y')} a las {appointment.appointment_time}"
+    elif notification_type == 'confirmed':
+        title = "Cita Confirmada"
+        body = f"Cita con {appointment.customer_name} confirmada para {appointment.appointment_date.strftime('%d/%m/%Y')} a las {appointment.appointment_time}"
+    elif notification_type == 'reminder':
+        title = "Recordatorio de Cita"
+        body = f"Cita con {appointment.customer_name} hoy a las {appointment.appointment_time}"
+    else:
+        title = "Actualización de Cita"
+        body = f"La cita #{appointment.id} ha sido actualizada"
+
+    data = {
+        'type': f'appointment_{notification_type}',
         'appointment_id': appointment.id,
-        'ticket_number': appointment.ticket_number,
-        'url': f'/dashboard/appointments'
+        'customer_name': appointment.customer_name,
+        'service_name': appointment.service.name,
+        'date': appointment.appointment_date.strftime('%Y-%m-%d'),
+        'time': appointment.appointment_time,
+        'url': '/dashboard/appointments'
     }
 
     return push_service.send_notification_to_user(user_id, title, body, data)
