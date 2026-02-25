@@ -73,11 +73,11 @@ def create_app(config_name=None):
     # Main route
     @app.route('/')
     def index():
-        from flask import redirect, url_for
+        from flask import redirect, url_for, render_template
         from flask_login import current_user
         if current_user.is_authenticated:
             return redirect(url_for('dashboard.index'))
-        return redirect(url_for('auth.login'))
+        return render_template('landing.html')
 
     # Dashboard favicon route
     @app.route('/favicon.ico')

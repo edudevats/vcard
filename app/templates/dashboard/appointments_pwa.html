@@ -48,28 +48,85 @@
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="mb-6">
-        <div class="flex gap-2 mb-3">
-            <select id="status-filter" class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Todos los estados</option>
-                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendientes</option>
-                <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmadas</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completadas</option>
-                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Canceladas</option>
-                <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No asistió</option>
-            </select>
-        </div>
+    <!-- View Tabs -->
+    <div class="flex gap-2 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+        <a href="{{ url_for('dashboard.appointments', view='active') }}"
+           class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors
+                  {% if view == 'active' or not view %}bg-white dark:bg-gray-700 text-primary shadow-sm{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+            <span class="material-symbols-outlined text-sm">calendar_check</span>
+            Citas Activas
+            {% if stats.active_count > 0 %}
+            <span class="bg-primary text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{{ stats.active_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('dashboard.appointments', view='history') }}"
+           class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors
+                  {% if view == 'history' %}bg-white dark:bg-gray-700 text-primary shadow-sm{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+            <span class="material-symbols-outlined text-sm">history</span>
+            Historial
+            {% if stats.history_count > 0 %}
+            <span class="bg-gray-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{{ stats.history_count }}</span>
+            {% endif %}
+        </a>
+    </div>
 
-        <div class="flex gap-2">
-            <select id="date-filter" class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                <option value="all" {% if date_filter == 'all' %}selected{% endif %}>Todas las fechas</option>
-                <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Hoy</option>
-                <option value="upcoming" {% if date_filter == 'upcoming' %}selected{% endif %}>Próximas</option>
-                <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Esta semana</option>
-                <option value="past" {% if date_filter == 'past' %}selected{% endif %}>Pasadas</option>
-            </select>
-        </div>
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-gray-700">
+        <form method="GET" class="space-y-3">
+            <input type="hidden" name="view" value="{{ view or 'active' }}">
+
+            {% if view == 'history' %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <span class="material-symbols-outlined text-sm mr-1">filter_list</span>Estado
+                </label>
+                <select name="status" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completadas</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                    <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No asistió</option>
+                </select>
+            </div>
+            {% else %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <span class="material-symbols-outlined text-sm mr-1">filter_list</span>Estado
+                </label>
+                <select name="status" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" onchange="this.form.submit()">
+                    <option value="">Todas</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendientes</option>
+                    <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmadas</option>
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <span class="material-symbols-outlined text-sm mr-1">calendar_today</span>Desde
+                    </label>
+                    <input type="date" name="date_from" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                           value="{{ date_from }}" onchange="this.form.submit()">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <span class="material-symbols-outlined text-sm mr-1">calendar_today</span>Hasta
+                    </label>
+                    <input type="date" name="date_to" class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                           value="{{ date_to }}" onchange="this.form.submit()">
+                </div>
+            </div>
+
+            {% if status_filter or date_from or date_to %}
+            <div class="pt-2">
+                <a href="{{ url_for('dashboard.appointments', view=view or 'active') }}" class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                    <span class="material-symbols-outlined text-sm">clear</span>
+                    Limpiar filtros
+                </a>
+            </div>
+            {% endif %}
+        </form>
     </div>
 
     <!-- Appointments List -->
@@ -164,6 +221,11 @@
                     <span class="material-symbols-outlined text-sm">cancel</span>
                     Cancelar
                 </button>
+                <button onclick="markNoShow({{ appointment.id }})"
+                        class="flex-1 flex items-center justify-center gap-1 py-2 px-3 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600 transition-colors">
+                    <span class="material-symbols-outlined text-sm">person_off</span>
+                    No asistió
+                </button>
                 {% endif %}
             </div>
 
@@ -171,6 +233,11 @@
             <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                     Reservada el {{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% if appointment.completed_at %}
+                    - Completada el {{ appointment.completed_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% elif appointment.cancelled_at %}
+                    - Cancelada el {{ appointment.cancelled_at.strftime('%d/%m/%Y %H:%M') }}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -179,23 +246,31 @@
     {% else %}
     <!-- Empty State -->
     <div class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <span class="material-symbols-outlined text-3xl text-gray-400 dark:text-gray-500">calendar_today</span>
+        <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+            <span class="material-symbols-outlined text-3xl text-primary">calendar_today</span>
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay citas registradas</h3>
+        {% if view == 'history' %}
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay citas en el historial</h3>
         <p class="text-gray-600 dark:text-gray-400 text-sm">
-            {% if status_filter != 'all' or date_filter != 'all' %}
+            {% if status_filter or date_from or date_to %}
             No se encontraron citas con los filtros seleccionados.
+            <br>
+            <a href="{{ url_for('dashboard.appointments', view='history') }}" class="text-primary hover:underline">Ver todo el historial</a>
+            {% else %}
+            Las citas completadas, canceladas o ausentes aparecerán aquí.
+            {% endif %}
+        </p>
+        {% else %}
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hay citas activas</h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm">
+            {% if status_filter or date_from or date_to %}
+            No se encontraron citas con los filtros seleccionados.
+            <br>
+            <a href="{{ url_for('dashboard.appointments', view='active') }}" class="text-primary hover:underline">Ver todas las citas activas</a>
             {% else %}
             Cuando tus clientes reserven citas para tus servicios, aparecerán aquí.
             {% endif %}
         </p>
-        {% if status_filter != 'all' or date_filter != 'all' %}
-        <a href="{{ url_for('dashboard.appointments') }}"
-           class="inline-flex items-center gap-2 mt-4 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <span class="material-symbols-outlined text-sm">clear</span>
-            Ver todas
-        </a>
         {% endif %}
     </div>
     {% endif %}
@@ -212,17 +287,22 @@
             <span class="material-symbols-outlined text-primary">home</span>
             <span class="font-medium">Volver al Inicio</span>
         </a>
-        <a href="{{ url_for('dashboard.appointments') }}"
+        <a href="{{ url_for('dashboard.appointments', view='active') }}"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-            <span class="material-symbols-outlined text-primary">calendar_today</span>
-            <span class="font-medium">Ver Todas las Citas</span>
+            <span class="material-symbols-outlined text-primary">calendar_check</span>
+            <span class="font-medium">Citas Activas</span>
         </a>
-        <a href="{{ url_for('dashboard.appointments', status='pending') }}"
+        <a href="{{ url_for('dashboard.appointments', view='history') }}"
+           class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <span class="material-symbols-outlined text-gray-500">history</span>
+            <span class="font-medium">Historial</span>
+        </a>
+        <a href="{{ url_for('dashboard.appointments', view='active', status='pending') }}"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-orange-500">schedule</span>
             <span class="font-medium">Citas Pendientes</span>
         </a>
-        <a href="{{ url_for('dashboard.appointments', date='today') }}"
+        <a href="{{ url_for('dashboard.appointments', view='active', date_from=request.args.get('today', '')) }}"
            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <span class="material-symbols-outlined text-blue-500">today</span>
             <span class="font-medium">Citas de Hoy</span>
@@ -233,25 +313,6 @@
 
 {% block scripts %}
 <script>
-// Filter functionality
-document.getElementById('status-filter').addEventListener('change', function() {
-    const status = this.value;
-    const date = document.getElementById('date-filter').value;
-    const url = new URL(window.location);
-    url.searchParams.set('status', status);
-    if (date !== 'all') url.searchParams.set('date', date);
-    window.location.href = url.toString();
-});
-
-document.getElementById('date-filter').addEventListener('change', function() {
-    const date = this.value;
-    const status = document.getElementById('status-filter').value;
-    const url = new URL(window.location);
-    if (status !== 'all') url.searchParams.set('status', status);
-    url.searchParams.set('date', date);
-    window.location.href = url.toString();
-});
-
 // Appointment actions
 function confirmAppointment(id) {
     if (!confirm('¿Confirmar esta cita?')) return;
