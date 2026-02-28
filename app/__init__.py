@@ -70,6 +70,11 @@ def create_app(config_name=None):
     from .api import bp as api_bp
     app.register_blueprint(api_bp)
 
+    from .api_mobile import bp as api_mobile_bp
+    from .csrf_utils import csrf_exempt_mobile
+    csrf_exempt_mobile(csrf, api_mobile_bp)   # Debe ir ANTES del register_blueprint
+    app.register_blueprint(api_mobile_bp)
+
     # Main route
     @app.route('/')
     def index():

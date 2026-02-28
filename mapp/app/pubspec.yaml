@@ -1,0 +1,56 @@
+name: atscard_app
+description: "ATScard - Gestión de tarjetas digitales de negocios"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # HTTP & Networking
+  http: ^1.2.0
+
+  # State Management
+  provider: ^6.1.2
+
+  # Storage
+  shared_preferences: ^2.3.0
+  flutter_secure_storage: ^9.2.1
+
+  # Images
+  # share_plus >=10.0.2 y cached_network_image >=3.4.1 comparten web ^1.0.0
+  cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+
+  # QR Code
+  qr_flutter: ^4.1.0
+
+  # Dates & Formatting
+  intl: ^0.19.0
+
+  # External Links & Share
+  url_launcher: ^6.3.0
+  share_plus: ^10.0.2    # >=10.0.2 es compatible con cached_network_image >=3.4.1
+
+  # UI & UX
+  shimmer: ^3.0.0
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10+1
+
+  # Charts (analytics)
+  fl_chart: ^0.69.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

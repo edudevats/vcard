@@ -30,6 +30,7 @@ class User(UserMixin, db.Model):
     email_verified_at = db.Column(db.DateTime)
     reset_token = db.Column(db.String(255))
     reset_token_expires = db.Column(db.DateTime)
+    mobile_token = db.Column(db.String(255), nullable=True, index=True)  # Token para app móvil
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
