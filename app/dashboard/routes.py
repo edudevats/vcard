@@ -289,10 +289,10 @@ def card_services(id):
 
         # Handle service image upload
         image_path = None
-        if form.image.data:
-            filename, _ = save_image(form.image.data, 'static/uploads')
+        if getattr(form.image.data, 'filename', None):
+            filename, _ = save_image(form.image.data, 'static/uploads/services')
             if filename:
-                image_path = filename
+                image_path = f"services/{filename}"
 
         # Handle category creation
         category_name = handle_category_creation(form, 'service')
@@ -349,13 +349,13 @@ def edit_service(card_id, service_id):
     
     if form.validate_on_submit():
         # Handle image upload
-        if form.image.data:
+        if getattr(form.image.data, 'filename', None):
             # Delete old image if exists
             cleanup_files([service.image_path])
             
-            filename, _ = save_image(form.image.data, 'static/uploads')
+            filename, _ = save_image(form.image.data, 'static/uploads/services')
             if filename:
-                service.image_path = filename
+                service.image_path = f"services/{filename}"
         
         # Handle category creation
         category_name = handle_category_creation(form, 'service')
@@ -884,7 +884,7 @@ def card_products(id):
         )
 
         # Handle image upload
-        if form.image.data:
+        if getattr(form.image.data, 'filename', None):
             filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
             if filename:
                 product.image_path = filename
@@ -936,7 +936,7 @@ def edit_product(card_id, product_id):
         product.is_available = form.is_available.data
         
         # Handle image upload
-        if form.image.data:
+        if getattr(form.image.data, 'filename', None):
             cleanup_files([product.image_path])
             
             filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
