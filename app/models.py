@@ -30,6 +30,7 @@ class User(UserMixin, db.Model):
     email_verified_at = db.Column(db.DateTime)
     reset_token = db.Column(db.String(255))
     reset_token_expires = db.Column(db.DateTime)
+    mobile_token = db.Column(db.String(255), nullable=True, index=True)  # Token para app móvil
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
@@ -1258,9 +1259,36 @@ class Appointment(db.Model):
 
     def get_full_phone(self):
         """Obtener número de teléfono completo con prefijo"""
+        if not self.customer_phone:
+            return None
         if self.customer_phone_country:
-            return f"{self.customer_phone_country} {self.customer_phone}"
+            return f"{self.customer_phone_country}{self.customer_phone}"
         return self.customer_phone
+
+    def get_whatsapp_url(self, message=None):
+        """Generar URL de WhatsApp para contactar al cliente"""
+        phone = self.get_full_phone()
+        if not phone:
+            return None
+
+        # Limpiar el número (remover espacios, guiones, etc.)
+        clean_phone = ''.join(filter(str.isdigit, phone.replace('+', '')))
+
+        # Mensaje predeterminado
+        if not message:
+            message = f"Hola {self.customer_name}, confirmando tu cita para {self.service.title} el {self.appointment_date.strftime('%d/%m/%Y')} a las {self.appointment_time}."
+
+        # URL encode del mensaje
+        import urllib.parse
+        encoded_message = urllib.parse.quote(message)
+
+        return f"https://wa.me/{clean_phone}?text={encoded_message}"
+
+    def get_local_datetime(self):
+        """Obtener fecha y hora formateada"""
+        from .timezone_utils import format_local_datetime
+        # Combinar fecha y hora para mostrar
+        return f"{self.appointment_date.strftime('%d/%m/%Y')} a las {self.appointment_time}"
 
     def add_rating(self, rating, feedback=None):
         """Agregar calificación y feedback a la cita"""
@@ -1309,36 +1337,6 @@ class Appointment(db.Model):
         if self.tags:
             return [t.strip() for t in self.tags.split(',') if t.strip()]
         return []
-        if not self.customer_phone:
-            return None
-        if self.customer_phone_country:
-            return f"{self.customer_phone_country}{self.customer_phone}"
-        return self.customer_phone
-
-    def get_whatsapp_url(self, message=None):
-        """Generar URL de WhatsApp para contactar al cliente"""
-        phone = self.get_full_phone()
-        if not phone:
-            return None
-
-        # Limpiar el número (remover espacios, guiones, etc.)
-        clean_phone = ''.join(filter(str.isdigit, phone.replace('+', '')))
-
-        # Mensaje predeterminado
-        if not message:
-            message = f"Hola {self.customer_name}, confirmando tu cita para {self.service.title} el {self.appointment_date.strftime('%d/%m/%Y')} a las {self.appointment_time}."
-
-        # URL encode del mensaje
-        import urllib.parse
-        encoded_message = urllib.parse.quote(message)
-
-        return f"https://wa.me/{clean_phone}?text={encoded_message}"
-
-    def get_local_datetime(self):
-        """Obtener fecha y hora formateada"""
-        from .timezone_utils import format_local_datetime
-        # Combinar fecha y hora para mostrar
-        return f"{self.appointment_date.strftime('%d/%m/%Y')} a las {self.appointment_time}"
 
     def __repr__(self):
         return f'<Appointment {self.id} - {self.customer_name} - {self.status}>'

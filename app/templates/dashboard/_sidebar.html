@@ -26,16 +26,8 @@
         {% endif %}
 
         <!-- Appointments System -->
-        <a class="nav-link {{ 'active' if 'appointments' in request.endpoint and 'history' not in request.endpoint }}" href="{{ url_for('dashboard.appointments') }}">
+        <a class="nav-link {{ 'active' if 'appointments' in request.endpoint }}" href="{{ url_for('dashboard.appointments') }}">
             <i class="fas fa-calendar-check me-2"></i>Citas
-        </a>
-
-        <a class="nav-link {{ 'active' if 'appointments_history' in request.endpoint }}" href="{{ url_for('dashboard.appointments_history') }}">
-            <i class="fas fa-history me-2"></i>Historial de Citas
-        </a>
-
-        <a class="nav-link {{ 'active' if 'appointments_analytics' in request.endpoint }}" href="{{ url_for('dashboard.appointments_analytics') }}">
-            <i class="fas fa-chart-bar me-2"></i>Analíticas de Citas
         </a>
 
         <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.advanced_features' }}" href="{{ url_for('dashboard.advanced_features') }}">

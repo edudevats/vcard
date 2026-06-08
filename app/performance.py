@@ -86,27 +86,34 @@ class DatabaseOptimizer:
     
     @staticmethod
     def analyze_slow_queries():
-        """Analyze and report slow queries (SQLite only)."""
+        """Analyze and report slow queries"""
         import sqlite3
+        # Use the global db instance if available
         if db is None:
             return
-        if 'sqlite' not in str(db.engine.url):
-            return
-
+        
         try:
+            # Get database file path
             db_path = db.engine.url.database
+            
+            # Enable query logging for analysis
             with sqlite3.connect(db_path) as conn:
                 conn.execute('PRAGMA analysis_limit=1000')
                 conn.execute('PRAGMA optimize')
-                cursor = conn.execute(
-                    "SELECT name FROM sqlite_master "
-                    "WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-                )
+                
+                # Query to find tables that might benefit from indexing
+                cursor = conn.execute("""
+                    SELECT name FROM sqlite_master 
+                    WHERE type='table' AND name NOT LIKE 'sqlite_%'
+                """)
                 tables = cursor.fetchall()
+                
                 print("Tables analyzed for optimization:")
                 for table in tables:
-                    conn.execute(f'ANALYZE {table[0]}')
-                    print(f"- {table[0]}: Analyzed successfully")
+                    table_name = table[0]
+                    cursor = conn.execute(f'ANALYZE {table_name}')
+                    print(f"- {table_name}: Analyzed successfully")
+                    
         except Exception as e:
             print(f"Error analyzing queries: {e}")
             logging.error(f"Query analysis failed: {e}")

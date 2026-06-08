@@ -18,12 +18,12 @@
 
         <!-- Pause/Resume Button -->
         <div class="mt-4">
-            <button class="{% if system.is_accepting_appointments %}bg-yellow-500 hover:bg-yellow-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white px-4 py-2 rounded-lg font-semibold transition-colors inline-flex items-center"
+            <button class="{% if system.is_accepting_tickets %}bg-yellow-500 hover:bg-yellow-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white px-4 py-2 rounded-lg font-semibold transition-colors inline-flex items-center"
                     onclick="togglePause()">
                 <span class="material-symbols-outlined mr-2">
-                    {% if system.is_accepting_appointments %}pause{% else %}play_arrow{% endif %}
+                    {% if system.is_accepting_tickets %}pause{% else %}play_arrow{% endif %}
                 </span>
-                {% if system.is_accepting_appointments %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
+                {% if system.is_accepting_tickets %}Pausar Turnos{% else %}Reanudar Turnos{% endif %}
             </button>
         </div>
     </div>
@@ -144,34 +144,65 @@
 
         <div class="divide-y divide-gray-200 dark:divide-gray-700">
             {% for ticket in waiting_tickets %}
-            <div class="p-4 flex items-center justify-between">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="text-xl font-bold" style="color: {{ ticket.type.color }};">
-                            {{ ticket.ticket_number }}
-                        </span>
-                        <span class="px-2 py-1 rounded-full text-xs font-medium"
-                              style="background-color: {{ ticket.type.color }}20; color: {{ ticket.type.color }};">
-                            {{ ticket.type.name }}
-                        </span>
-                    </div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <div>{{ ticket.patient_name }}</div>
-                        <div class="flex items-center gap-1">
-                            <span>{{ ticket.get_full_phone() or ticket.patient_phone }}</span>
-                            {% if ticket.get_full_phone() %}
-                                <a href="{{ ticket.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
-                                    <i class="fab fa-whatsapp"></i>
-                                </a>
+            <div class="p-4">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-xl font-bold" style="color: {{ ticket.type.color }};">
+                                {{ ticket.ticket_number }}
+                            </span>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                  style="background-color: {{ ticket.type.color }}20; color: {{ ticket.type.color }};">
+                                {{ ticket.type.name }}
+                            </span>
+                        </div>
+
+                        <!-- Priority and Check-in Badges -->
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            {% if ticket.priority == 1 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                    <span class="material-symbols-outlined text-xs mr-1">warning</span>
+                                    URGENTE
+                                </span>
+                            {% endif %}
+                            {% if ticket.is_checked_in %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                    <span class="material-symbols-outlined text-xs mr-1">check_circle</span>
+                                    Check-in
+                                </span>
                             {% endif %}
                         </div>
-                        <div>{{ ticket.get_waiting_time() }} min esperando</div>
+
+                        <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                            <div>{{ ticket.patient_name }}</div>
+                            <div class="flex items-center gap-1">
+                                <span>{{ ticket.get_full_phone() or ticket.patient_phone }}</span>
+                                {% if ticket.get_full_phone() %}
+                                    <a href="{{ ticket.get_whatsapp_url() }}" target="_blank" class="text-green-500 hover:text-green-600">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div>{{ ticket.get_waiting_time() }} min esperando</div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col gap-2 ml-2">
+                        {% if ticket.priority == 0 %}
+                            <button onclick="markUrgent({{ ticket.id }})"
+                                    class="text-yellow-500 hover:text-yellow-600 p-2"
+                                    title="Marcar como urgente">
+                                <span class="material-symbols-outlined">priority_high</span>
+                            </button>
+                        {% endif %}
+                        <button onclick="cancelTicket({{ ticket.id }})"
+                                class="text-red-500 hover:text-red-600 p-2"
+                                title="Cancelar turno">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
                     </div>
                 </div>
-                <button onclick="cancelTicket({{ ticket.id }})"
-                        class="text-red-500 hover:text-red-600 p-2">
-                    <span class="material-symbols-outlined">delete</span>
-                </button>
             </div>
             {% endfor %}
         </div>
@@ -180,6 +211,10 @@
 
     <!-- Action Buttons -->
     <div class="fixed bottom-20 right-4 space-y-3">
+        <a href="{{ url_for('dashboard.tickets_metrics') }}"
+           class="bg-blue-500 hover:bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors">
+            <span class="material-symbols-outlined">analytics</span>
+        </a>
         <button onclick="resetDailyQueue()"
                 class="bg-yellow-500 hover:bg-yellow-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-colors">
             <span class="material-symbols-outlined">refresh</span>
@@ -355,8 +390,33 @@ function resetDailyQueue() {
     }
 }
 
+function markUrgent(id) {
+    if (confirm('¿Marcar este turno como URGENTE? Se moverá al inicio de la cola.')) {
+        fetch(`/dashboard/tickets/${id}/mark-urgent`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Error al marcar como urgente', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al procesar la solicitud', 'error');
+        });
+    }
+}
+
 function togglePause() {
-    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_appointments else 'false' }};
+    const isCurrentlyAccepting = {{ 'true' if system.is_accepting_tickets else 'false' }};
     const action = isCurrentlyAccepting ? 'pausar' : 'reanudar';
     const confirmMessage = isCurrentlyAccepting
         ? '¿Pausar la toma de turnos? Los pacientes no podrán tomar nuevos turnos.'

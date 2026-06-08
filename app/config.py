@@ -17,16 +17,16 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     ALLOW_SIGNUP = os.environ.get('ALLOW_SIGNUP', 'false').lower() == 'true'
     ENABLE_VISUAL_EDITOR = os.environ.get('ENABLE_VISUAL_EDITOR', 'false').lower() == 'true'
-    
+
     # File upload security settings
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_UPLOAD_SIZE', '10485760'))  # 10MB default
     MAX_UPLOAD_SIZE = MAX_CONTENT_LENGTH  # Alias for backward compatibility
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'app/static/uploads')
     THUMBNAIL_FOLDER = os.environ.get('THUMBNAIL_FOLDER', 'app/static/thumbs')
-    
+
     # Additional security headers
     SEND_FILE_MAX_AGE_DEFAULT = 31536000  # 1 year for static files
-    
+
     # Email configuration
     APP_NAME = os.environ.get('APP_NAME', 'ATScard Digital')
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'localhost')
@@ -35,11 +35,11 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@atscard.app')
-    
+
     # Cache configuration
     CACHE_TYPE = os.environ.get('CACHE_TYPE', 'simple')
     CACHE_DEFAULT_TIMEOUT = int(os.environ.get('CACHE_DEFAULT_TIMEOUT', '300'))
-    
+
     # Performance optimization — pool settings only for non-SQLite
     SQLALCHEMY_ENGINE_OPTIONS = (
         {

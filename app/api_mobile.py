@@ -8,6 +8,7 @@ from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, date
 import secrets
+import os
 
 from . import db
 from .models import User, Card, Service, Product, GalleryItem, Appointment, TicketSystem, Ticket, TicketType
@@ -318,6 +319,46 @@ def delete_service(current_user, service_id):
     return jsonify({'message': 'Servicio eliminado'})
 
 
+@bp.route('/services/<int:service_id>/image', methods=['POST'])
+@token_required
+def upload_service_image(current_user, service_id):
+    """Subir imagen de servicio (multipart/form-data, campo 'image')."""
+    service = Service.query.get_or_404(service_id)
+    if service.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No se encontró el archivo'}), 400
+
+    file = request.files['image']
+    if not file or not file.filename:
+        return jsonify({'error': 'Archivo inválido'}), 400
+
+    from .utils import save_image
+    filename, _ = save_image(file, 'static/uploads')
+    if not filename:
+        return jsonify({'error': 'Error al procesar la imagen'}), 400
+
+    service.image_path = f"uploads/{filename}"
+    db.session.commit()
+    return jsonify({
+        'image_path': f"/static/uploads/{filename}",
+        'message': 'Imagen subida'
+    })
+
+
+@bp.route('/services/<int:service_id>/image', methods=['DELETE'])
+@token_required
+def delete_service_image(current_user, service_id):
+    """Eliminar imagen de servicio."""
+    service = Service.query.get_or_404(service_id)
+    if service.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    service.image_path = None
+    db.session.commit()
+    return jsonify({'message': 'Imagen eliminada'})
+
+
 # ─────────────────────────────── APPOINTMENTS ─────────────────────────────
 
 @bp.route('/appointments', methods=['GET'])
@@ -586,8 +627,8 @@ def list_gallery(current_user, card_id):
     items = card.gallery_items.order_by(GalleryItem.order_index).all()
     return jsonify([{
         'id': item.id,
-        'image_url': f"/static/{item.image_path}" if item.image_path else None,
-        'thumb_url': f"/static/{item.thumb_path}" if item.thumb_path else None,
+        'image_url': f"/static/uploads/{item.image_path}" if item.image_path else None,
+        'thumb_url': f"/static/thumbs/{item.thumbnail_path}" if item.thumbnail_path else None,
         'caption': item.caption,
         'is_featured': item.is_featured,
         'order_index': item.order_index,
@@ -640,4 +681,529 @@ def dashboard(current_user):
         'ticket_stats': ticket_stats,
         'recent_appointments': [_appointment_to_dict(a) for a in recent_apts],
         'cards': [_card_to_dict(c) for c in cards],
+    })
+
+
+# ─────────────────────────── CARD CREATE / UPDATE ─────────────────────────
+
+@bp.route('/cards', methods=['POST'])
+@token_required
+def create_card(current_user):
+    """Crear nueva tarjeta."""
+    if not current_user.can_create_card():
+        return jsonify({'error': 'Límite de tarjetas alcanzado'}), 403
+
+    data = request.get_json() or {}
+    if not data.get('name'):
+        return jsonify({'error': 'El nombre es requerido'}), 400
+
+    # Get default theme
+    from .models import Theme
+    default_theme = Theme.query.filter_by(is_global=True).first()
+
+    card = Card(
+        owner_id=current_user.id,
+        name=data['name'],
+        job_title=data.get('job_title'),
+        company=data.get('company'),
+        bio=data.get('bio'),
+        phone=data.get('phone'),
+        email_public=data.get('email_public'),
+        website=data.get('website'),
+        location=data.get('location'),
+        is_public=data.get('is_public', False),
+        theme_id=default_theme.id if default_theme else None,
+    )
+    db.session.add(card)
+    db.session.commit()
+    return jsonify(_card_to_dict(card, include_details=True)), 201
+
+
+@bp.route('/cards/<int:card_id>', methods=['PUT'])
+@token_required
+def update_card(current_user, card_id):
+    """Actualizar tarjeta (info, contacto, redes)."""
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+    data = request.get_json() or {}
+
+    updatable = [
+        'name', 'job_title', 'company', 'bio', 'phone', 'email_public',
+        'website', 'location', 'instagram', 'facebook', 'linkedin',
+        'twitter', 'youtube', 'tiktok', 'telegram', 'whatsapp',
+        'whatsapp_country', 'github', 'is_public',
+    ]
+    for field in updatable:
+        if field in data:
+            setattr(card, field, data[field])
+
+    card.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify(_card_to_dict(card, include_details=True))
+
+
+@bp.route('/cards/<int:card_id>', methods=['DELETE'])
+@token_required
+def delete_card(current_user, card_id):
+    """Eliminar tarjeta."""
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+    db.session.delete(card)
+    db.session.commit()
+    return jsonify({'message': 'Tarjeta eliminada'})
+
+
+# ─────────────────────────── AVATAR ───────────────────────────────────────
+
+@bp.route('/cards/<int:card_id>/avatar', methods=['POST'])
+@token_required
+def upload_avatar(current_user, card_id):
+    """Subir avatar de tarjeta (multipart/form-data, campo 'avatar')."""
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+
+    if 'avatar' not in request.files:
+        return jsonify({'error': 'No se encontró el archivo'}), 400
+
+    file = request.files['avatar']
+    if not file or not file.filename:
+        return jsonify({'error': 'Archivo inválido'}), 400
+
+    from .utils import save_avatar
+    try:
+        square_filename, rect_filename = save_avatar(file)
+        if not square_filename:
+            return jsonify({'error': 'Error al procesar la imagen'}), 400
+        card.avatar_square_path = square_filename
+        card.avatar_path = square_filename  # Legacy field
+        card.updated_at = datetime.utcnow()
+        db.session.commit()
+        return jsonify({
+            'avatar_url': f"/static/uploads/{square_filename}",
+            'message': 'Avatar actualizado'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@bp.route('/cards/<int:card_id>/avatar', methods=['DELETE'])
+@token_required
+def delete_avatar(current_user, card_id):
+    """Eliminar avatar de tarjeta."""
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+    card.avatar_path = None
+    card.avatar_square_path = None
+    card.updated_at = datetime.utcnow()
+    db.session.commit()
+    return jsonify({'message': 'Avatar eliminado'})
+
+
+# ─────────────────────────── GALLERY ──────────────────────────────────────
+
+@bp.route('/cards/<int:card_id>/gallery', methods=['POST'])
+@token_required
+def upload_gallery_image(current_user, card_id):
+    """Subir imagen a la galería (multipart/form-data, campo 'image')."""
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+
+    if card.gallery_items.count() >= 20:
+        return jsonify({'error': 'Límite de 20 imágenes alcanzado'}), 400
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No se encontró el archivo'}), 400
+
+    file = request.files['image']
+    if not file or not file.filename:
+        return jsonify({'error': 'Archivo inválido'}), 400
+
+    from .utils import save_image
+    try:
+        filename, thumb_filename = save_image(file, 'static/uploads')
+        if not filename:
+            return jsonify({'error': 'Error al procesar la imagen'}), 400
+        caption = request.form.get('caption', '')
+        item = GalleryItem(
+            card_id=card.id,
+            image_path=filename,
+            thumbnail_path=thumb_filename,
+            caption=caption,
+            order_index=card.gallery_items.count(),
+        )
+        db.session.add(item)
+        db.session.commit()
+        return jsonify({
+            'id': item.id,
+            'image_url': f"/static/uploads/{item.image_path}",
+            'thumb_url': f"/static/thumbs/{item.thumbnail_path}" if item.thumbnail_path else None,
+            'caption': item.caption,
+        }), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@bp.route('/gallery/<int:item_id>', methods=['DELETE'])
+@token_required
+def delete_gallery_item(current_user, item_id):
+    """Eliminar imagen de galería."""
+    item = GalleryItem.query.get_or_404(item_id)
+    if item.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({'message': 'Imagen eliminada'})
+
+
+@bp.route('/gallery/<int:item_id>/set-featured', methods=['POST'])
+@token_required
+def set_gallery_featured(current_user, item_id):
+    """Marcar imagen como destacada."""
+    item = GalleryItem.query.get_or_404(item_id)
+    if item.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    # Unset all featured for this card
+    for gi in item.card.gallery_items:
+        gi.is_featured = False
+    item.is_featured = True
+    db.session.commit()
+    return jsonify({'message': 'Imagen destacada actualizada'})
+
+
+# ─────────────────────────── PRODUCTS ─────────────────────────────────────
+
+def _product_to_dict(product):
+    return {
+        'id': product.id,
+        'name': product.name,
+        'description': product.description,
+        'price': float(product.price) if product.price else None,
+        'original_price': float(product.original_price) if product.original_price else None,
+        'category': product.category,
+        'brand': product.brand,
+        'sku': product.sku,
+        'stock_quantity': product.stock_quantity,
+        'external_link': product.external_link,
+        'is_featured': product.is_featured,
+        'is_visible': product.is_visible,
+        'is_available': product.is_available,
+        'image_url': f"/static/{product.image_path}" if product.image_path else None,
+        'order_index': product.order_index,
+    }
+
+
+@bp.route('/cards/<int:card_id>/products', methods=['GET'])
+@token_required
+def list_products(current_user, card_id):
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+    products = card.products.order_by(Product.order_index).all()
+    return jsonify([_product_to_dict(p) for p in products])
+
+
+@bp.route('/cards/<int:card_id>/products', methods=['POST'])
+@token_required
+def create_product(current_user, card_id):
+    card = Card.query.filter_by(id=card_id, owner_id=current_user.id).first_or_404()
+    data = request.get_json() or {}
+    if not data.get('name'):
+        return jsonify({'error': 'El nombre es requerido'}), 400
+
+    product = Product(
+        card_id=card.id,
+        name=data['name'],
+        description=data.get('description'),
+        price=data.get('price'),
+        original_price=data.get('original_price'),
+        category=data.get('category'),
+        brand=data.get('brand'),
+        sku=data.get('sku'),
+        stock_quantity=data.get('stock_quantity', -1),
+        external_link=data.get('external_link'),
+        is_featured=data.get('is_featured', False),
+        is_visible=data.get('is_visible', True),
+        is_available=data.get('is_available', True),
+        order_index=card.products.count(),
+    )
+    db.session.add(product)
+    db.session.commit()
+    return jsonify(_product_to_dict(product)), 201
+
+
+@bp.route('/products/<int:product_id>', methods=['PUT'])
+@token_required
+def update_product(current_user, product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    data = request.get_json() or {}
+    for field in ['name', 'description', 'price', 'original_price', 'category',
+                  'brand', 'sku', 'stock_quantity', 'external_link',
+                  'is_featured', 'is_visible', 'is_available']:
+        if field in data:
+            setattr(product, field, data[field])
+    db.session.commit()
+    return jsonify(_product_to_dict(product))
+
+
+@bp.route('/products/<int:product_id>', methods=['DELETE'])
+@token_required
+def delete_product(current_user, product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    db.session.delete(product)
+    db.session.commit()
+    return jsonify({'message': 'Producto eliminado'})
+
+
+@bp.route('/products/<int:product_id>/image', methods=['POST'])
+@token_required
+def upload_product_image(current_user, product_id):
+    """Subir imagen de producto (multipart/form-data, campo 'image')."""
+    product = Product.query.get_or_404(product_id)
+    if product.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No se encontró el archivo'}), 400
+
+    file = request.files['image']
+    if not file or not file.filename:
+        return jsonify({'error': 'Archivo inválido'}), 400
+
+    from .utils import save_image
+    filename, _ = save_image(file, 'static/uploads')
+    if not filename:
+        return jsonify({'error': 'Error al procesar la imagen'}), 400
+
+    product.image_path = filename
+    db.session.commit()
+    return jsonify({
+        'image_url': f"/static/uploads/{filename}",
+        'message': 'Imagen subida'
+    })
+
+
+@bp.route('/products/<int:product_id>/image', methods=['DELETE'])
+@token_required
+def delete_product_image(current_user, product_id):
+    """Eliminar imagen de producto."""
+    product = Product.query.get_or_404(product_id)
+    if product.card.owner_id != current_user.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    product.image_path = None
+    db.session.commit()
+    return jsonify({'message': 'Imagen eliminada'})
+
+
+# ─────────────────────────── PROFILE ──────────────────────────────────────
+
+@bp.route('/auth/change-password', methods=['POST'])
+@token_required
+def change_password(current_user):
+    """Cambiar contraseña."""
+    data = request.get_json() or {}
+    current_pw = data.get('current_password', '')
+    new_pw = data.get('new_password', '')
+
+    if not current_pw or not new_pw:
+        return jsonify({'error': 'Contraseñas requeridas'}), 400
+    if len(new_pw) < 6:
+        return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres'}), 400
+    if not current_user.check_password(current_pw):
+        return jsonify({'error': 'Contraseña actual incorrecta'}), 401
+
+    current_user.set_password(new_pw)
+    db.session.commit()
+    return jsonify({'message': 'Contraseña actualizada'})
+
+
+# ─────────────────────────── TICKET SETTINGS ──────────────────────────────
+
+def _ticket_type_to_dict(tt):
+    return {
+        'id': tt.id,
+        'name': tt.name,
+        'prefix': tt.prefix,
+        'color': tt.color,
+        'estimated_duration': tt.estimated_duration,
+        'is_active': tt.is_active,
+        'order_index': tt.order_index,
+    }
+
+
+@bp.route('/tickets/settings', methods=['GET'])
+@token_required
+def get_ticket_settings(current_user):
+    ts = current_user.ticket_system
+    if not ts:
+        return jsonify({'error': 'Sin sistema de turnos'}), 404
+    return jsonify({
+        'business_name': ts.business_name,
+        'business_hours': ts.business_hours,
+        'welcome_message': ts.welcome_message,
+        'display_mode': ts.display_mode,
+        'pause_message': ts.pause_message,
+        'is_accepting': ts.is_accepting_tickets,
+        'ticket_types': [_ticket_type_to_dict(t) for t in ts.ticket_types.order_by(TicketType.order_index).all()],
+    })
+
+
+@bp.route('/tickets/settings', methods=['PUT'])
+@token_required
+def update_ticket_settings(current_user):
+    ts = current_user.ticket_system
+    if not ts:
+        return jsonify({'error': 'Sin sistema de turnos'}), 404
+    data = request.get_json() or {}
+    for field in ['business_name', 'business_hours', 'welcome_message', 'display_mode', 'pause_message']:
+        if field in data:
+            setattr(ts, field, data[field])
+    db.session.commit()
+    return jsonify({'message': 'Configuración actualizada'})
+
+
+@bp.route('/tickets/types', methods=['POST'])
+@token_required
+def create_ticket_type(current_user):
+    ts = current_user.ticket_system
+    if not ts:
+        return jsonify({'error': 'Sin sistema de turnos'}), 404
+    data = request.get_json() or {}
+    if not data.get('name') or not data.get('prefix'):
+        return jsonify({'error': 'Nombre y prefijo requeridos'}), 400
+
+    tt = TicketType(
+        ticket_system_id=ts.id,
+        name=data['name'],
+        prefix=data['prefix'].upper(),
+        color=data.get('color', '#6366f1'),
+        estimated_duration=data.get('estimated_duration', 15),
+        is_active=data.get('is_active', True),
+        order_index=ts.ticket_types.count(),
+    )
+    db.session.add(tt)
+    db.session.commit()
+    return jsonify(_ticket_type_to_dict(tt)), 201
+
+
+@bp.route('/tickets/types/<int:type_id>', methods=['PUT'])
+@token_required
+def update_ticket_type(current_user, type_id):
+    ts = current_user.ticket_system
+    tt = TicketType.query.get_or_404(type_id)
+    if tt.ticket_system_id != ts.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    data = request.get_json() or {}
+    for field in ['name', 'prefix', 'color', 'estimated_duration', 'is_active']:
+        if field in data:
+            setattr(tt, field, data[field])
+    if 'prefix' in data:
+        tt.prefix = data['prefix'].upper()
+    db.session.commit()
+    return jsonify(_ticket_type_to_dict(tt))
+
+
+@bp.route('/tickets/types/<int:type_id>', methods=['DELETE'])
+@token_required
+def delete_ticket_type(current_user, type_id):
+    ts = current_user.ticket_system
+    tt = TicketType.query.get_or_404(type_id)
+    if tt.ticket_system_id != ts.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    db.session.delete(tt)
+    db.session.commit()
+    return jsonify({'message': 'Tipo eliminado'})
+
+
+@bp.route('/tickets/<int:ticket_id>/mark-urgent', methods=['POST'])
+@token_required
+def mark_urgent_ticket(current_user, ticket_id):
+    ts = current_user.ticket_system
+    ticket = Ticket.query.get_or_404(ticket_id)
+    if ticket.ticket_system_id != ts.id:
+        return jsonify({'error': 'Sin permiso'}), 403
+    ticket.is_priority = True
+    db.session.commit()
+    return jsonify(_ticket_to_dict(ticket))
+
+
+@bp.route('/tickets/metrics', methods=['GET'])
+@token_required
+def ticket_metrics(current_user):
+    """Métricas de turnos."""
+    ts = current_user.ticket_system
+    if not ts or not ts.is_enabled:
+        return jsonify({'error': 'Sin sistema de turnos'}), 404
+
+    days = request.args.get('days', 7, type=int)
+    from datetime import timedelta
+    from .timezone_utils import today_start_utc
+    day_start = today_start_utc()
+    period_start = day_start - timedelta(days=days - 1)
+
+    all_tickets = Ticket.query.filter(
+        Ticket.ticket_system_id == ts.id,
+        Ticket.created_at >= period_start,
+    ).all()
+
+    completed = [t for t in all_tickets if t.status == 'completed']
+    cancelled = [t for t in all_tickets if t.status == 'cancelled']
+    no_show = [t for t in all_tickets if t.status == 'no_show']
+
+    total_served = len(completed)
+    no_show_rate = round(len(no_show) / max(len(all_tickets), 1) * 100, 1)
+
+    # Average service time (minutes)
+    service_times = []
+    for t in completed:
+        if t.called_at and t.completed_at:
+            diff = (t.completed_at - t.called_at).total_seconds() / 60
+            service_times.append(diff)
+    avg_service_time = round(sum(service_times) / max(len(service_times), 1), 1)
+
+    # Daily trend
+    from collections import defaultdict
+    daily = defaultdict(int)
+    for t in all_tickets:
+        key = t.created_at.strftime('%d/%m')
+        daily[key] += 1
+    daily_trend = [{'date': k, 'count': v} for k, v in sorted(daily.items())]
+
+    # By type
+    type_stats = {}
+    for t in completed:
+        if t.ticket_type_id:
+            key = t.ticket_type_id
+            if key not in type_stats:
+                type_stats[key] = {
+                    'name': t.ticket_type.name if t.ticket_type else 'N/A',
+                    'color': t.ticket_type.color if t.ticket_type else '#6366f1',
+                    'count': 0,
+                    'service_times': [],
+                }
+            type_stats[key]['count'] += 1
+            if t.called_at and t.completed_at:
+                type_stats[key]['service_times'].append(
+                    (t.completed_at - t.called_at).total_seconds() / 60
+                )
+
+    type_statistics = []
+    for v in type_stats.values():
+        times = v['service_times']
+        avg = round(sum(times) / max(len(times), 1), 1)
+        type_statistics.append({
+            'name': v['name'],
+            'color': v['color'],
+            'count': v['count'],
+            'avg_service_time': avg,
+        })
+
+    # Efficiency score (0-100)
+    target = getattr(ts, 'target_service_time', 15) or 15
+    efficiency = max(0, min(100, round((1 - max(avg_service_time - target, 0) / max(target, 1)) * 100)))
+
+    return jsonify({
+        'total_served': total_served,
+        'avg_service_time': avg_service_time,
+        'avg_wait_time': 0,  # Could compute if we stored queue join time
+        'no_show_rate': no_show_rate,
+        'efficiency_score': efficiency,
+        'daily_trend': daily_trend,
+        'type_statistics': type_statistics,
     })

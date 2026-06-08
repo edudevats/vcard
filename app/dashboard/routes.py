@@ -84,22 +84,6 @@ def index():
         'public_cards': len([c for c in cards if c.is_public])
     }
 
-    # Get recent appointments for all user's cards
-    from app.models import Appointment
-    from datetime import datetime, timedelta
-
-    card_ids = [card.id for card in cards]
-    recent_appointments = Appointment.query.filter(
-        Appointment.card_id.in_(card_ids),
-        Appointment.appointment_date >= datetime.now().date()
-    ).order_by(Appointment.appointment_date.asc(), Appointment.appointment_time.asc()).limit(5).all()
-
-    # Count pending appointments
-    pending_appointments_count = Appointment.query.filter(
-        Appointment.card_id.in_(card_ids),
-        Appointment.status == 'pending'
-    ).count()
-
     # Detect device type from User-Agent
     user_agent = request.headers.get('User-Agent', '').lower()
     is_mobile = any(keyword in user_agent for keyword in [
@@ -108,13 +92,9 @@ def index():
 
     # Use PWA template for mobile devices, traditional template for desktop
     if is_mobile:
-        return render_template('dashboard/index_pwa.html', cards=cards, stats=stats,
-                             recent_appointments=recent_appointments,
-                             pending_appointments_count=pending_appointments_count)
+        return render_template('dashboard/index_pwa.html', cards=cards, stats=stats)
     else:
-        return render_template('dashboard/index.html', cards=cards, stats=stats,
-                             recent_appointments=recent_appointments,
-                             pending_appointments_count=pending_appointments_count)
+        return render_template('dashboard/index.html', cards=cards, stats=stats)
 
 @bp.route('/cards/new', methods=['GET', 'POST'])
 @login_required
@@ -309,10 +289,10 @@ def card_services(id):
 
         # Handle service image upload
         image_path = None
-        if form.image.data:
-            filename, _ = save_image(form.image.data, 'static/uploads')
+        if getattr(form.image.data, 'filename', None):
+            filename, _ = save_image(form.image.data, 'static/uploads/services')
             if filename:
-                image_path = filename
+                image_path = f"services/{filename}"
 
         # Handle category creation
         category_name = handle_category_creation(form, 'service')
@@ -369,13 +349,13 @@ def edit_service(card_id, service_id):
     
     if form.validate_on_submit():
         # Handle image upload
-        if form.image.data:
+        if getattr(form.image.data, 'filename', None):
             # Delete old image if exists
             cleanup_files([service.image_path])
             
-            filename, _ = save_image(form.image.data, 'static/uploads')
+            filename, _ = save_image(form.image.data, 'static/uploads/services')
             if filename:
-                service.image_path = filename
+                service.image_path = f"services/{filename}"
         
         # Handle category creation
         category_name = handle_category_creation(form, 'service')
@@ -904,7 +884,7 @@ def card_products(id):
         )
 
         # Handle image upload
-        if form.image.data:
+        if getattr(form.image.data, 'filename', None):
             filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
             if filename:
                 product.image_path = filename
@@ -956,7 +936,7 @@ def edit_product(card_id, product_id):
         product.is_available = form.is_available.data
         
         # Handle image upload
-        if form.image.data:
+        if getattr(form.image.data, 'filename', None):
             cleanup_files([product.image_path])
             
             filename, thumbnail_filename = save_image(form.image.data, 'static/uploads')
@@ -1910,8 +1890,9 @@ def complete_ticket(id):
     elif ticket.status != 'in_progress':
         return jsonify({'success': False, 'message': f'Estado inválido: {ticket.status}'}), 400
 
-    notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
-    ticket.complete(notes)
+    # Obtener notas médicas (pueden venir en JSON o form data)
+    medical_notes = request.json.get('medical_notes', '') if request.is_json else request.form.get('medical_notes', '')
+    ticket.complete(medical_notes)
     db.session.commit()
 
     # Llamar automáticamente al siguiente en la cola si existe
@@ -2050,6 +2031,130 @@ def toggle_pause_tickets():
         flash(message, 'success')
         return redirect(url_for('dashboard.tickets'))
 
+@bp.route('/tickets/<int:id>/mark-urgent', methods=['POST'])
+@login_required
+def mark_ticket_urgent(id):
+    """Marcar turno como urgente (prioridad alta)"""
+    from ..models import Ticket
+
+    if not current_user.ticket_system or not current_user.ticket_system.is_enabled:
+        return jsonify({'success': False, 'message': 'Sistema de turnos no habilitado'}), 403
+
+    ticket = Ticket.query.filter_by(
+        id=id,
+        ticket_system_id=current_user.ticket_system.id
+    ).first_or_404()
+
+    if ticket.status != 'waiting':
+        return jsonify({'success': False, 'message': 'Solo se pueden marcar como urgentes los turnos en espera'}), 400
+
+    if ticket.priority == 1:
+        return jsonify({'success': False, 'message': 'Este turno ya está marcado como urgente'}), 400
+
+    # Marcar como urgente
+    ticket.mark_urgent()
+    db.session.commit()
+
+    if request.is_json:
+        return jsonify({
+            'success': True,
+            'message': f'Turno {ticket.ticket_number} marcado como urgente',
+            'new_position': ticket.get_position_in_queue()
+        })
+    else:
+        flash(f'Turno {ticket.ticket_number} marcado como urgente', 'success')
+        return redirect(url_for('dashboard.tickets'))
+
+@bp.route('/tickets/metrics')
+@login_required
+def tickets_metrics():
+    """Panel de métricas avanzadas del sistema de turnos"""
+    if not current_user.ticket_system or not current_user.ticket_system.is_enabled:
+        flash('El sistema de turnos no está habilitado para tu cuenta.', 'warning')
+        return redirect(url_for('dashboard.index'))
+
+    system = current_user.ticket_system
+
+    # Obtener días de análisis (por defecto 7 días)
+    days = request.args.get('days', 7, type=int)
+
+    # Obtener métricas avanzadas
+    metrics = system.get_advanced_metrics(days=days)
+
+    # Obtener horas pico
+    peak_hours = system.get_peak_hours(days=days)
+
+    # Obtener estadísticas por tipo de cita
+    from sqlalchemy import func
+    from datetime import timedelta
+
+    start_date = now_utc_for_db() - timedelta(days=days)
+
+    # Tickets por tipo en el período
+    type_stats = db.session.query(
+        TicketType.name,
+        TicketType.color,
+        func.count(Ticket.id).label('count'),
+        func.avg(
+            func.julianday(Ticket.completed_at) - func.julianday(Ticket.called_at)
+        ).label('avg_service_minutes')
+    ).join(Ticket).filter(
+        Ticket.ticket_system_id == system.id,
+        Ticket.created_at >= start_date,
+        Ticket.status == 'completed'
+    ).group_by(TicketType.id).all()
+
+    type_statistics = []
+    for stat in type_stats:
+        avg_minutes = (stat.avg_service_minutes * 24 * 60) if stat.avg_service_minutes else 0
+        type_statistics.append({
+            'name': stat.name,
+            'color': stat.color,
+            'count': stat.count,
+            'avg_service_time': round(avg_minutes, 1)
+        })
+
+    # Tendencias diarias (tickets por día)
+    daily_tickets = db.session.query(
+        func.date(Ticket.created_at).label('date'),
+        func.count(Ticket.id).label('count')
+    ).filter(
+        Ticket.ticket_system_id == system.id,
+        Ticket.created_at >= start_date
+    ).group_by(func.date(Ticket.created_at)).order_by(func.date(Ticket.created_at)).all()
+
+    daily_trend = [
+        {
+            'date': str(day.date),
+            'count': day.count
+        }
+        for day in daily_tickets
+    ]
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    if is_mobile:
+        return render_template('dashboard/tickets_metrics_pwa.html',
+                              system=system,
+                              metrics=metrics,
+                              peak_hours=peak_hours,
+                              type_statistics=type_statistics,
+                              daily_trend=daily_trend,
+                              days=days)
+    else:
+        return render_template('dashboard/tickets/metrics.html',
+                              system=system,
+                              metrics=metrics,
+                              peak_hours=peak_hours,
+                              type_statistics=type_statistics,
+                              daily_trend=daily_trend,
+                              days=days)
+
 # ============================================================================
 # SISTEMA DE CITAS - Rutas Dashboard para Gestión
 # ============================================================================
@@ -2059,111 +2164,61 @@ def toggle_pause_tickets():
 def appointments():
     """Panel principal de gestión de citas"""
     from ..models import Appointment
-    from sqlalchemy import or_, and_
+    from sqlalchemy import or_
     from datetime import date, timedelta
 
-    # Obtener filtros de la URL
-    status_filter = request.args.get('status', 'all')
-    date_filter = request.args.get('date', 'all')
-    search_query = request.args.get('search', '').strip()
-    rating_filter = request.args.get('rating', 'all')
-    tag_filter = request.args.get('tag', '').strip()
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
+    # Obtener parámetro de vista (activas o historial)
+    view = request.args.get('view', 'active')  # 'active' o 'history'
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    status_filter = request.args.get('status', '')
 
     # Base query - todas las citas de las cards del usuario
-    query = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
+    base_query = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
 
-    # Filtrar por estado
-    if status_filter != 'all':
-        query = query.filter(Appointment.status == status_filter)
+    # Separar entre vista activa e historial
+    if view == 'history':
+        # Vista de historial: citas completadas, canceladas o no show
+        query = base_query.filter(Appointment.status.in_(['completed', 'cancelled', 'no_show']))
 
-    # Filtrar por fecha
+        # Filtros de historial
+        if status_filter:
+            query = query.filter(Appointment.status == status_filter)
+        if date_from:
+            query = query.filter(Appointment.appointment_date >= date_from)
+        if date_to:
+            query = query.filter(Appointment.appointment_date <= date_to)
+
+        # Ordenar por fecha descendente (más recientes primero)
+        appointments_list = query.order_by(Appointment.appointment_date.desc(), Appointment.appointment_time.desc()).all()
+
+    else:
+        # Vista activa: solo citas pendientes y confirmadas
+        query = base_query.filter(Appointment.status.in_(['pending', 'confirmed']))
+
+        # Filtros de vista activa
+        if status_filter:
+            query = query.filter(Appointment.status == status_filter)
+        if date_from:
+            query = query.filter(Appointment.appointment_date >= date_from)
+        if date_to:
+            query = query.filter(Appointment.appointment_date <= date_to)
+
+        # Ordenar por fecha ascendente (próximas primero)
+        appointments_list = query.order_by(Appointment.appointment_date.asc(), Appointment.appointment_time.asc()).all()
+
+    # Estadísticas globales
     today = date.today()
-    if date_filter == 'today':
-        query = query.filter(Appointment.appointment_date == today)
-    elif date_filter == 'upcoming':
-        query = query.filter(Appointment.appointment_date >= today)
-    elif date_filter == 'past':
-        query = query.filter(Appointment.appointment_date < today)
-    elif date_filter == 'week':
-        week_from_now = today + timedelta(days=7)
-        query = query.filter(Appointment.appointment_date.between(today, week_from_now))
-    elif date_filter == 'month':
-        month_from_now = today + timedelta(days=30)
-        query = query.filter(Appointment.appointment_date.between(today, month_from_now))
-
-    # Filtrar por búsqueda
-    if search_query:
-        query = query.filter(
-            or_(
-                Appointment.customer_name.ilike(f'%{search_query}%'),
-                Appointment.customer_phone.ilike(f'%{search_query}%'),
-                Appointment.notes.ilike(f'%{search_query}%'),
-                Appointment.internal_notes.ilike(f'%{search_query}%')
-            )
-        )
-
-    # Filtrar por calificación
-    if rating_filter != 'all':
-        if rating_filter == 'unrated':
-            query = query.filter(Appointment.rating.is_(None))
-        else:
-            try:
-                rating_val = int(rating_filter)
-                query = query.filter(Appointment.rating == rating_val)
-            except ValueError:
-                pass
-
-    # Filtrar por etiqueta
-    if tag_filter:
-        query = query.filter(Appointment.tags.ilike(f'%{tag_filter}%'))
-
-    # Ordenar por fecha y hora (más recientes primero) y paginar
-    appointments_paginated = query.order_by(
-        Appointment.appointment_date.desc(),
-        Appointment.appointment_time.desc()
-    ).paginate(
-        page=page,
-        per_page=per_page,
-        error_out=False
-    )
-
-    # Estadísticas mejoradas
-    all_appointments_query = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
+    all_appointments = Appointment.query.join(Card).filter(Card.owner_id == current_user.id)
 
     stats = {
-        'total': all_appointments_query.count(),
-        'pending': all_appointments_query.filter(Appointment.status == 'pending').count(),
-        'confirmed': all_appointments_query.filter(Appointment.status == 'confirmed').count(),
-        'completed': all_appointments_query.filter(Appointment.status == 'completed').count(),
-        'cancelled': all_appointments_query.filter(Appointment.status == 'cancelled').count(),
-        'no_show': all_appointments_query.filter(Appointment.status == 'no_show').count(),
-        'today': all_appointments_query.filter(Appointment.appointment_date == today).count(),
-        'upcoming': all_appointments_query.filter(
-            Appointment.appointment_date >= today,
-            Appointment.status.in_(['pending', 'confirmed'])
-        ).count(),
-        'past_month': all_appointments_query.filter(
-            Appointment.appointment_date >= (today - timedelta(days=30)),
-            Appointment.appointment_date < today
-        ).count(),
-        'rated': all_appointments_query.filter(Appointment.rating.isnot(None)).count(),
-        'follow_up_required': all_appointments_query.filter(Appointment.follow_up_required == True).count(),
+        'total': all_appointments.count(),
+        'pending': all_appointments.filter(Appointment.status == 'pending').count(),
+        'confirmed': all_appointments.filter(Appointment.status == 'confirmed').count(),
+        'today': all_appointments.filter(Appointment.appointment_date == today).count(),
+        'active_count': all_appointments.filter(Appointment.status.in_(['pending', 'confirmed'])).count(),
+        'history_count': all_appointments.filter(Appointment.status.in_(['completed', 'cancelled', 'no_show'])).count(),
     }
-
-    # Obtener todas las etiquetas únicas para el filtro
-    all_tags = set()
-    for appointment in all_appointments_query.filter(Appointment.tags.isnot(None)).all():
-        if appointment.tags:
-            # Se asume que el modelo Appointment tiene un método get_tags_list()
-            try:
-                all_tags.update(appointment.get_tags_list())
-            except Exception:
-                # Fallback: split por comas
-                tags_str = appointment.tags or ''
-                all_tags.update([t.strip() for t in tags_str.split(',') if t.strip()])
-    all_tags = sorted(list(all_tags))
 
     # Detect device type from User-Agent
     user_agent = request.headers.get('User-Agent', '').lower()
@@ -2172,22 +2227,22 @@ def appointments():
     ])
 
     # Use PWA template for mobile devices, traditional template for desktop
-    template_ctx = dict(
-        appointments=appointments_paginated.items,
-        pagination=appointments_paginated,
-        stats=stats,
-        status_filter=status_filter,
-        date_filter=date_filter,
-        search_query=search_query,
-        rating_filter=rating_filter,
-        tag_filter=tag_filter,
-        all_tags=all_tags
-    )
-
     if is_mobile:
-        return render_template('dashboard/appointments_pwa.html', **template_ctx)
+        return render_template('dashboard/appointments_pwa.html',
+                              appointments=appointments_list,
+                              stats=stats,
+                              view=view,
+                              status_filter=status_filter,
+                              date_from=date_from,
+                              date_to=date_to)
     else:
-        return render_template('dashboard/appointments/index.html', **template_ctx)
+        return render_template('dashboard/appointments/index.html',
+                              appointments=appointments_list,
+                              stats=stats,
+                              view=view,
+                              status_filter=status_filter,
+                              date_from=date_from,
+                              date_to=date_to)
 
 @bp.route('/appointments/<int:id>/confirm', methods=['POST'])
 @login_required
@@ -2206,6 +2261,14 @@ def confirm_appointment(id):
     appointment.confirm()
     db.session.commit()
 
+    # Enviar notificación push
+    try:
+        from ..push_notifications import send_appointment_notification
+        send_appointment_notification(current_user.id, appointment, notification_type='confirmed')
+    except Exception as e:
+        # No fallar la confirmación si la notificación falla
+        print(f"Failed to send confirmation notification: {e}")
+
     if request.is_json:
         return jsonify({'success': True, 'message': f'Cita #{appointment.id} confirmada'})
     else:
@@ -2215,115 +2278,68 @@ def confirm_appointment(id):
 @bp.route('/appointments/<int:id>/complete', methods=['POST'])
 @login_required
 def complete_appointment(id):
-    """Completar cita (AJAX) — mejoras:
-    - valida estados permitidos para completar
-    - registra completed_at y completed_by si existen los campos
-    - acepta petición JSON o form
-    - maneja errores de BD de forma segura
-    """
-    from ..models import Appointment
-    from datetime import datetime
-
-    appointment = Appointment.query.join(Card).filter(
-        Appointment.id == id,
-        Card.owner_id == current_user.id
-    ).first_or_404()
-
-    # Estados permitidos para completar (puede ampliarse según el modelo)
-    allowed_statuses = ['pending', 'confirmed', 'in_progress']
-    if appointment.status not in allowed_statuses:
-        return jsonify({'success': False, 'message': f'Esta cita no se puede completar (estado: {appointment.status})'}), 400
-
-    # Obtener datos (soporta JSON y form)
-    notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
-    notify = None
-    if request.is_json:
-        notify = request.json.get('notify_customer', None)
-    else:
-        notify = request.form.get('notify_customer', None)
-    # Normalizar flag de notificación
-    if isinstance(notify, str):
-        notify = notify.lower() in ('1', 'true', 'yes', 'on')
-    else:
-        notify = bool(notify)
-
-    # Intentar completar la cita usando el método del modelo si existe, sino actualizar manualmente
+    """Completar cita (AJAX)"""
     try:
-        if hasattr(appointment, 'complete'):
-            # Llamada al método existente (asumimos que acepta notes)
-            try:
-                appointment.complete(notes)
-            except TypeError:
-                # Si la firma es diferente, intentar sin parámetros
-                appointment.complete()
-        else:
-            appointment.status = 'completed'
+        from ..models import Appointment
 
-        # Registrar metadata si el modelo tiene esos campos
-        if hasattr(appointment, 'completed_at'):
-            try:
-                appointment.completed_at = datetime.utcnow()
-            except Exception:
-                pass
-        if hasattr(appointment, 'completed_by_id'):
-            try:
-                appointment.completed_by_id = current_user.id
-            except Exception:
-                pass
+        appointment = Appointment.query.join(Card).filter(
+            Appointment.id == id,
+            Card.owner_id == current_user.id
+        ).first_or_404()
 
+        if appointment.status not in ['pending', 'confirmed']:
+            return jsonify({'success': False, 'message': f'Esta cita no se puede completar (estado: {appointment.status})'}), 400
+
+        notes = request.json.get('notes', '') if request.is_json else request.form.get('notes', '')
+        appointment.complete(notes)
         db.session.commit()
+
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'Cita #{appointment.id} completada'})
+        else:
+            flash(f'Cita completada exitosamente', 'success')
+            return redirect(url_for('dashboard.appointments'))
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f'Error completing appointment {id}: {str(e)}')
         if request.is_json:
             return jsonify({'success': False, 'message': f'Error al completar la cita: {str(e)}'}), 500
         else:
             flash(f'Error al completar la cita: {str(e)}', 'error')
             return redirect(url_for('dashboard.appointments'))
 
-    # Intento opcional de notificar al cliente si se solicitó y existe un método apropiado
-    if notify:
-        try:
-            if hasattr(appointment, 'notify_customer'):
-                try:
-                    appointment.notify_customer(event='completed', notes=notes)
-                    db.session.commit()
-                except TypeError:
-                    # Firma alternativa
-                    appointment.notify_customer('completed')
-                    db.session.commit()
-        except Exception:
-            # No bloquear la respuesta principal por errores de notificación
-            db.session.rollback()
-
-    if request.is_json:
-        return jsonify({'success': True, 'message': f'Cita #{appointment.id} completada', 'appointment_id': appointment.id})
-    else:
-        flash(f'Cita completada exitosamente', 'success')
-        return redirect(url_for('dashboard.appointments'))
-
 @bp.route('/appointments/<int:id>/cancel', methods=['POST'])
 @login_required
 def cancel_appointment(id):
     """Cancelar cita (AJAX)"""
-    from ..models import Appointment
+    try:
+        from ..models import Appointment
 
-    appointment = Appointment.query.join(Card).filter(
-        Appointment.id == id,
-        Card.owner_id == current_user.id
-    ).first_or_404()
+        appointment = Appointment.query.join(Card).filter(
+            Appointment.id == id,
+            Card.owner_id == current_user.id
+        ).first_or_404()
 
-    if appointment.status not in ['pending', 'confirmed']:
-        return jsonify({'success': False, 'message': f'Esta cita no se puede cancelar (estado: {appointment.status})'}), 400
+        if appointment.status not in ['pending', 'confirmed']:
+            return jsonify({'success': False, 'message': f'Esta cita no se puede cancelar (estado: {appointment.status})'}), 400
 
-    reason = request.json.get('reason', '') if request.is_json else request.form.get('reason', '')
-    appointment.cancel(reason)
-    db.session.commit()
+        reason = request.json.get('reason', '') if request.is_json else request.form.get('reason', '')
+        appointment.cancel(reason)
+        db.session.commit()
 
-    if request.is_json:
-        return jsonify({'success': True, 'message': f'Cita #{appointment.id} cancelada'})
-    else:
-        flash(f'Cita cancelada', 'info')
-        return redirect(url_for('dashboard.appointments'))
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'Cita #{appointment.id} cancelada'})
+        else:
+            flash(f'Cita cancelada', 'info')
+            return redirect(url_for('dashboard.appointments'))
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error canceling appointment {id}: {str(e)}')
+        if request.is_json:
+            return jsonify({'success': False, 'message': f'Error al cancelar la cita: {str(e)}'}), 500
+        else:
+            flash(f'Error al cancelar la cita: {str(e)}', 'error')
+            return redirect(url_for('dashboard.appointments'))
 
 @bp.route('/appointments/<int:id>/no-show', methods=['POST'])
 @login_required
@@ -2347,191 +2363,3 @@ def appointment_no_show(id):
     else:
         flash(f'Cita marcada como ausente', 'info')
         return redirect(url_for('dashboard.appointments'))
-
-@bp.route('/appointments/<int:id>/send_reminder', methods=['POST'])
-@login_required
-def send_appointment_reminder(id):
-    """Enviar recordatorio de cita por WhatsApp/SMS"""
-    from ..models import Appointment
-    from datetime import date, timedelta
-
-    appointment = Appointment.query.join(Card).filter(
-        Appointment.id == id,
-        Card.owner_id == current_user.id
-    ).first_or_404()
-
-    if appointment.status not in ['pending', 'confirmed']:
-        return jsonify({'success': False, 'message': 'Solo se pueden enviar recordatorios a citas pendientes o confirmadas'}), 400
-
-    # Verificar que la cita sea próxima (no más de 7 días)
-    days_until = (appointment.appointment_date - date.today()).days
-    if days_until < 0:
-        return jsonify({'success': False, 'message': 'No se pueden enviar recordatorios para citas pasadas'}), 400
-
-    if days_until > 7:
-        return jsonify({'success': False, 'message': 'Solo se pueden enviar recordatorios hasta 7 días antes'}), 400
-
-    try:
-        # Crear mensaje de recordatorio
-        message = f"""🔔 *Recordatorio de Cita*
-
-Hola {appointment.customer_name},
-
-Te recordamos tu cita programada:
-
-📅 *Fecha:* {appointment.appointment_date.strftime('%d de %B, %Y')}
-🕐 *Hora:* {appointment.appointment_time}
-💼 *Servicio:* {appointment.service.name}
-
-Por favor confirma tu asistencia respondiendo a este mensaje.
-
-¡Te esperamos!"""
-
-        # Generar enlace de WhatsApp
-        phone = appointment.get_full_phone().replace(' ', '').replace('+', '')
-        import urllib.parse
-        whatsapp_url = f"https://wa.me/{phone}?text={urllib.parse.quote(message)}"
-
-        # Marcar recordatorio como enviado
-        appointment.mark_reminder_sent()
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Recordatorio preparado',
-            'whatsapp_url': whatsapp_url,
-            'phone': appointment.get_full_phone(),
-            'customer_name': appointment.customer_name
-        })
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error al preparar recordatorio: {str(e)}'}), 500
-
-@bp.route('/appointments/bulk_reminders', methods=['POST'])
-@login_required
-def send_bulk_reminders():
-    """Enviar recordatorios masivos para citas del día siguiente"""
-    from ..models import Appointment
-    from datetime import date, timedelta
-
-    # Obtener citas para mañana
-    tomorrow = date.today() + timedelta(days=1)
-    appointments = Appointment.query.join(Card).filter(
-        Card.owner_id == current_user.id,
-        Appointment.appointment_date == tomorrow,
-        Appointment.status.in_(['pending', 'confirmed']),
-        Appointment.reminder_sent == False
-    ).all()
-
-    if not appointments:
-        return jsonify({'success': False, 'message': 'No hay citas para mañana que requieran recordatorio'})
-
-    reminders = []
-    for appointment in appointments:
-        message = f"""🔔 *Recordatorio de Cita*
-
-Hola {appointment.customer_name},
-
-Te recordamos tu cita para mañana:
-
-📅 *Fecha:* {appointment.appointment_date.strftime('%d de %B, %Y')}
-🕐 *Hora:* {appointment.appointment_time}
-💼 *Servicio:* {appointment.service.name}
-
-Por favor confirma tu asistencia.
-
-¡Te esperamos!"""
-
-        phone = appointment.get_full_phone().replace(' ', '').replace('+', '')
-        import urllib.parse
-        whatsapp_url = f"https://wa.me/{phone}?text={urllib.parse.quote(message)}"
-
-        reminders.append({
-            'id': appointment.id,
-            'customer_name': appointment.customer_name,
-            'phone': appointment.get_full_phone(),
-            'service': appointment.service.name,
-            'time': appointment.appointment_time,
-            'whatsapp_url': whatsapp_url
-        })
-
-        # Marcar como enviado
-        appointment.mark_reminder_sent()
-
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'message': f'Se prepararon {len(reminders)} recordatorios',
-        'reminders': reminders
-    })
-
-@bp.route('/appointments/analytics')
-@login_required
-def appointments_analytics():
-    """Vista de analíticas avanzadas de citas"""
-    from ..models import Appointment
-    from sqlalchemy import func, extract
-    from datetime import date, timedelta
-    import calendar
-
-    # Estadísticas generales
-    total_appointments = Appointment.query.join(Card).filter(Card.owner_id == current_user.id).count()
-
-    # Estadísticas por estado
-    status_stats = db.session.query(
-        Appointment.status,
-        func.count(Appointment.id).label('count')
-    ).join(Card).filter(Card.owner_id == current_user.id).group_by(Appointment.status).all()
-
-    # Estadísticas por mes (últimos 12 meses)
-    monthly_stats = []
-    for i in range(12):
-        month_date = date.today().replace(day=1) - timedelta(days=30*i)
-        month_count = Appointment.query.join(Card).filter(
-            Card.owner_id == current_user.id,
-            extract('year', Appointment.appointment_date) == month_date.year,
-            extract('month', Appointment.appointment_date) == month_date.month
-        ).count()
-
-        monthly_stats.append({
-            'month': calendar.month_name[month_date.month],
-            'year': month_date.year,
-            'count': month_count
-        })
-
-    monthly_stats.reverse()
-
-    # Calificaciones promedio por servicio
-    service_ratings = db.session.query(
-        Appointment.service_id,
-        func.avg(Appointment.rating).label('avg_rating'),
-        func.count(Appointment.rating).label('rating_count')
-    ).join(Card).filter(
-        Card.owner_id == current_user.id,
-        Appointment.rating.isnot(None)
-    ).group_by(Appointment.service_id).all()
-
-    # Horarios más populares
-    time_stats = db.session.query(
-        Appointment.appointment_time,
-        func.count(Appointment.id).label('count')
-    ).join(Card).filter(Card.owner_id == current_user.id).group_by(Appointment.appointment_time).order_by(func.count(Appointment.id).desc()).limit(10).all()
-
-    # Días de la semana más populares
-    weekday_stats = db.session.query(
-        extract('dow', Appointment.appointment_date).label('weekday'),
-        func.count(Appointment.id).label('count')
-    ).join(Card).filter(Card.owner_id == current_user.id).group_by(extract('dow', Appointment.appointment_date)).all()
-
-    # Convertir números de día a nombres
-    weekday_names = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-    weekday_stats = [{'day': weekday_names[int(stat.weekday)], 'count': stat.count} for stat in weekday_stats]
-
-    return render_template('dashboard/appointments/analytics.html',
-                          total_appointments=total_appointments,
-                          status_stats=status_stats,
-                          monthly_stats=monthly_stats,
-                          service_ratings=service_ratings,
-                          time_stats=time_stats,
-                          weekday_stats=weekday_stats)
