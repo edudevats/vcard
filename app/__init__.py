@@ -70,19 +70,14 @@ def create_app(config_name=None):
     from .api import bp as api_bp
     app.register_blueprint(api_bp)
 
-    from .api_mobile import bp as api_mobile_bp
-    from .csrf_utils import csrf_exempt_mobile
-    csrf_exempt_mobile(csrf, api_mobile_bp)   # Debe ir ANTES del register_blueprint
-    app.register_blueprint(api_mobile_bp)
-
     # Main route
     @app.route('/')
     def index():
-        from flask import redirect, url_for, render_template
+        from flask import redirect, url_for
         from flask_login import current_user
         if current_user.is_authenticated:
             return redirect(url_for('dashboard.index'))
-        return render_template('landing.html')
+        return redirect(url_for('auth.login'))
 
     # Dashboard favicon route
     @app.route('/favicon.ico')

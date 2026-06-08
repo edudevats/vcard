@@ -30,7 +30,6 @@ class User(UserMixin, db.Model):
     email_verified_at = db.Column(db.DateTime)
     reset_token = db.Column(db.String(255))
     reset_token_expires = db.Column(db.DateTime)
-    mobile_token = db.Column(db.String(255), nullable=True, index=True)  # Token para app móvil
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
@@ -1216,6 +1215,15 @@ class Appointment(db.Model):
     completed_at = db.Column(db.DateTime)
     cancelled_at = db.Column(db.DateTime)
 
+    # Campos adicionales para mejor seguimiento
+    rating = db.Column(db.Integer)  # Calificación del 1 al 5
+    feedback = db.Column(db.Text)  # Comentarios del cliente
+    internal_notes = db.Column(db.Text)  # Notas privadas del profesional
+    reminder_sent = db.Column(db.Boolean, default=False)  # Si se envió recordatorio
+    reminder_sent_at = db.Column(db.DateTime)  # Cuándo se envió el recordatorio
+    follow_up_required = db.Column(db.Boolean, default=False)  # Si requiere seguimiento
+    tags = db.Column(db.String(500))  # Etiquetas separadas por comas
+
     # Metadata
     ip_address = db.Column(db.String(45))  # IP del cliente al reservar
     user_agent = db.Column(db.String(500))
@@ -1250,6 +1258,57 @@ class Appointment(db.Model):
 
     def get_full_phone(self):
         """Obtener número de teléfono completo con prefijo"""
+        if self.customer_phone_country:
+            return f"{self.customer_phone_country} {self.customer_phone}"
+        return self.customer_phone
+
+    def add_rating(self, rating, feedback=None):
+        """Agregar calificación y feedback a la cita"""
+        if rating < 1 or rating > 5:
+            raise ValueError("La calificación debe estar entre 1 y 5")
+        self.rating = rating
+        if feedback:
+            self.feedback = feedback
+
+    def add_internal_note(self, note):
+        """Agregar nota interna a la cita"""
+        timestamp = now_utc_for_db().strftime('%Y-%m-%d %H:%M')
+        formatted = f"[{timestamp}] {note}"
+        if self.internal_notes:
+            self.internal_notes += f"\n\n{formatted}"
+        else:
+            self.internal_notes = formatted
+
+    def mark_reminder_sent(self):
+        """Marcar que se envió recordatorio"""
+        self.reminder_sent = True
+        self.reminder_sent_at = now_utc_for_db()
+
+    def add_tag(self, tag):
+        """Agregar una etiqueta a la cita"""
+        tag = tag.strip()
+        if not tag:
+            return
+        if self.tags:
+            tags_list = [t.strip() for t in self.tags.split(',') if t.strip()]
+            if tag not in tags_list:
+                tags_list.append(tag)
+                self.tags = ', '.join(tags_list)
+        else:
+            self.tags = tag
+
+    def remove_tag(self, tag):
+        """Remover una etiqueta de la cita"""
+        if not self.tags:
+            return
+        tags_list = [t.strip() for t in self.tags.split(',') if t.strip() and t.strip() != tag]
+        self.tags = ', '.join(tags_list) if tags_list else None
+
+    def get_tags_list(self):
+        """Obtener lista de etiquetas"""
+        if self.tags:
+            return [t.strip() for t in self.tags.split(',') if t.strip()]
+        return []
         if not self.customer_phone:
             return None
         if self.customer_phone_country:

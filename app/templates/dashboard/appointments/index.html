@@ -66,81 +66,123 @@
                     <div class="stat-label">Hoy</div>
                 </div>
             </div>
+
+            <div class="stat-card stat-secondary">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.rated }}</div>
+
+                    <div class="filters-header" style="margin-top:10px;">
+                        <h3><i class="fas fa-filter"></i> Filtros y Búsqueda</h3>
+                        <div class="filters-actions">
+                            <a href="{{ url_for('dashboard.appointments_history') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-history"></i> Ver Historial
+                            </a>
+                            <a href="{{ url_for('dashboard.appointments_analytics') }}" class="btn btn-outline-info">
+                                <i class="fas fa-chart-bar"></i> Analíticas
+                            </a>
+                            <button class="btn btn-warning" onclick="sendBulkReminders()">
+                                <i class="fas fa-bell"></i> Recordatorios Masivos
+                            </button>
+                            <a href="{{ url_for('dashboard.export_appointments', **request.args) }}" class="btn btn-success">
+                                <i class="fas fa-download"></i> Exportar
+                            </a>
+                        </div>
+                    </div>
+                    <div class="stat-label">Calificadas</div>
+                </div>
+            </div>
+
+            <div class="stat-card stat-danger">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.follow_up_required }}</div>
+                    <div class="stat-label">Seguimiento</div>
+                </div>
+            </div>
         </div>
 
-        <!-- View Tabs -->
-        <div class="view-tabs">
-            <a href="{{ url_for('dashboard.appointments', view='active') }}"
-               class="tab-button {{ 'active' if view == 'active' else '' }}">
-                <i class="fas fa-calendar-check me-2"></i>Citas Activas
-                {% if stats.active_count > 0 %}
-                    <span class="tab-badge">{{ stats.active_count }}</span>
-                {% endif %}
-            </a>
-            <a href="{{ url_for('dashboard.appointments', view='history') }}"
-               class="tab-button {{ 'active' if view == 'history' else '' }}">
-                <i class="fas fa-history me-2"></i>Historial
-                {% if stats.history_count > 0 %}
-                    <span class="tab-badge tab-badge-secondary">{{ stats.history_count }}</span>
-                {% endif %}
-            </a>
-        </div>
-
-        <!-- Filters Section -->
-        <div class="filters-card">
-            <form method="GET" class="filters-form">
-                <input type="hidden" name="view" value="{{ view }}">
-
-                {% if view == 'history' %}
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <i class="fas fa-filter"></i> Estado
-                        </label>
-                        <select name="status" class="filter-select" onchange="this.form.submit()">
-                            <option value="">Todos</option>
-                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completadas</option>
-                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Canceladas</option>
-                            <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No asistió</option>
-                        </select>
-                    </div>
-                {% else %}
-                    <div class="filter-group">
-                        <label class="filter-label">
-                            <i class="fas fa-filter"></i> Estado
-                        </label>
-                        <select name="status" class="filter-select" onchange="this.form.submit()">
-                            <option value="">Todas</option>
-                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendientes</option>
-                            <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmadas</option>
-                        </select>
-                    </div>
-                {% endif %}
-
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-calendar"></i> Desde
-                    </label>
-                    <input type="date" name="date_from" class="filter-input"
-                           value="{{ date_from }}"
-                           onchange="this.form.submit()">
-                </div>
-
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-calendar"></i> Hasta
-                    </label>
-                    <input type="date" name="date_to" class="filter-input"
-                           value="{{ date_to }}"
-                           onchange="this.form.submit()">
-                </div>
-
-                {% if status_filter or date_from or date_to %}
-                <div class="filter-group">
-                    <a href="{{ url_for('dashboard.appointments', view=view) }}" class="btn-clear-filters">
-                        <i class="fas fa-times"></i> Limpiar
+        <!-- Enhanced Filters -->
+        <div class="filters-section">
+            <div class="filters-header">
+                <h3><i class="fas fa-filter"></i> Filtros y Búsqueda</h3>
+                <div class="filters-actions">
+                    <a href="{{ url_for('dashboard.appointments_history') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-history"></i> Ver Historial
+                    </a>
+                    <a href="{{ url_for('dashboard.export_appointments', **request.args) }}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Exportar
                     </a>
                 </div>
-                {% endif %}
+            </div>
+
+            <form method="GET" class="filters-form">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="search">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search"
+                               value="{{ search_query }}" placeholder="Cliente, teléfono, notas...">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="status">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Todos los estados</option>
+                            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pendientes</option>
+                            <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmadas</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completadas</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                            <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No asistieron</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="date">Fecha</label>
+                        <select class="form-select" id="date" name="date">
+                            <option value="all" {% if date_filter == 'all' %}selected{% endif %}>Todas las fechas</option>
+                            <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Hoy</option>
+                            <option value="upcoming" {% if date_filter == 'upcoming' %}selected{% endif %}>Próximas</option>
+                            <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Esta semana</option>
+                            <option value="month" {% if date_filter == 'month' %}selected{% endif %}>Este mes</option>
+                            <option value="past" {% if date_filter == 'past' %}selected{% endif %}>Pasadas</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="rating">Calificación</label>
+                        <select class="form-select" id="rating" name="rating">
+                            <option value="all" {% if rating_filter == 'all' %}selected{% endif %}>Todas</option>
+                            <option value="unrated" {% if rating_filter == 'unrated' %}selected{% endif %}>Sin calificar</option>
+                            <option value="5" {% if rating_filter == '5' %}selected{% endif %}>5 estrellas</option>
+                            <option value="4" {% if rating_filter == '4' %}selected{% endif %}>4 estrellas</option>
+                            <option value="3" {% if rating_filter == '3' %}selected{% endif %}>3 estrellas</option>
+                            <option value="2" {% if rating_filter == '2' %}selected{% endif %}>2 estrellas</option>
+                            <option value="1" {% if rating_filter == '1' %}selected{% endif %}>1 estrella</option>
+                        </select>
+                    </div>
+
+                    {% if all_tags %}
+                    <div class="filter-group">
+                        <label for="tag">Etiqueta</label>
+                        <select class="form-select" id="tag" name="tag">
+                            <option value="">Todas las etiquetas</option>
+                            {% for tag in all_tags %}
+                            <option value="{{ tag }}" {% if tag_filter == tag %}selected{% endif %}>{{ tag }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="filter-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
 
@@ -148,12 +190,17 @@
         {% if appointments %}
         <div class="appointments-section">
             {% for appointment in appointments %}
-            <div class="appointment-card {% if appointment.status in ['cancelled', 'no_show'] %}appointment-inactive{% endif %}"
+            <div class="appointment-card {% if appointment.status == 'cancelled' or appointment.status == 'no_show' %}appointment-inactive{% endif %}"
                  data-appointment-id="{{ appointment.id }}">
                 <div class="appointment-header">
                     <div class="appointment-service">
                         <i class="fas fa-briefcase"></i>
                         <strong>{{ appointment.service.name }}</strong>
+                        {% if appointment.follow_up_required %}
+                        <span class="badge bg-warning ms-2">
+                            <i class="fas fa-flag"></i> Seguimiento
+                        </span>
+                        {% endif %}
                     </div>
                     <div class="appointment-status">
                         <span class="status-badge status-{{ appointment.status }}">
@@ -169,6 +216,18 @@
                                 <i class="fas fa-user-times"></i> No asistió
                             {% endif %}
                         </span>
+
+                        {% if appointment.rating %}
+                        <div class="rating-display ms-2">
+                            {% for i in range(1, 6) %}
+                                {% if i <= appointment.rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-muted"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -177,38 +236,201 @@
                         <div class="appointment-datetime">
                             <div class="datetime-item">
                                 <i class="fas fa-calendar-alt"></i>
-                                <span>{{ appointment.appointment_date.strftime('%d/%m/%Y') }}</span>
+                                <div class="datetime-content">
+                                    <div class="datetime-label">Fecha</div>
+                                    <div class="datetime-value">
+                                        {{ appointment.appointment_date.strftime('%d de %B, %Y') }}
+                                    </div>
+                                </div>
                             </div>
                             <div class="datetime-item">
                                 <i class="fas fa-clock"></i>
-                                <span>{{ appointment.appointment_time }}</span>
+                                <div class="datetime-content">
+                                    <div class="datetime-label">Hora</div>
+                                    <div class="datetime-value">{{ appointment.appointment_time }}</div>
+                                </div>
                             </div>
                         </div>
 
                         <div class="appointment-customer">
                             <div class="customer-info">
-                                <i class="fas fa-user"></i>
-                                <strong>{{ appointment.customer_name }}</strong>
+                                <div class="customer-name">
+                                    <i class="fas fa-user"></i>
+                                    <strong>{{ appointment.customer_name }}</strong>
+                                </div>
+                                <div class="customer-phone">
+                                    <i class="fas fa-phone"></i>
+                                    <a href="tel:{{ appointment.get_full_phone() }}">{{ appointment.get_full_phone() }}</a>
+                                </div>
+                                {% if appointment.customer_address %}
+                                <div class="customer-address">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>{{ appointment.customer_address }}</span>
+                                </div>
+                                {% endif %}
                             </div>
-                            <div class="customer-contact">
-                                <i class="fas fa-phone"></i>
-                                <span>{{ appointment.customer_phone_country }} {{ appointment.customer_phone }}</span>
+                        </div>
+
+                        {% if appointment.tags %}
+                        <div class="appointment-tags">
+                            <i class="fas fa-tags"></i>
+                            <div class="tags-list">
+                                {% for tag in appointment.get_tags_list() %}
+                                <span class="tag">{{ tag }}</span>
+                                {% endfor %}
                             </div>
-                            {% if appointment.customer_address %}
-                            <div class="customer-address">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span>{{ appointment.customer_address }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if appointment.notes or appointment.feedback %}
+                        <div class="appointment-notes">
+                            {% if appointment.notes %}
+                            <div class="notes-section">
+                                <strong><i class="fas fa-sticky-note"></i> Notas:</strong>
+                                <p>{{ appointment.notes }}</p>
+                            </div>
+                            {% endif %}
+
+                            {% if appointment.feedback %}
+                            <div class="feedback-section">
+                                <strong><i class="fas fa-comment"></i> Feedback del Cliente:</strong>
+                                <p>{{ appointment.feedback }}</p>
                             </div>
                             {% endif %}
                         </div>
-
-                        {% if appointment.notes %}
-                        <div class="appointment-notes">
-                            <i class="fas fa-sticky-note"></i>
-                            <span>{{ appointment.notes }}</span>
-                        </div>
                         {% endif %}
                     </div>
+
+                    <div class="appointment-actions">
+                        {% if appointment.status == 'pending' %}
+                        <button class="btn btn-success btn-sm" onclick="confirmAppointment({{ appointment.id }})">
+                            <i class="fas fa-check"></i> Confirmar
+                        </button>
+                        {% endif %}
+
+                        {% if appointment.status in ['pending', 'confirmed'] %}
+                        <button class="btn btn-primary btn-sm" onclick="completeAppointment({{ appointment.id }})">
+                            <i class="fas fa-check-double"></i> Completar
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="cancelAppointment({{ appointment.id }})">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        {% endif %}
+
+                        {% if appointment.status == 'confirmed' %}
+                        <button class="btn btn-warning btn-sm" onclick="markNoShow({{ appointment.id }})">
+                            <i class="fas fa-user-times"></i> No asistió
+                        </button>
+                        {% endif %}
+
+                        <!-- Nuevas acciones -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                {% if appointment.status == 'completed' and not appointment.rating %}
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="showRatingModal({{ appointment.id }}); return false;">
+                                        <i class="fas fa-star"></i> Calificar
+                                    </a>
+                                </li>
+                                {% endif %}
+
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="showNoteModal({{ appointment.id }}); return false;">
+                                        <i class="fas fa-sticky-note"></i> Agregar Nota
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="showTagModal({{ appointment.id }}); return false;">
+                                        <i class="fas fa-tag"></i> Agregar Etiqueta
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="toggleFollowUp({{ appointment.id }}); return false;">
+                                        <i class="fas fa-flag"></i>
+                                        {% if appointment.follow_up_required %}Quitar{% else %}Marcar{% endif %} Seguimiento
+                                    </a>
+                                </li>
+
+                                {% if appointment.status in ['pending', 'confirmed'] and not appointment.reminder_sent %}
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="sendReminder({{ appointment.id }}); return false;">
+                                        <i class="fas fa-bell"></i> Enviar Recordatorio
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="appointment-footer">
+                    <div class="appointment-meta">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-plus"></i>
+                            Creada: {{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                        {% if appointment.reminder_sent %}
+                        <small class="text-success ms-3">
+                            <i class="fas fa-bell"></i>
+                            Recordatorio enviado
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Paginación -->
+            {% if pagination.pages > 1 %}
+            <div class="pagination-wrapper">
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('dashboard.appointments', page=pagination.prev_num, **request.args) }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in pagination.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('dashboard.appointments', page=page_num, **request.args) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('dashboard.appointments', page=pagination.next_num, **request.args) }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
 
                     <div class="appointment-actions">
                         <!-- Contact Buttons -->
@@ -226,8 +448,7 @@
                             </a>
                         </div>
 
-                        <!-- Action Buttons (solo para citas activas) -->
-                        {% if view == 'active' %}
+                        <!-- Action Buttons -->
                         <div class="action-buttons">
                             {% if appointment.status == 'pending' %}
                                 <button onclick="confirmAppointment({{ appointment.id }})"
@@ -251,18 +472,12 @@
                                 </button>
                             {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
 
                 <div class="appointment-footer">
                     <small class="text-muted">
                         Reservada el {{ appointment.created_at.strftime('%d/%m/%Y %H:%M') }}
-                        {% if appointment.completed_at %}
-                            - Completada el {{ appointment.completed_at.strftime('%d/%m/%Y %H:%M') }}
-                        {% elif appointment.cancelled_at %}
-                            - Cancelada el {{ appointment.cancelled_at.strftime('%d/%m/%Y %H:%M') }}
-                        {% endif %}
                     </small>
                 </div>
             </div>
@@ -274,33 +489,18 @@
             <div class="empty-icon">
                 <i class="fas fa-calendar-alt"></i>
             </div>
-            {% if view == 'active' %}
-                <h2 class="empty-title">No hay citas activas</h2>
-                <p class="empty-description">
-                    {% if status_filter or date_from or date_to %}
-                        No se encontraron citas con los filtros seleccionados.
-                        <br>
-                        <a href="{{ url_for('dashboard.appointments', view='active') }}" class="link-primary">
-                            Ver todas las citas activas
-                        </a>
-                    {% else %}
-                        Cuando tus clientes reserven citas para tus servicios, aparecerán aquí.
-                    {% endif %}
-                </p>
-            {% else %}
-                <h2 class="empty-title">No hay citas en el historial</h2>
-                <p class="empty-description">
-                    {% if status_filter or date_from or date_to %}
-                        No se encontraron citas con los filtros seleccionados.
-                        <br>
-                        <a href="{{ url_for('dashboard.appointments', view='history') }}" class="link-primary">
-                            Ver todo el historial
-                        </a>
-                    {% else %}
-                        Las citas completadas, canceladas o ausentes aparecerán aquí.
-                    {% endif %}
-                </p>
-            {% endif %}
+            <h2 class="empty-title">No hay citas registradas</h2>
+            <p class="empty-description">
+                {% if request.args.get('status') or request.args.get('date_from') or request.args.get('date_to') %}
+                    No se encontraron citas con los filtros seleccionados.
+                    <br>
+                    <a href="{{ url_for('dashboard.appointments') }}" class="link-primary">
+                        Ver todas las citas
+                    </a>
+                {% else %}
+                    Cuando tus clientes reserven citas para tus servicios, aparecerán aquí.
+                {% endif %}
+            </p>
         </div>
         {% endif %}
     </div>
@@ -401,71 +601,6 @@
     color: #64748b;
     font-size: 0.875rem;
     font-weight: 500;
-}
-
-/* View Tabs */
-.view-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-    background: white;
-    padding: 0.5rem;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.tab-button {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.875rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    color: #64748b;
-    text-decoration: none;
-    transition: all 0.2s;
-    position: relative;
-}
-
-.tab-button:hover {
-    color: #3b82f6;
-    background: #f8fafc;
-    text-decoration: none;
-}
-
-.tab-button.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.tab-button.active:hover {
-    color: white;
-}
-
-.tab-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 0.5rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-}
-
-.tab-button:not(.active) .tab-badge {
-    background: #3b82f6;
-    color: white;
-}
-
-.tab-badge-secondary {
-    background: #94a3b8;
 }
 
 /* Filters Card */
@@ -853,14 +988,6 @@
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-
-    .view-tabs {
-        flex-direction: column;
-    }
-
-    .tab-button {
-        justify-content: flex-start;
-    }
 }
 </style>
 
@@ -873,8 +1000,7 @@ function confirmAppointment(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({})
+        }
     })
     .then(response => response.json())
     .then(data => {
@@ -898,8 +1024,7 @@ function completeAppointment(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({})
+        }
     })
     .then(response => response.json())
     .then(data => {
@@ -923,8 +1048,7 @@ function cancelAppointment(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({})
+        }
     })
     .then(response => response.json())
     .then(data => {
@@ -948,8 +1072,7 @@ function markNoShow(id) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({})
+        }
     })
     .then(response => response.json())
     .then(data => {
@@ -964,5 +1087,441 @@ function markNoShow(id) {
         alert('Error al actualizar la cita');
     });
 }
+
+// Nuevas funciones para las funcionalidades adicionales
+let currentAppointmentId = null;
+
+function showRatingModal(id) {
+    currentAppointmentId = id;
+    const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
+    modal.show();
+}
+
+function submitRating() {
+    const rating = document.querySelector('input[name="rating"]:checked')?.value;
+    const feedback = document.getElementById('feedback').value;
+
+    if (!rating) {
+        alert('Por favor selecciona una calificación');
+        return;
+    }
+
+    fetch(`/dashboard/appointments/${currentAppointmentId}/rate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ rating: parseInt(rating), feedback: feedback })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al guardar la calificación');
+    });
+}
+
+function showNoteModal(id) {
+    currentAppointmentId = id;
+    document.getElementById('internal_note').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('noteModal'));
+    modal.show();
+}
+
+function submitNote() {
+    const note = document.getElementById('internal_note').value.trim();
+
+    if (!note) {
+        alert('Por favor escribe una nota');
+        return;
+    }
+
+    fetch(`/dashboard/appointments/${currentAppointmentId}/add_note`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ note: note })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            bootstrap.Modal.getInstance(document.getElementById('noteModal')).hide();
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al agregar la nota');
+    });
+}
+
+function showTagModal(id) {
+    currentAppointmentId = id;
+    document.getElementById('tag_input').value = '';
+    const modal = new bootstrap.Modal(document.getElementById('tagModal'));
+    modal.show();
+}
+
+function submitTag() {
+    const tag = document.getElementById('tag_input').value.trim();
+
+    if (!tag) {
+        alert('Por favor escribe una etiqueta');
+        return;
+    }
+
+    fetch(`/dashboard/appointments/${currentAppointmentId}/add_tag`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ tag: tag })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            bootstrap.Modal.getInstance(document.getElementById('tagModal')).hide();
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al agregar la etiqueta');
+    });
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+
+function sendBulkReminders() {
+    if (confirm('¿Enviar recordatorios a todas las citas de mañana?')) {
+        fetch('/dashboard/appointments/bulk_reminders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                if (data.reminders && data.reminders.length > 0) {
+                    if (confirm('¿Abrir WhatsApp para cada recordatorio?')) {
+                        data.reminders.forEach((reminder, index) => {
+                            setTimeout(() => {
+                                if (reminder.whatsapp_url) {
+                                    window.open(reminder.whatsapp_url, '_blank');
+                                }
+                            }, index * 1000); // Esperar 1 segundo entre cada ventana
+                        });
+                    }
+                }
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error al enviar recordatorios masivos');
+        });
+    }
+}
+
+function sendReminder(id) {
+    if (confirm('¿Enviar recordatorio de esta cita?')) {
+        fetch(`/dashboard/appointments/${id}/send_reminder`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                if (data.whatsapp_url) {
+                    if (confirm(`¿Abrir WhatsApp para enviar recordatorio a ${data.customer_name}?`)) {
+                        window.open(data.whatsapp_url, '_blank');
+                    }
+                }
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error al enviar recordatorio');
+        });
+    }
+}
+
+function toggleFollowUp(id) {
+    fetch(`/dashboard/appointments/${id}/toggle_follow_up`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error al cambiar el estado de seguimiento');
+    });
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
 </script>
+
+<!-- Modales para nuevas funcionalidades -->
+
+<!-- Modal para Calificación -->
+<div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ratingModalLabel">
+                    <i class="fas fa-star"></i> Calificar Cita
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="ratingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Calificación</label>
+                        <div class="rating-input">
+                            <input type="radio" name="rating" value="1" id="star1">
+                            <label for="star1"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="2" id="star2">
+                            <label for="star2"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="3" id="star3">
+                            <label for="star3"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="4" id="star4">
+                            <label for="star4"><i class="fas fa-star"></i></label>
+                            <input type="radio" name="rating" value="5" id="star5">
+                            <label for="star5"><i class="fas fa-star"></i></label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="feedback" class="form-label">Comentarios (opcional)</label>
+                        <textarea class="form-control" id="feedback" name="feedback" rows="3"
+                                  placeholder="Comentarios sobre la cita..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitRating()">Guardar Calificación</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Notas Internas -->
+<div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="noteModalLabel">
+                    <i class="fas fa-sticky-note"></i> Agregar Nota Interna
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="noteForm">
+                    <div class="mb-3">
+                        <label for="internal_note" class="form-label">Nota</label>
+                        <textarea class="form-control" id="internal_note" name="note" rows="4"
+                                  placeholder="Escribe tu nota interna aquí..." required></textarea>
+                        <div class="form-text">Esta nota solo será visible para ti.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitNote()">Agregar Nota</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Etiquetas -->
+<div class="modal fade" id="tagModal" tabindex="-1" aria-labelledby="tagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tagModalLabel">
+                    <i class="fas fa-tag"></i> Agregar Etiqueta
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="tagForm">
+                    <div class="mb-3">
+                        <label for="tag_input" class="form-label">Etiqueta</label>
+                        <input type="text" class="form-control" id="tag_input" name="tag"
+                               placeholder="Ej: Urgente, VIP, Primera vez..." required>
+                        <div class="form-text">Las etiquetas te ayudan a organizar y filtrar tus citas.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitTag()">Agregar Etiqueta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos adicionales para las nuevas funcionalidades */
+.filters-section {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filters-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+}
+
+.filter-group label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.appointment-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rating-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.rating-input input[type="radio"] {
+    display: none;
+}
+
+.rating-input label {
+    font-size: 1.5rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rating-input label:hover,
+.rating-input input[type="radio"]:checked ~ label,
+.rating-input label:hover ~ label {
+    color: #ffc107;
+}
+
+.rating-input input[type="radio"]:checked + label {
+    color: #ffc107;
+}
+
+.feedback-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    border-left: 4px solid #28a745;
+    margin-top: 0.5rem;
+}
+
+.notes-section {
+    background: #fff3cd;
+    padding: 1rem;
+    border-radius: 5px;
+    border-left: 4px solid #ffc107;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .filters-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+
+    .appointment-body {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+</style>
+
 {% endblock %}

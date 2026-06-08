@@ -1,0 +1,256 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Analíticas de Citas{% endblock %}
+
+{% block extra_css %}
+<style>
+.analytics-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.analytics-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-top: 1rem;
+}
+
+.stats-list {
+    list-style: none;
+    padding: 0;
+}
+
+.stats-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.stats-list li:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-weight: 500;
+}
+
+.stat-value {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-weight: bold;
+}
+
+.rating-stars {
+    color: #ffc107;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.summary-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.summary-label {
+    color: #666;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-header">
+    <h1><i class="fas fa-chart-bar"></i> Analíticas de Citas</h1>
+    <p>Análisis detallado del rendimiento de tu sistema de citas</p>
+</div>
+
+<!-- Resumen General -->
+<div class="summary-cards">
+    <div class="summary-card">
+        <div class="summary-number">{{ total_appointments }}</div>
+        <div class="summary-label">Total de Citas</div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-number">
+            {% set completed = status_stats|selectattr('status', 'equalto', 'completed')|list %}
+            {{ completed[0].count if completed else 0 }}
+        </div>
+        <div class="summary-label">Completadas</div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-number">
+            {% set cancelled = status_stats|selectattr('status', 'equalto', 'cancelled')|list %}
+            {{ cancelled[0].count if cancelled else 0 }}
+        </div>
+        <div class="summary-label">Canceladas</div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-number">
+            {% if service_ratings %}
+                {{ "%.1f"|format(service_ratings|map(attribute='avg_rating')|list|sum / service_ratings|length) }}
+            {% else %}
+                0.0
+            {% endif %}
+        </div>
+        <div class="summary-label">Calificación Promedio</div>
+    </div>
+</div>
+
+<!-- Gráficos y Estadísticas -->
+<div class="analytics-grid">
+    <!-- Estados de Citas -->
+    <div class="analytics-card">
+        <h3><i class="fas fa-pie-chart"></i> Estados de Citas</h3>
+        <ul class="stats-list">
+            {% for stat in status_stats %}
+            <li>
+                <span class="stat-label">{{ stat.status|title }}</span>
+                <span class="stat-value">{{ stat.count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <!-- Horarios Populares -->
+    <div class="analytics-card">
+        <h3><i class="fas fa-clock"></i> Horarios Más Populares</h3>
+        <ul class="stats-list">
+            {% for time_stat in time_stats %}
+            <li>
+                <span class="stat-label">{{ time_stat.appointment_time }}</span>
+                <span class="stat-value">{{ time_stat.count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <!-- Días de la Semana -->
+    <div class="analytics-card">
+        <h3><i class="fas fa-calendar-week"></i> Días Más Populares</h3>
+        <ul class="stats-list">
+            {% for day_stat in weekday_stats %}
+            <li>
+                <span class="stat-label">{{ day_stat.day }}</span>
+                <span class="stat-value">{{ day_stat.count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <!-- Calificaciones por Servicio -->
+    {% if service_ratings %}
+    <div class="analytics-card">
+        <h3><i class="fas fa-star"></i> Calificaciones por Servicio</h3>
+        <ul class="stats-list">
+            {% for rating in service_ratings %}
+            <li>
+                <span class="stat-label">
+                    Servicio #{{ rating.service_id }}
+                    <div class="rating-stars">
+                        {% for i in range(1, 6) %}
+                            {% if i <= rating.avg_rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </span>
+                <span class="stat-value">{{ "%.1f"|format(rating.avg_rating) }} ({{ rating.rating_count }})</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tendencias Mensuales -->
+<div class="analytics-card">
+    <h3><i class="fas fa-chart-line"></i> Tendencia Mensual (Últimos 12 Meses)</h3>
+    <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de tendencia mensual
+const monthlyData = {{ monthly_stats|tojson }};
+const ctx = document.getElementById('monthlyChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: monthlyData.map(item => `${item.month} ${item.year}`),
+        datasets: [{
+            label: 'Citas por Mes',
+            data: monthlyData.map(item => item.count),
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

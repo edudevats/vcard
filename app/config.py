@@ -3,9 +3,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def _build_db_url():
+    url = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
+    # Normalize plain mysql:// → mysql+mysqldb:// (PythonAnywhere and some providers)
+    if url.startswith('mysql://'):
+        url = 'mysql+mysqldb://' + url[len('mysql://'):]
+    return url
+
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
+    SQLALCHEMY_DATABASE_URI = _build_db_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     ALLOW_SIGNUP = os.environ.get('ALLOW_SIGNUP', 'false').lower() == 'true'
     ENABLE_VISUAL_EDITOR = os.environ.get('ENABLE_VISUAL_EDITOR', 'false').lower() == 'true'
@@ -32,13 +40,17 @@ class Config:
     CACHE_TYPE = os.environ.get('CACHE_TYPE', 'simple')
     CACHE_DEFAULT_TIMEOUT = int(os.environ.get('CACHE_DEFAULT_TIMEOUT', '300'))
     
-    # Performance optimization
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': int(os.environ.get('DB_POOL_SIZE', '10')),
-        'pool_recycle': int(os.environ.get('DB_POOL_RECYCLE', '3600')),
-        'pool_pre_ping': True,
-        'max_overflow': int(os.environ.get('DB_MAX_OVERFLOW', '20'))
-    }
+    # Performance optimization — pool settings only for non-SQLite
+    SQLALCHEMY_ENGINE_OPTIONS = (
+        {
+            'pool_size': int(os.environ.get('DB_POOL_SIZE', '5')),
+            'pool_recycle': int(os.environ.get('DB_POOL_RECYCLE', '3600')),
+            'pool_pre_ping': True,
+            'max_overflow': int(os.environ.get('DB_MAX_OVERFLOW', '10')),
+        }
+        if not SQLALCHEMY_DATABASE_URI.startswith('sqlite')
+        else {'pool_pre_ping': True}
+    )
     
     # Compression
     COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml', 'application/json', 'application/javascript']

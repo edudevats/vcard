@@ -17,6 +17,7 @@ email-validator==2.2.0
 # Database
 SQLAlchemy==2.0.35
 Alembic==1.13.2
+mysqlclient>=2.2.0
 
 # Security and Authentication  
 passlib[bcrypt]==1.7.4
