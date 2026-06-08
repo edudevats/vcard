@@ -28,6 +28,19 @@ def create_admin(email, password):
 
 @app.cli.command()
 @click.option('--email', prompt=True, help='User email')
+@click.option('--password', prompt=True, hide_input=True, help='New password')
+def change_password(email, password):
+    """Change password for an existing user."""
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        click.echo(f'User {email} not found.')
+        return
+    user.set_password(password)
+    db.session.commit()
+    click.echo(f'Password for {email} updated successfully.')
+
+@app.cli.command()
+@click.option('--email', prompt=True, help='User email')
 @click.option('--n', prompt=True, type=int, help='Maximum number of cards')
 def set_max_cards(email, n):
     """Set max cards for a user."""
