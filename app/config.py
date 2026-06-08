@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
 def _build_db_url():
     url = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
