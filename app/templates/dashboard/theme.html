@@ -91,9 +91,20 @@
                 
                 <div class="templates-grid">
                     {% for template_name in available_templates %}
-                    <div class="template-card {% if current_template == template_name %}template-active{% endif %}" 
-                         data-template="{{ template_name }}">
+                    {% set is_active = (current_template == template_name) %}
+                    <div class="template-card {% if is_active %}template-active{% endif %}"
+                         data-template="{{ template_name }}"
+                         {% if is_active %}aria-current="true"{% else %}role="button" tabindex="0" aria-label="Seleccionar plantilla {{ template_name.title() }}"{% endif %}>
+                        {% if is_active %}
+                        <span class="template-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+                        {% endif %}
                         <div class="template-preview">
+                            {% if not is_active %}
+                            <div class="template-select-overlay">
+                                <span class="overlay-default"><i class="fas fa-hand-pointer"></i> Seleccionar</span>
+                                <span class="overlay-loading"><i class="fas fa-spinner fa-spin"></i> Cambiando...</span>
+                            </div>
+                            {% endif %}
                             {% if template_name == 'classic' %}
                             <div class="preview-classic">
                                 <div class="preview-content">
@@ -150,36 +161,15 @@
                         <div class="template-info">
                             <h4 class="template-title">
                                 {{ template_name.title() }}
-                                {% if current_template == template_name %}
-                                    <span class="active-badge">Actual</span>
-                                {% endif %}
+                                {% if is_active %}<span class="active-badge">Actual</span>{% endif %}
                             </h4>
-                            
                             <p class="template-description">
-                                {% if template_name == 'classic' %}
-                                Diseño vertical tradicional, perfecto para la mayoría de profesionales
-                                {% elif template_name == 'business' %}
-                                Diseño horizontal estilo tarjeta de negocio, ideal para empresarios
-                                {% elif template_name == 'old_school' %}
-                                Diseño vintage con estilo retro y colores clásicos
-                                {% elif template_name == 'mobile' %}
-                                Diseño optimizado para móviles con botones grandes
-                                {% else %}
-                                Plantilla personalizada con diseño único
-                                {% endif %}
+                                {% if template_name == 'classic' %}Vertical tradicional, para la mayoría de profesionales
+                                {% elif template_name == 'business' %}Horizontal, estilo tarjeta de negocio
+                                {% elif template_name == 'old_school' %}Vintage con estilo retro y colores clásicos
+                                {% elif template_name == 'mobile' %}Optimizado para móviles con botones grandes
+                                {% else %}Plantilla personalizada con diseño único{% endif %}
                             </p>
-                            
-                            {% if current_template != template_name %}
-                                <button class="select-template-btn" data-template="{{ template_name }}">
-                                    <i class="fas fa-exchange-alt"></i>
-                                    Cambiar a {{ template_name.title() }}
-                                </button>
-                            {% else %}
-                                <button class="current-template-btn" disabled>
-                                    <i class="fas fa-check"></i>
-                                    Plantilla Actual
-                                </button>
-                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -203,7 +193,22 @@
                                 </h3>
                                 <p class="section-description">Selecciona una paleta predefinida o personaliza tus colores</p>
                             </div>
-                            
+
+                            <!-- Mode toggle: presets vs custom -->
+                            <div class="palette-mode-toggle" role="tablist" aria-label="Modo de color">
+                                <button type="button" class="mode-btn active" data-mode="presets" role="tab" aria-selected="true">
+                                    <i class="fas fa-swatchbook"></i>
+                                    Paletas predefinidas
+                                </button>
+                                <button type="button" class="mode-btn" data-mode="custom" role="tab" aria-selected="false">
+                                    <i class="fas fa-sliders-h"></i>
+                                    Personalizar colores
+                                </button>
+                            </div>
+
+                            <!-- Predefined palettes -->
+                            <div id="mode-presets" class="palette-mode">
+
                             <!-- Professional Palettes -->
                             <div class="palette-category">
                                 <h4 class="category-title">Profesionales</h4>
@@ -326,8 +331,10 @@
                                 </div>
                             </div>
                             
+                            </div><!-- /#mode-presets -->
+
                             <!-- Custom Colors -->
-                            <div class="custom-colors-section">
+                            <div class="custom-colors-section palette-mode hidden" id="mode-custom">
                                 <h4 class="category-title">Personalización Manual</h4>
                                 <div class="color-inputs-grid">
                                     <div class="color-input-group">
@@ -657,38 +664,112 @@
 
 .templates-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
 }
 
 .template-card {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 14px;
+    padding: 0.6rem;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
     border: 2px solid transparent;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
 }
 
-.template-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+.template-card:hover,
+.template-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.14);
+    border-color: rgba(102, 126, 234, 0.45);
+    outline: none;
 }
 
 .template-card.template-active {
     border-color: #667eea;
-    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
-    transform: translateY(-4px);
+    box-shadow: 0 8px 22px rgba(102, 126, 234, 0.22);
+    cursor: default;
+}
+
+.template-card.template-active:hover {
+    transform: none;
+}
+
+/* Check badge on the active template */
+.template-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #48bb78;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 6px rgba(72, 187, 120, 0.45);
 }
 
 .template-preview {
-    height: 200px;
-    border-radius: 12px;
+    height: 116px;
+    border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 1rem;
+    margin-bottom: 0.6rem;
     position: relative;
 }
+
+/* Hover/loading overlay to make selection obvious */
+.template-select-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(45, 55, 72, 0.55);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.template-card:hover .template-select-overlay,
+.template-card:focus-visible .template-select-overlay,
+.template-card.template-loading .template-select-overlay {
+    opacity: 1;
+}
+
+.template-select-overlay span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+}
+
+.template-select-overlay .overlay-loading { display: none; }
+.template-card.template-loading { pointer-events: none; }
+.template-card.template-loading .overlay-default { display: none; }
+.template-card.template-loading .overlay-loading { display: inline-flex; }
+
+/* Compact mini-previews */
+.template-preview .preview-classic,
+.template-preview .preview-business,
+.template-preview .preview-old-school,
+.template-preview .preview-mobile {
+    padding: 12px;
+}
+
+.template-preview .preview-content { padding: 12px; }
+.template-preview .preview-business .preview-info { padding: 10px; margin-right: 10px; }
 
 /* Template Preview Styles */
 .preview-classic {
@@ -882,14 +963,14 @@
 }
 
 .template-title {
-    font-size: 1.3rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #2d3748;
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.25rem 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .active-badge {
@@ -903,45 +984,19 @@
 
 .template-description {
     color: #718096;
-    font-size: 0.95rem;
-    margin: 0 0 1.5rem 0;
-    line-height: 1.5;
+    font-size: 0.78rem;
+    margin: 0;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.1em;
 }
 
-.select-template-btn {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 auto;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.select-template-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-.current-template-btn {
-    background: #48bb78;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: default;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 auto;
-    opacity: 0.8;
+.active-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
 }
 
 /* Customization Layout */
@@ -1051,8 +1106,56 @@
 
 /* Custom Colors */
 .custom-colors-section {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 2rem;
+    padding-top: 0.5rem;
+}
+
+/* Color mode toggle (presets vs custom) */
+.palette-mode-toggle {
+    display: flex;
+    width: 100%;
+    max-width: 440px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 1.75rem;
+}
+
+.mode-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.65rem 1rem;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #64748b;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mode-btn:hover {
+    color: #475569;
+}
+
+.mode-btn.active {
+    background: #ffffff;
+    color: #667eea;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.mode-btn:focus-visible {
+    outline: 3px solid rgba(102, 126, 234, 0.45);
+    outline-offset: 2px;
+}
+
+.palette-mode.hidden {
+    display: none;
 }
 
 .color-inputs-grid {
@@ -1384,9 +1487,9 @@
     }
     
     .templates-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .palette-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -1490,7 +1593,6 @@
 
 /* Accessible focus states */
 .palette-btn:focus-visible,
-.select-template-btn:focus-visible,
 .color-input:focus-visible,
 .save-theme-btn:focus-visible,
 .view-public-btn:focus-visible {
@@ -1718,6 +1820,19 @@ function applyTemplatePreview(templateName) {
     card.classList.add('tpl-' + templateName);
 }
 
+// Switch between predefined palettes and manual customization
+function setColorMode(mode) {
+    document.querySelectorAll('.mode-btn').forEach(b => {
+        const active = b.dataset.mode === mode;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    const presets = document.getElementById('mode-presets');
+    const custom = document.getElementById('mode-custom');
+    if (presets) presets.classList.toggle('hidden', mode !== 'presets');
+    if (custom) custom.classList.toggle('hidden', mode !== 'custom');
+}
+
 // Apply color preset
 function applyPreset(primaryColor, secondaryColor, accentColor, avatarBorderColor = '#ffffff') {
     document.getElementById('primary_color').value = primaryColor;
@@ -1742,14 +1857,9 @@ function applyPreset(primaryColor, secondaryColor, accentColor, avatarBorderColo
 // Change template
 function changeTemplate(templateName) {
     const csrfToken = document.querySelector('[name=csrf_token]').value;
-    const button = document.querySelector(`[data-template="${templateName}"] .select-template-btn`);
-    
-    if (button) {
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cambiando...';
-        button.disabled = true;
-    }
-    
+    const cardEl = document.querySelector(`.template-card[data-template="${templateName}"]`);
+    if (cardEl) cardEl.classList.add('template-loading');
+
     fetch(`/dashboard/cards/{{ card.id }}/change-template`, {
         method: 'POST',
         headers: {
@@ -1765,19 +1875,13 @@ function changeTemplate(templateName) {
             setTimeout(() => location.reload(), 1000);
         } else {
             showMessage('Error al cambiar plantilla: ' + data.message, 'error');
-            if (button) {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }
+            if (cardEl) cardEl.classList.remove('template-loading');
         }
     })
     .catch(error => {
         console.error('Error:', error);
         showMessage('Error al cambiar plantilla', 'error');
-        if (button) {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
+        if (cardEl) cardEl.classList.remove('template-loading');
     });
 }
 
@@ -1804,11 +1908,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updatePreview();
 
-    // Handle template selection
-    document.querySelectorAll('.select-template-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const template = this.dataset.template;
-            changeTemplate(template);
+    // Default color mode: presets if the current colors match a preset, else custom
+    const matchedPreset = document.querySelector('.palette-btn.active');
+    setColorMode(matchedPreset ? 'presets' : 'custom');
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => setColorMode(btn.dataset.mode));
+    });
+
+    // Handle template selection — the whole card is clickable and keyboard friendly
+    document.querySelectorAll('.template-card[data-template]:not(.template-active)').forEach(cardEl => {
+        const select = () => changeTemplate(cardEl.dataset.template);
+        cardEl.addEventListener('click', select);
+        cardEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                select();
+            }
         });
     });
 
