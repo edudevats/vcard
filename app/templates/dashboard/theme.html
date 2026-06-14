@@ -469,6 +469,7 @@
                             </div>
                             </div>
                         </div>
+                        <p class="preview-template-label" id="preview-template-label"></p>
                     </div>
                 </div>
             </div>
@@ -1349,6 +1350,7 @@
     padding: 2rem;
     min-height: 500px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
 }
@@ -1628,48 +1630,78 @@
     min-height: 380px;
 }
 
-/* Template-aware live preview */
+/* Template-aware live preview (card-level bg/border/radius/font set inline by JS) */
+.live-preview-card.tpl-classic {
+    text-align: center;
+}
+
+.live-preview-card.tpl-classic .live-buttons {
+    flex-direction: column;
+}
+
+/* Business: left-aligned card with an accent edge and a row of buttons */
 .live-preview-card.tpl-business {
     text-align: left;
-    max-width: 300px;
+    border-left: 5px solid var(--preview-accent, #a855f7);
 }
 
 .live-preview-card.tpl-business .live-avatar {
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.85rem 0;
     width: 64px;
     height: 64px;
+}
+
+.live-preview-card.tpl-business .live-title,
+.live-preview-card.tpl-business .live-subtitle {
+    text-align: left;
 }
 
 .live-preview-card.tpl-business .live-buttons {
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .live-preview-card.tpl-business .live-btn {
     flex: 1;
-    min-width: 90px;
+    min-width: 88px;
     padding: 0.6rem 0.75rem;
     font-size: 0.85rem;
 }
 
-.live-preview-card.tpl-mobile {
-    border-radius: 28px;
+/* Mobile: large pill buttons and airy spacing */
+.live-preview-card.tpl-mobile .live-avatar {
+    width: 92px;
+    height: 92px;
+}
+
+.live-preview-card.tpl-mobile .live-buttons {
+    gap: 1rem;
 }
 
 .live-preview-card.tpl-mobile .live-btn {
     border-radius: 999px;
     padding: 1rem 1.5rem;
+    font-size: 1rem;
 }
 
-.live-preview-card.tpl-old_school {
-    border: 2px solid var(--preview-accent, #cd853f);
-    border-radius: 6px;
+/* Old school: vintage serif title and squared buttons */
+.live-preview-card.tpl-old_school .live-title {
     font-family: Georgia, 'Times New Roman', serif;
-    background: #faf5ec;
+    letter-spacing: 0.5px;
 }
 
 .live-preview-card.tpl-old_school .live-btn {
     border-radius: 4px;
+}
+
+/* Caption naming the active template */
+.preview-template-label {
+    text-align: center;
+    margin: 0.85rem 0 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
 }
 </style>
 
@@ -1754,6 +1786,9 @@ function updatePreview() {
             previewCard.style.backdropFilter = 'none';
         }
     }
+
+    // Re-assert template-specific styling so it wins over the generic layout styles
+    applyTemplatePreview(currentTemplate);
 }
 
 function updateGoogleFont(font) {
@@ -1774,7 +1809,7 @@ function updateGoogleFont(font) {
     // Apply font after a delay
     setTimeout(() => {
         const previewCard = document.querySelector('.live-preview-card');
-        if (previewCard) {
+        if (previewCard && currentTemplate !== 'old_school') {
             previewCard.style.fontFamily = `'${font}', sans-serif`;
         }
     }, 300);
@@ -1812,12 +1847,30 @@ function highlightMatchingPalette(primary, secondary, accent) {
     if (idx >= 0 && buttons[idx]) buttons[idx].classList.add('active');
 }
 
-// Make the live preview reflect the active template's layout
+// Make the live preview reflect the active template's layout.
+// Sets template-specific inline styles so they win over the generic layout
+// styles applied by updatePreview(). Called at the end of updatePreview().
 function applyTemplatePreview(templateName) {
     const card = document.getElementById('preview-card');
     if (!card) return;
     card.classList.remove('tpl-classic', 'tpl-business', 'tpl-mobile', 'tpl-old_school');
     card.classList.add('tpl-' + templateName);
+
+    if (templateName === 'old_school') {
+        card.style.background = '#faf5ec';
+        card.style.border = '3px solid var(--preview-accent, #cd853f)';
+        card.style.borderRadius = '6px';
+        card.style.fontFamily = "Georgia, 'Times New Roman', serif";
+    } else if (templateName === 'mobile') {
+        card.style.borderRadius = '28px';
+    } else if (templateName === 'business') {
+        card.style.borderRadius = '12px';
+    }
+
+    // Update the caption under the preview so the active template is unmistakable
+    const labels = { classic: 'Clásica', business: 'Negocio', old_school: 'Vintage', mobile: 'Móvil' };
+    const label = document.getElementById('preview-template-label');
+    if (label) label.textContent = 'Plantilla: ' + (labels[templateName] || templateName);
 }
 
 // Switch between predefined palettes and manual customization
