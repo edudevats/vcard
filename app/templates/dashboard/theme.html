@@ -331,35 +331,35 @@
                                 <h4 class="category-title">Personalización Manual</h4>
                                 <div class="color-inputs-grid">
                                     <div class="color-input-group">
-                                        <label class="color-label">
-                                            <i class="fas fa-circle" style="color: var(--primary-color, #667eea);"></i>
-                                            Color Principal
-                                        </label>
-                                        {{ form.primary_color(class="color-input", onchange="updatePreview()") }}
+                                        <label class="color-label" for="primary_color">Color Principal</label>
+                                        <div class="color-input-wrap">
+                                            {{ form.primary_color(class="color-input", oninput="updatePreview()") }}
+                                            <span class="color-hex" id="primary_color_hex">#000000</span>
+                                        </div>
                                     </div>
-                                    
+
                                     <div class="color-input-group">
-                                        <label class="color-label">
-                                            <i class="fas fa-circle" style="color: var(--secondary-color, #764ba2);"></i>
-                                            Color Secundario
-                                        </label>
-                                        {{ form.secondary_color(class="color-input", onchange="updatePreview()") }}
+                                        <label class="color-label" for="secondary_color">Color Secundario</label>
+                                        <div class="color-input-wrap">
+                                            {{ form.secondary_color(class="color-input", oninput="updatePreview()") }}
+                                            <span class="color-hex" id="secondary_color_hex">#000000</span>
+                                        </div>
                                     </div>
-                                    
+
                                     <div class="color-input-group">
-                                        <label class="color-label">
-                                            <i class="fas fa-circle" style="color: var(--accent-color, #a855f7);"></i>
-                                            Color de Acento
-                                        </label>
-                                        {{ form.accent_color(class="color-input", onchange="updatePreview()") }}
+                                        <label class="color-label" for="accent_color">Color de Acento</label>
+                                        <div class="color-input-wrap">
+                                            {{ form.accent_color(class="color-input", oninput="updatePreview()") }}
+                                            <span class="color-hex" id="accent_color_hex">#000000</span>
+                                        </div>
                                     </div>
-                                    
+
                                     <div class="color-input-group">
-                                        <label class="color-label">
-                                            <i class="fas fa-circle" style="color: var(--border-color, #ffffff);"></i>
-                                            Borde del Avatar
-                                        </label>
-                                        {{ form.avatar_border_color(class="color-input", onchange="updatePreview()") }}
+                                        <label class="color-label" for="avatar_border_color">Borde del Avatar</label>
+                                        <div class="color-input-wrap">
+                                            {{ form.avatar_border_color(class="color-input", oninput="updatePreview()") }}
+                                            <span class="color-hex" id="avatar_border_color_hex">#000000</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -413,7 +413,11 @@
                         </div>
                         
                         <!-- Save Button -->
-                        <div class="form-actions">
+                        <div class="form-actions" id="save-bar">
+                            <span class="save-status" id="save-status">
+                                <i class="fas fa-circle"></i>
+                                Tienes cambios sin guardar
+                            </span>
                             {{ form.submit(class="save-theme-btn") }}
                         </div>
                     </form>
@@ -429,7 +433,9 @@
                     </div>
                     
                     <div class="preview-container" id="preview-container">
-                        <div class="preview-background">
+                        <div class="device-frame">
+                            <div class="device-notch"></div>
+                            <div class="preview-background">
                             <div id="preview-card" class="live-preview-card">
                                 <!-- Preview content will be dynamically generated -->
                                 <div id="preview-avatar" class="live-avatar">
@@ -453,6 +459,7 @@
                                     <button id="btn-services" class="live-btn live-btn-secondary">Servicios</button>
                                     <button id="btn-outline" class="live-btn live-btn-outline">Ubicación</button>
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -1338,8 +1345,8 @@
 
 .live-btn-outline {
     background: transparent;
-    color: var(--preview-primary, #667eea);
-    border: 2px solid var(--preview-primary, #667eea);
+    color: var(--preview-accent, #a855f7);
+    border: 2px solid var(--preview-accent, #a855f7);
 }
 
 /* Responsive Design */
@@ -1391,6 +1398,176 @@
     .layout-options {
         grid-template-columns: 1fr;
     }
+
+    .form-actions {
+        position: static;
+        margin: 0;
+        padding: 1.5rem 0 0;
+        flex-wrap: wrap;
+    }
+
+    .form-actions .save-theme-btn {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+/* === UX improvements === */
+
+/* Color inputs with hex readout */
+.color-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.color-input-wrap .color-input {
+    width: 56px;
+    height: 44px;
+    flex: 0 0 auto;
+    padding: 4px;
+}
+
+.color-hex {
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    flex: 1;
+}
+
+/* Sticky save bar with unsaved-changes feedback */
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    margin: 0 -2rem -2rem;
+    padding: 1.25rem 2rem;
+    border-top: 1px solid #e2e8f0;
+    z-index: 5;
+}
+
+.form-actions .save-theme-btn {
+    width: auto;
+    flex: 0 0 auto;
+    min-width: 220px;
+    margin-left: auto;
+}
+
+.save-status {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    color: #b7791f;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.save-status i {
+    font-size: 0.6rem;
+    color: #ecc94b;
+    animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+.form-actions.dirty .save-status {
+    display: flex;
+}
+
+/* Accessible focus states */
+.palette-btn:focus-visible,
+.select-template-btn:focus-visible,
+.color-input:focus-visible,
+.save-theme-btn:focus-visible,
+.view-public-btn:focus-visible {
+    outline: 3px solid rgba(102, 126, 234, 0.45);
+    outline-offset: 2px;
+}
+
+/* Device frame for the live preview */
+.device-frame {
+    position: relative;
+    background: #1a202c;
+    border-radius: 36px;
+    padding: 14px 12px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 320px;
+}
+
+.device-notch {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 18px;
+    background: #1a202c;
+    border-radius: 0 0 12px 12px;
+    z-index: 2;
+}
+
+.device-frame .preview-background {
+    border-radius: 26px;
+    min-height: 380px;
+}
+
+/* Template-aware live preview */
+.live-preview-card.tpl-business {
+    text-align: left;
+    max-width: 300px;
+}
+
+.live-preview-card.tpl-business .live-avatar {
+    margin: 0 0 1rem 0;
+    width: 64px;
+    height: 64px;
+}
+
+.live-preview-card.tpl-business .live-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.live-preview-card.tpl-business .live-btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.live-preview-card.tpl-mobile {
+    border-radius: 28px;
+}
+
+.live-preview-card.tpl-mobile .live-btn {
+    border-radius: 999px;
+    padding: 1rem 1.5rem;
+}
+
+.live-preview-card.tpl-old_school {
+    border: 2px solid var(--preview-accent, #cd853f);
+    border-radius: 6px;
+    font-family: Georgia, 'Times New Roman', serif;
+    background: #faf5ec;
+}
+
+.live-preview-card.tpl-old_school .live-btn {
+    border-radius: 4px;
 }
 </style>
 
@@ -1414,7 +1591,16 @@ function updatePreview() {
     document.documentElement.style.setProperty('--preview-accent', accent);
     document.documentElement.style.setProperty('--preview-border', avatarBorderColor);
     document.documentElement.style.setProperty('--preview-font', `'${font}'`);
-    
+
+    // Update hex readouts next to each color picker
+    updateHex('primary_color', primary);
+    updateHex('secondary_color', secondary);
+    updateHex('accent_color', accent);
+    updateHex('avatar_border_color', avatarBorderColor);
+
+    // Highlight the preset palette that matches the current colors (if any)
+    highlightMatchingPalette(primary, secondary, accent);
+
     // Update font preview
     const fontPreview = document.getElementById('font-preview');
     if (fontPreview) {
@@ -1490,6 +1676,46 @@ function updateGoogleFont(font) {
             previewCard.style.fontFamily = `'${font}', sans-serif`;
         }
     }, 300);
+}
+
+// Update the hex label shown next to a color input
+function updateHex(inputId, value) {
+    const el = document.getElementById(inputId + '_hex');
+    if (el) el.textContent = (value || '').toUpperCase();
+}
+
+// Preset palettes [primary, secondary, accent] in the same order as the
+// .palette-btn elements in the DOM (6 profesionales, luego 4 de negocios)
+const PRESET_PALETTES = [
+    ['#1e40af', '#3b82f6', '#60a5fa'],
+    ['#7c3aed', '#a855f7', '#c084fc'],
+    ['#374151', '#6b7280', '#9ca3af'],
+    ['#059669', '#10b981', '#34d399'],
+    ['#ec4899', '#f472b6', '#f9a8d4'],
+    ['#0f172a', '#475569', '#06b6d4'],
+    ['#1f2937', '#374151', '#6b7280'],
+    ['#166534', '#15803d', '#16a34a'],
+    ['#b45309', '#d97706', '#f59e0b'],
+    ['#7c2d12', '#991b1b', '#dc2626']
+];
+
+// Highlight the preset palette whose colors match the current selection
+function highlightMatchingPalette(primary, secondary, accent) {
+    const buttons = document.querySelectorAll('.palette-btn');
+    const p = (primary || '').toLowerCase();
+    const s = (secondary || '').toLowerCase();
+    const a = (accent || '').toLowerCase();
+    buttons.forEach(btn => btn.classList.remove('active'));
+    const idx = PRESET_PALETTES.findIndex(pre => pre[0] === p && pre[1] === s && pre[2] === a);
+    if (idx >= 0 && buttons[idx]) buttons[idx].classList.add('active');
+}
+
+// Make the live preview reflect the active template's layout
+function applyTemplatePreview(templateName) {
+    const card = document.getElementById('preview-card');
+    if (!card) return;
+    card.classList.remove('tpl-classic', 'tpl-business', 'tpl-mobile', 'tpl-old_school');
+    card.classList.add('tpl-' + templateName);
 }
 
 // Apply color preset
@@ -1573,8 +1799,11 @@ function showMessage(message, type) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Reflect the active template in the live preview
+    applyTemplatePreview(currentTemplate);
+
     updatePreview();
-    
+
     // Handle template selection
     document.querySelectorAll('.select-template-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -1582,13 +1811,21 @@ document.addEventListener('DOMContentLoaded', function() {
             changeTemplate(template);
         });
     });
-    
-    // Handle palette button clicks
-    document.querySelectorAll('.palette-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            // The applyPreset function is called via onclick attribute
+
+    // Track unsaved changes and surface them in the sticky save bar
+    const form = document.getElementById('theme-form');
+    const saveBar = document.getElementById('save-bar');
+    if (form && saveBar) {
+        const markDirty = () => saveBar.classList.add('dirty');
+        form.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', markDirty);
+            el.addEventListener('change', markDirty);
         });
-    });
+        document.querySelectorAll('.palette-btn').forEach(btn => {
+            btn.addEventListener('click', markDirty);
+        });
+        form.addEventListener('submit', () => saveBar.classList.remove('dirty'));
+    }
 });
 </script>
 {% endblock %}
