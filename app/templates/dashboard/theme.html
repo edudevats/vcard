@@ -1961,9 +1961,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updatePreview();
 
-    // Default color mode: presets if the current colors match a preset, else custom
-    const matchedPreset = document.querySelector('.palette-btn.active');
-    setColorMode(matchedPreset ? 'presets' : 'custom');
+    // Default color mode: always show the predefined palettes
+    setColorMode('presets');
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.addEventListener('click', () => setColorMode(btn.dataset.mode));
     });
