@@ -11,18 +11,25 @@
     
     <!-- Main Content -->
     <div class="col-md-9">
-        <div class="main-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-user-circle me-2"></i>Avatar
-                    <small class="text-muted">- {{ card.name }}</small>
-                </h2>
-                {% if card.is_public %}
-                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
-                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
-                    </a>
-                {% endif %}
+        <div class="avatar-main">
+            <div class="avatar-header">
+                <div class="header-content">
+                    <div class="header-title">
+                        <h1 class="avatar-title">
+                            <i class="fas fa-user-circle"></i>
+                            Avatar
+                        </h1>
+                        <p class="avatar-subtitle">{{ card.name }}</p>
+                    </div>
+                    {% if card.is_public %}
+                        <a href="{{ card.get_public_url() }}" target="_blank" class="view-public-btn">
+                            <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                        </a>
+                    {% endif %}
+                </div>
             </div>
+            
+            <div class="avatar-content">
             
             <div class="row">
                 <!-- Current Avatar -->
@@ -202,7 +209,8 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </div> <!-- Close avatar-content -->
+        </div> <!-- Close avatar-main -->
     </div>
 </div>
 
@@ -276,4 +284,79 @@ function removeAvatar() {
     }
 }
 </script>
+
+<style>
+/* Modern Avatar Dashboard Styles */
+.avatar-main {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.avatar-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.avatar-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    margin: 0;
+}
+
+.avatar-title i {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+}
+
+.avatar-subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 500;
+}
+
+.view-public-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.view-public-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+}
+
+.avatar-content {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+</style>
 {% endblock %}

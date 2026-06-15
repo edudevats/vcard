@@ -11,18 +11,25 @@
     
     <!-- Main Content -->
     <div class="col-md-9">
-        <div class="main-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>
-                    <i class="fas fa-box me-2"></i>Productos
-                    <small class="text-muted">- {{ card.name }}</small>
-                </h2>
-                {% if card.is_public %}
-                    <a href="{{ card.get_public_url() }}" target="_blank" class="btn btn-outline-success">
-                        <i class="fas fa-external-link-alt me-1"></i>Ver Pública
-                    </a>
-                {% endif %}
+        <div class="products-main">
+            <div class="products-header">
+                <div class="header-content">
+                    <div class="header-title">
+                        <h1 class="products-title">
+                            <i class="fas fa-box"></i>
+                            Productos
+                        </h1>
+                        <p class="products-subtitle">{{ card.name }}</p>
+                    </div>
+                    {% if card.is_public %}
+                        <a href="{{ card.get_public_url() }}" target="_blank" class="view-public-btn">
+                            <i class="fas fa-external-link-alt me-1"></i>Ver Pública
+                        </a>
+                    {% endif %}
+                </div>
             </div>
+            
+            <div class="products-content">
             
             <!-- Add Product Form -->
             <div class="card mb-4">
@@ -255,11 +262,86 @@
                     </div>
                 </div>
             {% endif %}
-        </div>
+            </div> <!-- Close products-content -->
+        </div> <!-- Close products-main -->
     </div>
 </div>
 
 <style>
+/* Modern Products Dashboard Styles */
+.products-main {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.products-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.products-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    margin: 0;
+}
+
+.products-title i {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+}
+
+.products-subtitle {
+    color: #718096;
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 500;
+}
+
+.view-public-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.view-public-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+    color: white;
+}
+
+.products-content {
+    padding: 0 2rem 2rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
 .table tbody tr {
     cursor: move;
 }
