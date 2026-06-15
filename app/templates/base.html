@@ -86,11 +86,29 @@
         }
 
         .navbar .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             color: #374151 !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
         }
 
         .navbar .nav-link:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
             color: var(--primary-color) !important;
+        }
+
+        .navbar .nav-link i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
         }
         
         .navbar-brand {
