@@ -602,10 +602,18 @@ def card_theme(id):
     # Get template data
     available_templates = get_all_templates()
     current_template = card.theme.template_name if card.theme else 'classic'
-    
-    return render_template('dashboard/theme.html', 
-                         card=card, 
-                         form=form, 
+
+    # Detect device type from User-Agent
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = any(keyword in user_agent for keyword in [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'
+    ])
+
+    # Use PWA template for mobile devices, traditional template for desktop
+    template = 'dashboard/theme_pwa.html' if is_mobile else 'dashboard/theme.html'
+    return render_template(template,
+                         card=card,
+                         form=form,
                          available_themes=available_themes,
                          available_templates=available_templates,
                          current_template=current_template)

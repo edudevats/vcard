@@ -1,0 +1,167 @@
+{% extends "base_pwa.html" %}
+
+{% block title %}Personalizar Tema - {{ card.name }}{% endblock %}
+
+{% block content %}
+<div class="flex h-screen flex-col bg-background-light dark:bg-background-dark">
+  <!-- Header -->
+  <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-background-light px-4 dark:border-slate-800/80 dark:bg-background-dark">
+    <button class="flex items-center justify-center" onclick="history.back()">
+      <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">close</span>
+    </button>
+    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Personalizar Tema</h1>
+    <div class="w-8"></div>
+  </header>
+
+  {% include 'dashboard/_sidebar_card_pwa.html' %}
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    <div class="space-y-6">
+      <!-- Live Preview -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <span class="material-symbols-outlined mr-2">visibility</span>
+          Vista Previa
+        </h2>
+        <div id="theme-preview" class="text-center rounded-xl p-6" style="background: linear-gradient(135deg, {{ card.theme.primary_color }}20, {{ card.theme.secondary_color }}20);">
+          <div id="preview-avatar" class="mx-auto mb-3 flex h-20 w-20 items-center justify-center overflow-hidden"
+               style="border: 4px solid {{ card.theme.avatar_border_color }}; background: linear-gradient(135deg, {{ card.theme.primary_color }}, {{ card.theme.secondary_color }}); {% if card.theme.avatar_shape == 'circle' %}border-radius: 50%;{% elif card.theme.avatar_shape == 'rounded' %}border-radius: 18px;{% else %}border-radius: 10px;{% endif %}">
+            {% if card.avatar_path %}
+              <img src="{{ url_for('static', filename='uploads/' + card.avatar_path) }}" class="h-full w-full object-cover" alt="Avatar">
+            {% else %}
+              <span class="material-symbols-outlined text-3xl text-white">person</span>
+            {% endif %}
+          </div>
+          <h3 id="preview-name" class="text-lg font-bold" style="color: {{ card.theme.primary_color }}; font-family: '{{ card.theme.font_family }}', sans-serif;">{{ card.name }}</h3>
+          <p id="preview-title" class="text-sm text-gray-600 dark:text-gray-300" style="font-family: '{{ card.theme.font_family }}', sans-serif;">{{ card.title or 'Tu título profesional' }}</p>
+          <span id="preview-accent" class="mt-3 inline-block rounded-full px-4 py-1.5 text-sm font-medium text-white" style="background: {{ card.theme.accent_color }};">Botón</span>
+        </div>
+      </div>
+
+      <!-- Customization Form -->
+      <form method="POST" class="space-y-6">
+        {{ form.hidden_tag() }}
+
+        <!-- Colors -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h3 class="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+            <span class="material-symbols-outlined mr-2">palette</span>
+            Colores
+          </h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <label for="primary_color" class="text-sm font-medium text-gray-700 dark:text-gray-300">Color primario</label>
+              {{ form.primary_color(class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 bg-transparent dark:border-gray-600") }}
+            </div>
+            <div class="flex items-center justify-between">
+              <label for="secondary_color" class="text-sm font-medium text-gray-700 dark:text-gray-300">Color secundario</label>
+              {{ form.secondary_color(class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 bg-transparent dark:border-gray-600") }}
+            </div>
+            <div class="flex items-center justify-between">
+              <label for="accent_color" class="text-sm font-medium text-gray-700 dark:text-gray-300">Color de acento</label>
+              {{ form.accent_color(class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 bg-transparent dark:border-gray-600") }}
+            </div>
+            <div class="flex items-center justify-between">
+              <label for="avatar_border_color" class="text-sm font-medium text-gray-700 dark:text-gray-300">Borde del avatar</label>
+              {{ form.avatar_border_color(class="h-10 w-16 cursor-pointer rounded-lg border border-gray-300 bg-transparent dark:border-gray-600") }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography & Layout -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h3 class="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+            <span class="material-symbols-outlined mr-2">tune</span>
+            Tipografía y diseño
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <label for="font_family" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Tipografía</label>
+              {{ form.font_family(class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white") }}
+            </div>
+            <div>
+              <label for="layout" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Diseño</label>
+              {{ form.layout(class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white") }}
+            </div>
+            <div>
+              <label for="avatar_shape" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Forma del avatar</label>
+              {{ form.avatar_shape(class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white") }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 font-semibold text-white transition-colors hover:bg-primary/90">
+          <span class="material-symbols-outlined mr-2">save</span>
+          Guardar Tema
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="flex h-20 shrink-0 items-center justify-around border-t border-slate-200/80 bg-background-light px-2 pt-1 dark:border-slate-800/80 dark:bg-background-dark">
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.index') }}">
+      <span class="material-symbols-outlined">home</span>
+      <span class="text-xs font-medium">Inicio</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 rounded-full bg-primary/10 px-4 py-2 text-primary dark:bg-primary/20" href="{{ url_for('dashboard.cards_list') }}">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">badge</span>
+      <span class="text-xs font-medium">Tarjetas</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.analytics') }}">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="text-xs font-medium">Analytics</span>
+    </a>
+    <a class="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400" href="{{ url_for('dashboard.profile') }}">
+      <span class="material-symbols-outlined">person</span>
+      <span class="text-xs font-medium">Perfil</span>
+    </a>
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const byId = id => document.getElementById(id);
+  const primary = byId('primary_color');
+  const secondary = byId('secondary_color');
+  const accent = byId('accent_color');
+  const border = byId('avatar_border_color');
+  const font = byId('font_family');
+  const shape = byId('avatar_shape');
+
+  const preview = byId('theme-preview');
+  const avatar = byId('preview-avatar');
+  const name = byId('preview-name');
+  const title = byId('preview-title');
+  const accentBtn = byId('preview-accent');
+
+  function update() {
+    if (!primary) return;
+    if (preview) preview.style.background = 'linear-gradient(135deg, ' + primary.value + '20, ' + secondary.value + '20)';
+    if (avatar) {
+      avatar.style.background = 'linear-gradient(135deg, ' + primary.value + ', ' + secondary.value + ')';
+      avatar.style.border = '4px solid ' + border.value;
+      const s = shape.value;
+      avatar.style.borderRadius = s === 'circle' ? '50%' : (s === 'rounded' ? '18px' : '10px');
+    }
+    if (name) {
+      name.style.color = primary.value;
+      name.style.fontFamily = "'" + font.value + "', sans-serif";
+    }
+    if (title) title.style.fontFamily = "'" + font.value + "', sans-serif";
+    if (accentBtn) accentBtn.style.background = accent.value;
+  }
+
+  [primary, secondary, accent, border, font, shape].forEach(function (el) {
+    if (el) {
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
+    }
+  });
+})();
+</script>
+{% endblock %}

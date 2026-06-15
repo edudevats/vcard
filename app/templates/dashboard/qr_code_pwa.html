@@ -7,6 +7,7 @@
 {% block title %}{% if show_list %}Mis Códigos QR{% else %}Código QR - {{ card.name }}{% endif %}{% endblock %}
 
 {% block content %}
+{% if not show_list %}{% include 'dashboard/_sidebar_card_pwa.html' %}{% endif %}
 <div class="p-4">
     <!-- Header -->
     <div class="text-center mb-6">

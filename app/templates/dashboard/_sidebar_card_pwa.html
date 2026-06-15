@@ -1,0 +1,22 @@
+{# PWA card-section navigation — mobile equivalent of _sidebar_card.html #}
+{% set card_sections = [
+    {'label': 'Editar',    'icon': 'badge',          'url': url_for('dashboard.edit_card', id=card.id),            'match': ['dashboard.edit_card']},
+    {'label': 'Servicios', 'icon': 'design_services', 'url': url_for('dashboard.card_services', id=card.id),        'match': ['dashboard.card_services', 'dashboard.edit_service']},
+    {'label': 'Productos', 'icon': 'inventory_2',     'url': url_for('dashboard.card_products', id=card.id),        'match': ['dashboard.card_products', 'dashboard.edit_product']},
+    {'label': 'Galería',   'icon': 'photo_library',   'url': url_for('dashboard.card_gallery', id=card.id),         'match': ['dashboard.card_gallery']},
+    {'label': 'Avatar',    'icon': 'account_circle',  'url': url_for('dashboard.card_avatar', id=card.id),          'match': ['dashboard.card_avatar']},
+    {'label': 'Tema',      'icon': 'palette',         'url': url_for('dashboard.card_theme', id=card.id),           'match': ['dashboard.card_theme']},
+    {'label': 'Redes',     'icon': 'share',           'url': url_for('dashboard.card_social_networks', id=card.id), 'match': ['dashboard.card_social_networks']},
+    {'label': 'QR',        'icon': 'qr_code_2',       'url': url_for('dashboard.card_qr', id=card.id),              'match': ['dashboard.card_qr']},
+] %}
+<nav class="shrink-0 overflow-x-auto border-b border-slate-200/80 bg-background-light dark:border-slate-800/80 dark:bg-background-dark">
+  <div class="flex min-w-max">
+    {% for section in card_sections %}
+    <a href="{{ section.url }}"
+       class="flex shrink-0 flex-col items-center gap-1 whitespace-nowrap border-b-2 px-4 py-2.5 text-xs font-medium transition-colors {% if request.endpoint in section.match %}border-primary text-primary{% else %}border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200{% endif %}">
+      <span class="material-symbols-outlined text-xl {% if request.endpoint in section.match %}fill-1{% endif %}">{{ section.icon }}</span>
+      {{ section.label }}
+    </a>
+    {% endfor %}
+  </div>
+</nav>
