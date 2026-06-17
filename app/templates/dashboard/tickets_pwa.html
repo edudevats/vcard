@@ -28,6 +28,8 @@
         </div>
     </div>
 
+    <!-- Live-updating content (auto-refresh via AJAX) -->
+    <div id="tickets-live-content">
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 gap-4">
         <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center border border-green-200 dark:border-green-800">
@@ -208,6 +210,7 @@
         </div>
     </div>
     {% endif %}
+    </div><!-- /tickets-live-content -->
 
     <!-- Action Buttons -->
     <div class="fixed bottom-20 right-4 space-y-3">
@@ -243,6 +246,23 @@ function getCSRFToken() {
     return '{{ csrf_token() }}';
 }
 
+// Refresca SOLO el contenido dinámico (turno actual, cola, estadísticas)
+// sin recargar toda la página. Evita el parpadeo y los problemas de caché
+// del service worker que hacían que los turnos completados "se quedaran".
+async function refreshTicketsContent() {
+    const resp = await fetch(window.location.href, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        cache: 'no-store'
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const html = await resp.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const fresh = doc.getElementById('tickets-live-content');
+    const current = document.getElementById('tickets-live-content');
+    if (!fresh || !current) throw new Error('contenedor no encontrado');
+    current.innerHTML = fresh.innerHTML;
+}
+
 function callNext() {
     fetch('{{ url_for("dashboard.call_next_ticket") }}', {
         method: 'POST',
@@ -254,7 +274,7 @@ function callNext() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload();
+            refreshTicketsContent().catch(() => location.reload());
         } else {
             showNotification(data.message || 'Error al llamar siguiente turno', 'error');
         }
@@ -278,7 +298,7 @@ function completeTicket(id) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                refreshTicketsContent().catch(() => location.reload());
             } else {
                 showNotification(data.message || 'Error al completar turno', 'error');
             }
@@ -302,7 +322,7 @@ function markNoShow(id) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                refreshTicketsContent().catch(() => location.reload());
             } else {
                 showNotification(data.message || 'Error', 'error');
             }
@@ -328,7 +348,7 @@ function cancelTicket(id) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                refreshTicketsContent().catch(() => location.reload());
             } else {
                 showNotification(data.message || 'Error al cancelar', 'error');
             }
@@ -340,10 +360,10 @@ function cancelTicket(id) {
     }
 }
 
-// Auto-refresh every 30 seconds
+// Actualización automática en vivo cada 5 segundos (solo el contenido dinámico)
 setInterval(() => {
-    location.reload();
-}, 30000);
+    refreshTicketsContent().catch(() => {});
+}, 5000);
 
 // Notification helper
 function showNotification(message, type = 'info') {
@@ -403,7 +423,7 @@ function markUrgent(id) {
         .then(data => {
             if (data.success) {
                 showNotification(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
+                refreshTicketsContent().catch(() => location.reload());
             } else {
                 showNotification(data.message || 'Error al marcar como urgente', 'error');
             }

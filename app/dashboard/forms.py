@@ -42,21 +42,21 @@ class CardForm(FlaskForm):
     company = StringField('Empresa', validators=[Optional()],
                          render_kw={'class': 'form-control', 'placeholder': 'Nombre de tu empresa'})
     phone = StringField('Teléfono', validators=[Optional()],
-                       render_kw={'class': 'form-control', 'placeholder': '+34 123 456 789'})
+                       render_kw={'class': 'form-control', 'placeholder': '+52 12 3456 7890'})
     email_public = StringField('Email Público', validators=[Optional(), Email()],
                               render_kw={'class': 'form-control', 'placeholder': 'contacto@empresa.com'})
     website = StringField('Sitio Web', validators=[Optional(), flexible_url_validator],
                          render_kw={'class': 'form-control', 'placeholder': 'miempresa.com'})
     location = StringField('Ubicación', validators=[Optional()],
-                          render_kw={'class': 'form-control', 'placeholder': 'Madrid, España'})
+                          render_kw={'class': 'form-control', 'placeholder': 'CDMX, México'})
     bio = TextAreaField('Biografía', validators=[Optional(), Length(max=500)],
                        render_kw={'class': 'form-control', 'rows': 4, 
-                                 'placeholder': 'Breve descripción sobre ti o tu negocio...'})
+                                 'placeholder': 'Una breve descripción sobre ti o tu negocio...'})
     
     # Social media
     # Social media fields
     instagram = StringField('Instagram', validators=[Optional()],
-                           render_kw={'class': 'form-control', 'placeholder': '@tuusuario'})
+                           render_kw={'class': 'form-control', 'placeholder': '@usuario'})
     
     whatsapp_country = SelectField('País WhatsApp', validators=[Optional()], 
                                   choices=[
@@ -83,7 +83,7 @@ class CardForm(FlaskForm):
                                   ],
                                   render_kw={'class': 'form-select'})
     whatsapp = StringField('Número WhatsApp', validators=[Optional()],
-                          render_kw={'class': 'form-control', 'placeholder': '123 456 789 (sin código de país)'})
+                          render_kw={'class': 'form-control', 'placeholder': '12 3456 7890 (sin código de país)'})
     facebook = StringField('Facebook', validators=[Optional()],
                           render_kw={'class': 'form-control', 'placeholder': 'https://facebook.com/tuperfil'})
     linkedin = StringField('LinkedIn', validators=[Optional()],
