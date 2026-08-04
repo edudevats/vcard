@@ -138,3 +138,39 @@ def reset_password(token):
     
     return render_template('auth/reset_password.html', form=form)
 
+
+@bp.route('/sso')
+def sso_login():
+    """Inicio de sesión automático mediante SSOToken generado por API Partner"""
+    token_str = request.args.get('token', '').strip()
+    next_page = request.args.get('next')
+
+    if not token_str:
+        flash('Token SSO no proporcionado.', 'error')
+        return redirect(url_for('auth.login'))
+
+    from ..models import SSOToken
+    sso_token = SSOToken.query.filter_by(token=token_str).first()
+
+    if not sso_token or not sso_token.is_valid():
+        flash('El enlace de inicio de sesión ha expirado o ya fue utilizado.', 'error')
+        return redirect(url_for('auth.login'))
+
+    user = sso_token.user
+    if not user or not user.is_active or user.is_suspended:
+        flash('La cuenta vinculada no está activa.', 'error')
+        return redirect(url_for('auth.login'))
+
+    # Marcar token como consumido
+    sso_token.is_used = True
+    db.session.commit()
+
+    # Iniciar sesión de usuario
+    login_user(user)
+
+    if not next_page or urlparse(next_page).netloc != '':
+        next_page = url_for('dashboard.index')
+
+    return redirect(next_page)
+
+

@@ -75,6 +75,11 @@ def create_app(config_name=None):
     csrf_exempt_mobile(csrf, api_mobile_bp)   # Debe ir ANTES del register_blueprint
     app.register_blueprint(api_mobile_bp)
 
+    from .api_partner import bp as api_partner_bp
+    csrf.exempt(api_partner_bp)
+    app.register_blueprint(api_partner_bp)
+
+
     # Main route
     @app.route('/')
     def index():

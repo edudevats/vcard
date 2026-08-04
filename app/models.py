@@ -31,6 +31,7 @@ class User(UserMixin, db.Model):
     reset_token = db.Column(db.String(255))
     reset_token_expires = db.Column(db.DateTime)
     mobile_token = db.Column(db.String(255), nullable=True, index=True)  # Token para app móvil
+    partner_client_id = db.Column(db.String(120), nullable=True, index=True)  # ID del cliente en la app externa
     created_at = db.Column(db.DateTime, default=now_utc_for_db)
     updated_at = db.Column(db.DateTime, default=now_utc_for_db, onupdate=now_utc_for_db)
     
@@ -1340,3 +1341,71 @@ class Appointment(db.Model):
 
     def __repr__(self):
         return f'<Appointment {self.id} - {self.customer_name} - {self.status}>'
+
+
+class PartnerApiKey(db.Model):
+    """API Keys para integración B2B con apps externas"""
+    __tablename__ = 'partner_api_keys'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    key_prefix = db.Column(db.String(10), nullable=False, index=True)
+    key_hash = db.Column(db.String(255), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    last_used_at = db.Column(db.DateTime, nullable=True)
+
+    @staticmethod
+    def generate_key(name):
+        """Genera una nueva API Key, retorna (raw_key, partner_key_obj)"""
+        import secrets
+        import hashlib
+        raw_key = f"vcard_sk_{secrets.token_hex(24)}"
+        prefix = raw_key[:10]
+        hash_val = hashlib.sha256(raw_key.encode('utf-8')).hexdigest()
+        obj = PartnerApiKey(
+            name=name,
+            key_prefix=prefix,
+            key_hash=hash_val,
+            is_active=True
+        )
+        return raw_key, obj
+
+    def verify_key(self, raw_key):
+        """Verifica si la raw_key coincide con el hash guardado"""
+        import secrets
+        import hashlib
+        hash_val = hashlib.sha256(raw_key.encode('utf-8')).hexdigest()
+        return secrets.compare_digest(self.key_hash, hash_val)
+
+    def touch_last_used(self):
+        """Actualiza la fecha de último uso"""
+        self.last_used_at = now_utc_for_db()
+
+
+class SSOToken(db.Model):
+    """Tokens de Single Sign-On / Magic Login para redirigir desde apps externas"""
+    __tablename__ = 'sso_tokens'
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, default=now_utc_for_db)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('sso_tokens', lazy='dynamic', cascade='all, delete-orphan'))
+
+    @staticmethod
+    def create_for_user(user, expires_in_minutes=15):
+        import secrets
+        token_str = secrets.token_urlsafe(32)
+        expires = now_utc_for_db() + timedelta(minutes=expires_in_minutes)
+        sso = SSOToken(token=token_str, user_id=user.id, expires_at=expires)
+        return sso
+
+    def is_valid(self):
+        """Verifica si el token no ha expirado y no ha sido usado"""
+        if self.is_used:
+            return False
+        return now_utc_for_db() <= self.expires_at
