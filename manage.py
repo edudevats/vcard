@@ -138,7 +138,7 @@ def seed_data():
                 name=user_data['name'],
                 job_title=user_data['job'],
                 company=user_data['company'],
-                phone='+34 123 456 789',
+                phone='+52 123 456 789',
                 email_public=user_data['email'],
                 location='CDMX, Mexico',
                 bio=f'Profesional especializado en {user_data["job"]} con amplia experiencia en el sector.',
@@ -253,6 +253,7 @@ def tickets_stats():
 def create_partner_key(name):
     """Generar una API Key para integración B2B."""
     from app.models import PartnerApiKey
+    db.create_all()
     raw_key, key_obj = PartnerApiKey.generate_key(name)
     db.session.add(key_obj)
     db.session.commit()
@@ -261,8 +262,9 @@ def create_partner_key(name):
     click.echo('Partner API Key creada con éxito!')
     click.echo(f'Nombre: {name}')
     click.echo(f'API Key: {raw_key}')
-    click.echo('⚠️ IMPORTANTE: Copia esta clave ahora. No se podrá volver a mostrar.')
+    click.echo('[!] IMPORTANTE: Copia esta clave ahora. No se podra volver a mostrar.')
     click.echo('==================================================\n')
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.cli()
